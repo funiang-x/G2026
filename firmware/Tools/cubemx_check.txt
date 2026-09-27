@@ -1,0 +1,2 @@
+config load C:/Users/funiang/Desktop/Project/products/G2026/firmware/G2026.ioc
+exit

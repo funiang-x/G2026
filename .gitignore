@@ -1,0 +1,7 @@
+# 生成物与 IDE
+firmware/build/
+firmware/.vscode/
+
+# 只读输入（外部厂商资料包 ~3.7G，不可变、无需回滚；git 只管自产文档与固件源码）
+docs/立创·梁山派·天空星STM32F407VET6开发板资料（标准库）/
+docs/TK035F5687_9629_整理资料_(含SPI及并口版)/

@@ -1,0 +1,62 @@
+# ============================================================================
+#  .gitattributes —— 换行符策略（**建仓库时定下的，改动等于改门禁**）
+#
+#  为什么需要它
+#  ------------
+#  这台机器的 git 全局 `core.autocrlf=true`（实测：`git config --get
+#  core.autocrlf` ⇒ true）。不管的话，clone 出来的**手写源码会被整文件改行尾** ——
+#  而 `.editorconfig` 里没有 `end_of_line`，拦不住这件事。
+#
+#  本工程里有两类文件，必须**分开**处理（判据同 `.gitignore` 与 docs/01 规矩 4）：
+#
+#    · **人写的**（Task/ Operation/ Common/ Test/ Tools/ docs/ 与根配置）
+#      —— 现状全是 LF，声明成 `text eol=lf` 后**字节不变**，但保证任何机器
+#         clone 出来都是 LF。
+#    · **生成物 / vendor**（Core/ Drivers/ Middlewares/ startup_*.s .ld .ioc
+#      .mxproject cmake 的工具链文件 .vscode/c_cpp_properties.json）
+#      —— CubeMX 与 SEGGER 写的是 **CRLF**。给它们做转换的后果是：每次重新生成
+#         就冒出一个"整文件行尾变了"的假 diff，把真正的改动淹掉。所以走默认值
+#         `* -text`：**git 一律不碰字节**。
+#
+#  ⚠️ 顺序有讲究：`* -text` 必须在最前，后面的显式规则**按后匹配优先**覆盖它。
+#  ⚠️ 加完这个文件后请验证一次"clone 出来逐字节一致"（docs 里没写步骤，做法是
+#     `git clone <本仓库> /tmp/x && diff -r -x .git <本仓库> /tmp/x` 应为空）。
+#  ⚠️ 已知遗留：`Device/Src/bsp_gpio.c` 是 **CRLF**，而同层其它文件是 LF。
+#     所以本文件**没有**给 `Device/**` 加 `eol=lf` —— 加了就会在下次 checkout 时
+#     悄悄改这个文件的字节。要收敛请先单独把它转成 LF，再回来加规则。
+# ==========================================================================*/
+
+# ---- 默认：不猜、不改，仓库内保持字节原样（生成物 / vendor 走这条）----
+* -text
+
+# ---- 人写的层 ----
+Task/**       text eol=lf
+Operation/**  text eol=lf
+Common/**     text eol=lf
+Device/Inc/** text eol=lf
+Test/**       text eol=lf
+Tools/**      text eol=lf
+docs/**       text eol=lf
+
+# ---- 人写的根配置与构建脚本 ----
+# ⚠️ **必须以 `/` 开头**：gitattributes 里不含斜杠的模式匹配**任意层级**的同名
+#    文件。写成 `CMakeLists.txt` 会连 CubeMX 生成物
+#    `cmake/stm32cubemx/CMakeLists.txt`（CRLF）一起吃掉 ⇒ git 警告
+#    "CRLF will be replaced by LF"，等于把生成物规范化。实测踩过，别去掉斜杠。
+/AGENTS.md            text eol=lf
+/README.md            text eol=lf
+/CMakeLists.txt       text eol=lf
+/CMakePresets.json    text eol=lf
+/project_config.h     text eol=lf
+/.clang-format        text eol=lf
+/.editorconfig        text eol=lf
+/.gitignore           text eol=lf
+/.gitattributes       text eol=lf
+docs/**/*.md          text eol=lf
+Tools/*.py            text eol=lf
+cmake/proj_warnings.cmake text eol=lf
+
+# ---- 明确留给你自己判断的（**故意不写规则**，走默认 `-text`）----
+# Core/  Middlewares/  Drivers/  cmake/gcc-arm-none-eabi.cmake
+# cmake/starm-clang.cmake  cmake/stm32cubemx/  startup_*.s  *.ld
+# *.ioc  .mxproject  .vscode/*.json  Device/Src/bsp_gpio.c

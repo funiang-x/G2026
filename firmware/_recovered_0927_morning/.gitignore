@@ -1,0 +1,49 @@
+# ============================================================================
+#  .gitignore —— 只忽略**衍生物**，不忽略任何源码或配置
+#
+#  判据与 .vscode/settings.json 的 files.exclude 一致：
+#    人写的（Task/ Operation/ Device/ Common/ Test/ Tools/ docs/ 以及
+#    Core/ 里的 USER CODE）→ **提交**
+#    衍生的（构建产物、AI 记忆）→ 忽略
+#
+#  ⚠️ `Drivers/` 与 `Middlewares/` **不要忽略** —— 它们虽然由 CubeMX 生成 /
+#     vendor 进来，但本工程**不靠联网拉取**（docs/00 §1.4 明确放弃了
+#     fetch_deps 那套）。忽略它们 = 别人 clone 下来编不过。
+#  ⚠️ `.vscode/` **不要忽略** —— 那四个配置文件是**刻意手写的**
+#     （任务、调试配置、IntelliSense、工具链路径），属于工程资产。
+# ============================================================================
+
+# ---- 构建产物 ----
+build/
+*.o
+*.d
+*.elf
+*.bin
+*.hex
+*.map
+compile_commands.json
+
+# ---- 烧录 / 调试脚本的临时产物（fw.py 往 build/ 写，这里兜底）----
+*.jlink
+rtt_ch*.log
+rtt_verify.log
+
+# ---- AI 助手的记忆与备份：不属于工程代码 ----
+.workbuddy/
+.workbuddy-ai/
+
+# ---- 配置文件的自动备份（Tools/ioc_*.py 写入，衍生物）----
+# 形如 f407vgt6.ioc.bak_20260926_pinlabels。`.ioc` 本身是源文件、要提交，
+# 但它的备份是工具产出的中间态，不该进版本库（diff 里全是噪声）。
+*.ioc.bak_*
+
+# ---- 编辑器 / 系统 ----
+.vscode/ipch/
+.cache/
+__pycache__/
+*.pyc
+*.swp
+*~
+Thumbs.db
+desktop.ini
+.DS_Store

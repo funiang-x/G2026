@@ -1,0 +1,33 @@
+# STM32 HAL 模板统一 C 风格（与 mcutemplates 保持一致，便于多工程互抄片段）。
+# 基于 LLVM 风格微调：4 空格缩进 + 窄列宽 + 指针星号靠左。
+BasedOnStyle: LLVM
+IndentWidth: 4
+ColumnLimit: 88
+UseTab: Never
+TabWidth: 4
+
+# 指针 / 引用星号靠左（int *p）
+PointerAlignment: Left
+ReferenceAlignment: Left
+
+# 函数返回类型不单独换行
+AlwaysBreakAfterDefinitionReturnType: None
+AlwaysBreakAfterReturnType: None
+
+# 短语句不合并到单行（else/return 各自成行，便于打断点与阅读）
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Inline
+
+AlignConsecutiveDeclarations: true
+AlignConsecutiveAssignments: false
+AlignAfterOpenBracket: Align
+BreakBeforeBraces: Attach
+SpaceBeforeParens: ControlStatements
+
+SortIncludes: true
+
+# switch：case 与 switch 平齐一层
+IndentCaseLabels: false
+
+IncludeBlocks: Regroup

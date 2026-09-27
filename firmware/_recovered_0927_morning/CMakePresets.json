@@ -1,0 +1,75 @@
+{
+    "version": 3,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 22,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "base",
+            "hidden": true,
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "toolchainFile": "${sourceDir}/cmake/gcc-arm-none-eabi.cmake",
+            "cacheVariables": {
+                "LOG_BACKEND": "RTT"
+            }
+        },
+        {
+            "name": "Debug",
+            "inherits": "base",
+            "displayName": "Debug (-Og -g3)",
+            "description": "日常开发 / 单步调试。判零告警只能用这个预设 + --clean-first（docs/11）",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "Release",
+            "inherits": "base",
+            "displayName": "Release (-Os -g0)",
+            "description": "发布：体积最小。不要改回 -O3，会让第三方代码膨胀 7.3 KB（docs/11）",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "RelWithDebInfo",
+            "inherits": "base",
+            "displayName": "RelWithDebInfo (-O2 -g3)",
+            "description": "现场取证 / profiling：跑得快且带完整符号",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
+        },
+        {
+            "name": "Debug-UART",
+            "inherits": "base",
+            "displayName": "Debug + 串口日志",
+            "description": "日志改走 USART1（引脚在 Core/Inc/board_config.h），手边没有 J-Link 时用",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "LOG_BACKEND": "UART"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "Debug",
+            "configurePreset": "Debug"
+        },
+        {
+            "name": "Release",
+            "configurePreset": "Release"
+        },
+        {
+            "name": "RelWithDebInfo",
+            "configurePreset": "RelWithDebInfo"
+        },
+        {
+            "name": "Debug-UART",
+            "configurePreset": "Debug-UART"
+        }
+    ]
+}
