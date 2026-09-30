@@ -45,7 +45,7 @@
 #include "bsp_spi.h"   /* SPI1 + 板载 W25Q128（16MB SPI Flash）*/
 #include "bsp_tick.h"  /* 时基与阻塞延时 */
 
-#include "bsp_adc.h"   /* 采样链：TIM8 触发 ADC1 → DMA2（PA0，2.0MSPS）*/
+#include "bsp_adc.h"   /* 采样链：TIM8 触发 ADC1 → DMA2（PA1，2.0MSPS）*/
 #include "bsp_lcd.h"   /* 液晶屏：ST7796S · 8080 16 位并口走 FSMC */
 #include "bsp_touch.h" /* 电容触摸 FT6336（I2C2）*/
 

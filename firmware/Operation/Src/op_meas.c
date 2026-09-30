@@ -5,10 +5,19 @@
 
 #include <math.h>
 
-/* 重建一个基波周期用的采样点数：Upp = max−min 对抽点密度不敏感
- * （正弦和的光滑函数，512 点的 ptp 与 8192 点差 <0.01mV —— verify_dsp 用
- * 8192 是 Python 顺手，MCU 取 512 省 3/4 的 sinf）。 */
-#define OP_MEAS_REBUILD_PTS 512U
+/* 重建一个基波周期用的采样点数 —— **必须跟着最高分量阶次 m_max 走**。
+ *
+ * ★ 2026-09-28 修正（实测发现）：抽点密度 = P/m_max 点/周期，ptp 的格点误差
+ *   约为 (1−cos(π·m_max/P))。**固定 512** 在 m_max≤8 时够用（0.03%），
+ *   但 m_max=50（f1=10k 基波 + 500k 分量）时只有 10.2 点/周期 ——
+ *   实测 Upp 偏 **−1.75mV**（判据 5mV 的 35%，且是系统性误差不是噪声）。
+ *   旧注释"512 点的 ptp 与 8192 点差 <0.01mV"只在低阶次下成立，是错的。
+ *   ⇒ 取 max(512, 32·m_max)：m≤16 时**零额外开销**（仍是 512 点），
+ *     大阶次自动加密（m=50 → 1600 点）。上限 4096 兜住耗时。
+ *   ⚠️ 这改的是**实现**不是口径（口径仍是"sin 重建取 max−min"，docs/01 §5 ②）。 */
+#define OP_MEAS_REBUILD_MIN_PTS 512U
+#define OP_MEAS_REBUILD_PTS_PER_HARMONIC 32U
+#define OP_MEAS_REBUILD_MAX_PTS 4096U
 
 void op_meas_build(const meas_peak_t *peaks, int n_peaks, uint32_t seq,
                    uint8_t scene, meas_result_t *out) {
@@ -57,19 +66,39 @@ void op_meas_build(const meas_peak_t *peaks, int n_peaks, uint32_t seq,
     out->urms_mv = (float)sqrt(sum_a2 / 2.0);
 
     /* ② Upp = sin 口径重建一个基波周期 → max−min。
-     *    m_k = round(f_k/f1)（级次）—— 相位用各自测得的 φ_k（源端口径）。 */
+     *    m_k = round(f_k/f1)（级次）—— 相位用各自测得的 φ_k（源端口径）。
+     *    ⚠️ 重建点数按最高阶次自适应（见文件顶的说明），否则大阶次信号会偏。 */
+    int m_k[MEAS_MAX_PEAKS];
+    int m_max = 1;
+    for (int i = 0; i < n; i++) {
+        int m = (int)(peaks[i].freq_hz / f1 + 0.5f);
+        if (m < 1) {
+            m = 1;
+        }
+        m_k[i] = m;
+        if (m > m_max) {
+            m_max = m;
+        }
+    }
+    uint32_t pts = OP_MEAS_REBUILD_MIN_PTS;
+    {
+        const uint32_t need = OP_MEAS_REBUILD_PTS_PER_HARMONIC * (uint32_t)m_max;
+        if (need > pts) {
+            pts = need;
+        }
+        if (pts > OP_MEAS_REBUILD_MAX_PTS) {
+            pts = OP_MEAS_REBUILD_MAX_PTS;
+        }
+    }
+
     double w_max = -1e30;
     double w_min = 1e30;
-    for (uint32_t j = 0; j < OP_MEAS_REBUILD_PTS; j++) {
-        const double t = (double)j / ((double)f1 * (double)OP_MEAS_REBUILD_PTS);
+    for (uint32_t j = 0; j < pts; j++) {
+        const double t = (double)j / ((double)f1 * (double)pts);
         double w = 0.0;
         for (int i = 0; i < n; i++) {
-            int m = (int)(peaks[i].freq_hz / f1 + 0.5f);
-            if (m < 1) {
-                m = 1;
-            }
             w += (double)peaks[i].amp_mv *
-                 sin(2.0 * 3.14159265358979323846 * (double)m * (double)f1 * t +
+                 sin(2.0 * 3.14159265358979323846 * (double)m_k[i] * (double)f1 * t +
                      (double)peaks[i].phase_rad);
         }
         if (w > w_max) {

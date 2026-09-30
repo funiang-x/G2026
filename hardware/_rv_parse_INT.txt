@@ -1,0 +1,121 @@
+### PAGE INT  (301653 chars)
+类型计数: {'DOCHEAD': 1, 'CANVAS': 1, 'WIRE': 82, 'ATTR': 727, 'COMPONENT': 86, 'TEXT': 23, 'LINE': 107, 'RECT': 3}
+导线 82 / NO_CONNECT 60 / 器件 86
+
+--- COMPONENT (86) ---
+  des=H3       part=FH12-45S-0.5SVA(54).1      mp=FH12-45S-0.5SVA(54)        sp=FH12-45S-0.5SV val=None         @(700,-1050) rot=0 id=8a46f8d6f5809424
+  des=H4       part=FH12-6S-0.5SH.1            mp=FH12-6S-0.5SH              sp=FH12-6S-0.5SH. val=None         @(900,-1250) rot=0 id=55ef99a195c4355e
+  des=J4       part=W10006-206MG0ER1.1         mp=W10006-206MG0ER1           sp=W10006-206MG0E val=None         @(1450,-1300) rot=0 id=c6fd3164b80a62e0
+  des=EVK1     part=LCKFB-LSPI-SKYSTAR-STM32F4 mp=LCKFB-LSPI-SkyStar-STM32F4 sp=LCKFB-LSPI-SKY val=None         @(780,-515) rot=0 id=00726019c8c2f9ff
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(340,-415) rot=180 id=d95712259d6685d1
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1000,-425) rot=180 id=fa7b91c7c641d6ea
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(660,-1200) rot=180 id=3ac7c4a37b5564b1
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(660,-1190) rot=180 id=082922494b26f905
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(660,-1180) rot=180 id=96ddba93784cbe2e
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(660,-1110) rot=180 id=c34dfb97eb5ab242
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(660,-1100) rot=180 id=edff821d14c1bad0
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(660,-1090) rot=180 id=0c418dc4b8b1104e
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(660,-1080) rot=180 id=e48357134d4e1e37
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(660,-1070) rot=180 id=37e791b887f26057
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(660,-1060) rot=180 id=9253a1a266ce7221
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(660,-1050) rot=180 id=75f4eddb1f686aa6
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(660,-1040) rot=180 id=5ab17b736f20c46f
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(660,-1030) rot=180 id=72949bb6b8fe5bc5
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(660,-1020) rot=180 id=1d03bb74a5aff4dd
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(660,-1010) rot=180 id=5acc7132981159ff
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(660,-1000) rot=180 id=90838c7451d34a38
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(660,-990) rot=180 id=3a08c5bb49df5a34
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(660,-980) rot=180 id=0d0dbf9b9de648fc
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(660,-950) rot=180 id=ac9bb9c2a257b2ed
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(660,-940) rot=180 id=678ea5e787a0aa83
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(660,-930) rot=180 id=c8e8b1f5aa4d8348
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(660,-920) rot=180 id=f5a72a1ea53e91ea
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(660,-910) rot=180 id=39147d64d14c51aa
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(660,-840) rot=180 id=9e8b73a394b02835
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(660,-830) rot=180 id=f901ce92092b5f74
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(860,-1255) rot=180 id=cca270c37e7eb4f1
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(860,-1245) rot=180 id=0c60592ea6396a54
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(860,-1235) rot=180 id=c9c90aae32ff1a8f
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(860,-1225) rot=180 id=428699b021ce48a1
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(660,-1160) rot=180 id=ceba1719bc523ad6
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(715,-790) rot=90 id=52425c7adb563cbe
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(715,-1310) rot=270 id=607bee877f545f48
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(860,-1275) rot=180 id=e7adce0dc841cac7
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(860,-1265) rot=180 id=d1f171c071ddc4c3
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(900,-1325) rot=270 id=16ea487e53ddce12
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(900,-1175) rot=90 id=a67bd5c8c2b4675d
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(340,-555) rot=180 id=49f2bb3a4addd788
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(340,-515) rot=180 id=3e30670cbbacc123
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(340,-495) rot=180 id=15899236477208d5
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(340,-595) rot=180 id=a049f92e5598bef8
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(340,-565) rot=180 id=a12cc50ad9a36626
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(340,-535) rot=180 id=3bcd6376e4c6b980
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(340,-525) rot=180 id=6dcefa6269589856
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(340,-505) rot=180 id=02c9d84e9f699ddd
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(340,-465) rot=180 id=80014d49b5ade056
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(340,-435) rot=180 id=ed0168aa811f01b5
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(540,-435) rot=0 id=3aaae5e144d9df92
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(540,-465) rot=0 id=72c29cead1da1715
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(540,-505) rot=0 id=2fc3c19d0aadce93
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(540,-525) rot=0 id=e1b6a3016bd79352
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(540,-455) rot=0 id=462859cd3db95da9
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(540,-535) rot=0 id=0dbd606935101e63
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(540,-545) rot=0 id=6b43b274687101f0
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(540,-595) rot=0 id=331fa4e860d6d538
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(540,-495) rot=0 id=6ddf88a05ba72b9b
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(540,-555) rot=0 id=ce4ed731c8cc0438
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(540,-605) rot=0 id=a19ef86c70ffac69
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(340,-425) rot=180 id=a13ca1fae43cc5b9
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(540,-415) rot=0 id=ded38423fcf74afe
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(540,-425) rot=0 id=797ebea98ef935e2
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(340,-545) rot=180 id=531732e683181c3d
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(540,-515) rot=0 id=c05e1ddbe9fbbe8a
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(340,-455) rot=180 id=a40da66ca1060fb4
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1500,-1330) rot=0 id=77b970d714f1537d
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1500,-1320) rot=0 id=20d07182d6a349dd
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1500,-1310) rot=0 id=3f4c78fe6bc89936
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1400,-1310) rot=180 id=56430600d1b993b1
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1400,-1320) rot=180 id=fa039657ca0af57b
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1400,-1330) rot=180 id=e835bbb169b5cf17
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1000,-435) rot=180 id=2ec50de62392e55b
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(660,-970) rot=180 id=45ba5daf8411481e
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(660,-960) rot=180 id=6ca33565e7eebd82
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1010,-485) rot=180 id=c1f1ff9b2dd6350d
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1010,-475) rot=180 id=e915766f5108f704
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1010,-465) rot=180 id=a5f5970d35b23066
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1210,-475) rot=0 id=60a9351547ac7d39
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1210,-465) rot=0 id=7aa11ddd22f423b2
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1210,-435) rot=0 id=31a913871a49b164
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1210,-425) rot=0 id=a1d99cd32e11faa9
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(640,-875) rot=180 id=0604f330a83d620a
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(660,-1300) rot=270 id=24a8ee85ec914b4a
+
+--- NETPORT (0) ---
+
+--- NETFLAG (0) ---
+  计数: {}
+
+--- TEXT (23) ---
+  @(1825,-1355) EVK1(天空星 STM32F407VGT6 高配版) 未用脚：
+  @(1825,-1325) 1,5,6,7,8,10,25,26,27,28,33,34,41,42,43,44,45,46,47,48,49,50,51,52,
+  @(1830,-1305) 53,54,55,56,57,58,59,60,61,62,63,64,65,66,68,73,74,75,76,81,82,83,84
+  @(1830,-1275) H3(屏 FPC-45P) 未用脚：1(TE),13(DIN),14(DOUT),15(DB17),16(DB16)
+  @(1770,-1255) J4(板间互连 2x7P) 未用脚：7~14
+  @(1825,-1395) ※ 有意不接（NC）声明 —— 以下脚在底板上不使用，无需连线
+  @(1825,-1325) 1,5,6,7,8,10,25,26,27,28,33,34,41,42,43,44,45,46,47,48,49,50,51,52,
+  @(1830,-1305) 53,54,55,56,57,58,59,60,61,62,63,64,65,66,68,73,74,75,76,81,82,83,84
+  @(1830,-1275) H3(屏 FPC-45P) 未用脚：1(TE),13(DIN),14(DOUT),15(DB17),16(DB16)
+  @(348,-725) ① 核心板（EVK1）
+  @(628,-1345) ② 显示与触摸（H3 / H4）
+  @(1368,-1415) ③ 板间互连（J4）
+  @(348,-799) LCKFB 天空星 STM32F407VGT6 · FSMC 16bit 并口驱动屏
+  @(348,-782) LCD_D0~D15 + LCD_CS/WR/RD/RS/RST → H3（FPC-45P）
+  @(348,-765) I2C2 → H4 触摸：TP_SCL/TP_SDA/TP_RST/TP_INT
+  @(348,-748) 经 J4 与 AFE 页互连：AFE_ADC_IN / VREF_3V3_EXT / VBIAS_1V65
+  @(628,-1419) H3：3.5″ ST7796S 屏 FPC-45P，IM=010 → 16bit 并口
+  @(628,-1402) H4：FT6336 电容触摸 FPC-6P（I2C 从机）
+  @(628,-1385) IM0/IM1/IM2 由 PWR 页 0Ω 电阻配置接口模式
+  @(628,-1368) BL_A 供电 / BL_K 回流（见 PWR 页背光驱动）
+  @(1368,-1472) 2×7：+5V_A / AGND / AFE_ADC_IN /
+  @(1368,-1455) VBIAS_1V65 / VREF_3V3_EXT
+  @(1368,-1438) AGND 与 GND 分开，单点接地在核心板内

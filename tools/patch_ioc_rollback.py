@@ -2,7 +2,7 @@
 """回滚 .ioc 里的 ADC1（尊重既有 bsp_adc.c 直写寄存器的设计），保留按键 + NVIC.DMA2 行"""
 import io, re
 
-P = r"C:\Users\funiang\Desktop\Project\products\G2026\firmware\G2026.ioc"
+P = r"C:\Users\funiang\Desktop\Project\projects\G2026\firmware\G2026.ioc"
 s = io.open(P, encoding="utf-8").read()
 
 # 1) 删全部 ADC1.* 键

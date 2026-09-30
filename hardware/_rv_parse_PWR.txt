@@ -1,0 +1,88 @@
+### PAGE PWR  (353679 chars)
+类型计数: {'DOCHEAD': 1, 'CANVAS': 1, 'COMPONENT': 59, 'ATTR': 939, 'RECT': 4, 'TEXT': 17, 'WIRE': 39, 'LINE': 49}
+导线 39 / NO_CONNECT 0 / 器件 59
+
+--- COMPONENT (59) ---
+  des=J3       part=DC005_C431533.1            mp=DC005                      sp=DC005_C431533. val=None         @(150,-1100) rot=0 id=d5d56c702b585adc
+  des=D2       part=SS34_C8678.1               mp=SS34                       sp=SS34_C8678.1   val=None         @(320,-1100) rot=0 id=b9be7ece1a795baa
+  des=U3       part=pid8a0e77bacb214e          mp=AMS1117-3.3                sp=pid8a0e77bacb2 val=None         @(550,-1100) rot=0 id=759a40ee92f8e635
+  des=C16      part=TAJB226K025RNJ.1           mp=TAJB226K025RNJ             sp=TAJB226K025RNJ val=22uF         @(470,-1220) rot=270 id=2ea6e106201aceec
+  des=C17      part=TAJB226K016RNJ.1           mp=TAJB226K016RNJ             sp=TAJB226K016RNJ val=22uF         @(660,-1220) rot=270 id=ca336dc61b362c97
+  des=C18      part=CC0805KRX7R9BB104.1        mp=CC0805KRX7R9BB104          sp=CC0805KRX7R9BB val=100nF        @(760,-1220) rot=270 id=d4cc88476e1b4f12
+  des=LED1     part=17-21SUYC/TR8.1            mp=KT-0805Y                   sp=17-21SUYC/TR8. val=None         @(950,-1100) rot=270 id=f0762fdb9715828c
+  des=R11      part=0805W8F1001T5E.1           mp=0805W8F1001T5E             sp=0805W8F1001T5E val=1kΩ          @(950,-1000) rot=270 id=0c50e451c9f5f463
+  des=Q1       part=SI2302_C2841377.1          mp=SI2302                     sp=SI2302_C284137 val=None         @(1150,-1100) rot=0 id=54f483ba966c0f66
+  des=R12      part=0805W8F1001T5E.1           mp=0805W8F1001T5E             sp=0805W8F1001T5E val=1kΩ          @(1090,-1000) rot=0 id=13c0b205bd394675
+  des=R13      part=0805W8F1003T5E_C149504.1   mp=0805W8F1003T5E             sp=0805W8F1003T5E val=100kΩ        @(1230,-950) rot=270 id=689e4c979b738429
+  des=R15      part=0805W8F4701T5E.1           mp=0805W8F4701T5E             sp=0805W8F4701T5E val=4.7kΩ        @(1450,-1000) rot=270 id=5ab550dd2667403a
+  des=R16      part=0805W8F4701T5E.1           mp=0805W8F4701T5E             sp=0805W8F4701T5E val=4.7kΩ        @(1560,-1000) rot=270 id=4201b681fcd77473
+  des=R17      part=0805W8F0000T5E.1           mp=0805W8F0000T5E             sp=0805W8F0000T5E val=0Ω           @(1680,-1000) rot=270 id=3e9f38fe7267b761
+  des=R18      part=0805W8F0000T5E.1           mp=0805W8F0000T5E             sp=0805W8F0000T5E val=0Ω           @(1790,-1000) rot=270 id=27d30ae8ab850bc4
+  des=R19      part=0805W8F0000T5E.1           mp=0805W8F0000T5E             sp=0805W8F0000T5E val=0Ω           @(1900,-1000) rot=270 id=ccfabec82f67c21d
+  des=R20      part=0805W8F1003T5E_C149504.1   mp=0805W8F1003T5E             sp=0805W8F1003T5E val=100kΩ        @(2010,-1000) rot=270 id=41bebfa2723de373
+  des=C19      part=CC0805KRX7R9BB104.1        mp=CC0805KRX7R9BB104          sp=CC0805KRX7R9BB val=100nF        @(2120,-1000) rot=270 id=4d52694eb60c6be3
+  des=C20      part=CC0805KRX7R9BB104.1        mp=CC0805KRX7R9BB104          sp=CC0805KRX7R9BB val=100nF        @(2210,-1000) rot=270 id=24e6560b340332c0
+  des=R14      part=1206W4F390JT5E_C22198.1    mp=1206W4F390JT5E             sp=1206W4F390JT5E val=39Ω          @(1330,-1000) rot=0 id=1541d5b75410c0be
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(170,-1070) rot=90 id=c95ec3ffb9ea919c
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(470,-1180) rot=270 id=434ae854e83148fb
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(485,-1110) rot=180 id=47cc19ec6c5a66df
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(660,-1185) rot=270 id=0399cb47eb83cfe4
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(760,-1180) rot=270 id=055bd55992a5ce2f
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(950,-1140) rot=270 id=abad9d5744a839e5
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1150,-1060) rot=90 id=fce26725a161765d
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1230,-910) rot=270 id=a0a3b8581ad257c9
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1680,-960) rot=270 id=34ad5e30a4a4e7b3
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1790,-960) rot=270 id=94060124c51d32a6
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(2010,-960) rot=270 id=8b4338426b1434ba
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(2120,-960) rot=270 id=257d9671a79528e1
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(2210,-960) rot=270 id=b0f2e11343abeaa9
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(660,-1255) rot=90 id=623719613d534774
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(760,-1260) rot=90 id=c96ba6eaf997465b
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(950,-960) rot=90 id=d40dc8c3c9f2bff1
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1450,-1040) rot=270 id=656d5427c92b1cd8
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1560,-1040) rot=270 id=938cd9e7b5c9521d
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1900,-960) rot=90 id=01a7baadeb16a8a0
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(2120,-1040) rot=270 id=54116985a436f4dd
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(2210,-1040) rot=270 id=52fbe3764778d5ac
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(470,-1260) rot=270 id=459f3d8008994781
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1290,-1000) rot=180 id=55acf5fee9209c7b
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1370,-1000) rot=0 id=fb251c8057d51896
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1150,-1140) rot=90 id=fafba24c00588cb7
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1050,-1000) rot=180 id=bf7f3869a8297859
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(2010,-1040) rot=270 id=1603e1a72cdbc525
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1450,-960) rot=90 id=4ce707e12f2dbae5
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1560,-960) rot=90 id=8c72eaa24788eb17
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1680,-1040) rot=270 id=849443da03bc569f
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1900,-1040) rot=270 id=ef3f65dd5ba05430
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1790,-1040) rot=270 id=d7179f48fae8c2e7
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(300,-1080) rot=90 id=547ad2ff9d323b9e
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(505,-1070) rot=90 id=a664e4f19a4949b9
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(485,-1100) rot=180 id=cf35e096b0b2472c
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(615,-1100) rot=0 id=f47f5e96e0c6ea16
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(250,-1110) rot=90 id=7b04bfb1b75da4ba
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(970,-1050) rot=0 id=263c9e57071f23ab
+  des=None     part=pid8a0e77bacb214e          mp=None                       sp=None           val=None         @(1150,-990) rot=270 id=b4282ce9bd8caff8
+
+--- NETPORT (0) ---
+
+--- NETFLAG (0) ---
+  计数: {}
+
+--- TEXT (17) ---
+  @(78,-1315) ① 电源输入与防反接
+  @(508,-1315) ② 3.3V LDO
+  @(908,-1195) ③ 背光恒流驱动
+  @(1418,-1095) ④ 屏接口配置与上拉
+  @(78,-1372) DC005 电源座 → D2(SS34) 肖特基防反接
+  @(78,-1355) C16 22µF 输入储能，抑制上电冲击
+  @(78,-1338) +5V_RAW 经 D2 后得 +5V（Vf≈0.5V@1A）
+  @(508,-1372) U3 AMS1117-3.3：+5V → +3V3，压差≈1.7V
+  @(508,-1355) U3.2/U3.4 两路 VOUT 并联走线
+  @(508,-1338) C17 22µF 储能 · C18 100nF 高频去耦
+  @(908,-1269) PB0 → R12 1k 栅极限流 → Q1(SI2302) 低边开关
+  @(908,-1252) R13 100k 栅极下拉，防上电误导通
+  @(908,-1235) +3V3 → R11 1k → LED1 → Q1 → GND（背光指示）
+  @(908,-1218) +5V → R14 39Ω → BL_A；BL_K 回 GND
+  @(1418,-1152) R15/R16 4.7k：I2C(TP_SCL/SDA) 上拉到 +3V3
+  @(1418,-1135) R17/R18/R19 0Ω：IM0/IM1/IM2 屏接口模式配置
+  @(1418,-1118) R20 100k：LCD_ID 屏识别 · C19/C20 100nF +3V3 去耦

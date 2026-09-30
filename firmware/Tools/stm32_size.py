@@ -53,15 +53,22 @@ ROOT = Path(__file__).resolve().parent.parent
 BUDGETS: dict[str, int] = {
     # 空白模板基线约 22 KB（HAL + FreeRTOS + RTT + 本工程代码）。
     # 256 → 640（2026-09-28）：G2026 定稿方案的**固有成本**——LVGL 图形栈
-    # （四页面 UI，docs/01 §1）≈200KB + CMSIS-DSP twiddle 表（FFT4096 数学
-    # 必需）48KB + BH4 窗表 16KB（§5 定稿，从 RAM 挪到 Flash）。合计 ~280KB
-    # 与业务代码无关、砍不掉；1MB 物理总量下 640 = 62.5%，仍留 140KB 业务
-    # 余量，且"误引一个大库"（lwIP 级 ~400KB）照样会挂——门禁没拆。
+    # （四页面 UI，docs/01 §1）≈200KB + CMSIS-DSP FFT 表 40.4KB（4096 点数学
+    # 必需；**2026-09-28 修正**：原先误用通用 arm_cfft_init_f32，把 16~2048 点
+    # 的表也链了进来，实测多带 45.5KB，见 docs/01 §5.1）+ BH4 窗表 16KB
+    # （§5 定稿，从 RAM 挪到 Flash）。合计 ~256KB 与业务代码无关、砍不掉；
+    # 1MB 物理总量下 640 = 62.5%，仍留余量，且"误引一个大库"（lwIP 级 ~400KB）
+    # 照样会挂——门禁没拆。
     # 理由已登记 docs/12 §6 授权记录。
     "FLASH": 640,
-    # 含 FreeRTOS 堆（configTOTAL_HEAP_SIZE = 15 KB）+ 默认任务栈 1 KB
-    # + HAL 的静态缓冲。F407VG 的 RAM 段总共 128 KB。
-    "RAM": 96,
+    # 含 FreeRTOS 堆（configTOTAL_HEAP_SIZE = 15 KB）+ 两个任务栈 10 KB
+    # + LVGL draw buffer 30 KB + HAL 的静态缓冲。F407VG 的 RAM 段总共 128 KB。
+    # 96 → 104（2026-09-28）：**修正 FFT 缓冲尺寸错误的必要开销** ——
+    # `arm_cfft_f32` 的 p1 是"2*fftLen 个 float"的交织复数缓冲（官方约定），
+    # 4096 点就要 32 KB。原先只给了 16 KB（写穿到相邻的 s_xw），修好后
+    # s_fft=32KB 占满 CCM 低半，s_xw=16KB 只能落到 SRAM1 ⇒ RAM +16 KB。
+    # 这是**正确性开销**，不是为让门禁变绿而放宽（128 KB 物理总量下 104 = 81%）。
+    "RAM": 104,
     # CCM 已按 board_config 的切分用满规划（低 32KB = DSP 双缓冲，高 32KB =
     # LVGL 堆），上限保持全段 —— 越界由链接脚本 ASSERT 更早拦下。
     "CCMRAM": 64,

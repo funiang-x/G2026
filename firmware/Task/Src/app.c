@@ -17,6 +17,7 @@
 #include "app_blink.h"
 #include "app_engine.h"     /* 测量编排（task_ops 层 —— 碰 bsp_adc/bsp_spi） */
 #include "app_lvgl.h"       /* LVGL 适配层（显示 + 触摸）—— 与 Device 一起用 */
+#include "app_tasks.h"      /* 任务创建（Task_Engine / Task_Ui）*/
 #include "app_ui.h"         /* 测量 UI（四页面，task_ops 层） */
 #include "board_config.h"   /* 硬件事实 */
 #include "bsp.h"            /* Device 层总入口 */
@@ -35,6 +36,7 @@ static const bsp_gpio_t s_led = {(bsp_gpio_port_t)BOARD_LED_PORT, BOARD_LED_PIN}
 
 static int      s_led_on = 0;        /* 当前已写入的电平，用于"变了才写" */
 static int      s_boot_reported = 0; /* [AI_READY] 只打一次 */
+static int      s_stack_reported = 0; /* 任务栈余量只报一次 */
 static uint32_t s_last_hb_ms = 0;
 
 /* ---- 自检状态（上板验证用）-------------------------------------------- */
@@ -114,7 +116,7 @@ static void app_self_test(void) {
 
     /* ⑦ 采样链：TIM8 触发 ADC1 → DMA2 搬 64 个点。
      * ★ 判据是"**DMA 确实搬回了点**"，不是"数值等于某个期望值" ——
-     *   PA0 此刻可能悬空，读数是多少都正常。搬回来就证明
+     *   PA1 此刻可能没接信号源，读数是多少都正常。搬回来就证明
      *   触发 / 转换 / 搬运三跳全通（这是"编译通过 ≠ 能跑"最容易骗人的一处）。 */
     (void)bsp_adc_self_check();
 
@@ -127,7 +129,14 @@ static void app_self_test(void) {
     /* ⑨ 触摸：FT6336 应答 0x38（TD_STATUS 读得通即过，见 bsp_touch.c）。 */
     (void)bsp_touch_self_check();
 
-    /* ⚠️ 板上按键**已不存在**（PA0 让给 ADC1_IN0，见 board_config.h）——
+    /* ⑩ DSP 链：合成一帧已知单音 → 全链 → 校验谱峰位置与幅值。
+     * ★ 这是**唯一覆盖 MCU 侧 arm_cfft_f32 路径**的检查 —— PC 单测走的是朴素
+     *   DFT 替身（OP_DSP_HOST_FFT），看不见 FFT 实例/表是否装配正确
+     *   （2026-09-28 加，理由见 app_engine.h）。 */
+    (void)app_engine_selftest();
+
+    /* ⚠️ 板上按键 SW2（PA0）**无代码消费**（ADC 于 2026-09-28 挪到 PA1，
+     *    PA0 空闲但 SW2 电路还在；要用按键先配 .ioc 再建 bsp_key）——
      *    所以这里没有按键自检。LED 仍靠 app_poll_at() 的心跳闪烁体现。 */
 
 #if APP_SELFTEST_FAULT
@@ -313,14 +322,22 @@ static void app_poll_at(uint32_t now_ms) {
         LOG_I("heartbeat, uptime=%lu ms", (unsigned long)now_ms);
     }
 
-    /* ---- ③ 业务：Operation 出结论，组合根把它落到 Device 上 -------------- */
+    /* ---- ③ 任务栈余量（一次性，上板验证用）------------------------------
+     * 高水位只降不升 ⇒ 它是"栈快溢出"的提前预警。要晚到 DSP/LVGL 都跑过几轮
+     * 才有意义（APP_STACK_REPORT_MS）；想验 UI 任务最坏栈，先手动跑一次标定。 */
+    if (s_stack_reported == 0 && now_ms >= APP_STACK_REPORT_MS) {
+        s_stack_reported = 1;
+        app_tasks_report_stack();
+    }
+
+    /* ---- ④ 业务：Operation 出结论，组合根把它落到 Device 上 -------------- */
     int want = app_blink_poll(now_ms);
     if (want != s_led_on) {
         s_led_on = want;
         bsp_gpio_write(s_led, want);
     }
 
-    /* ---- ④ 自检：RTC 走时（5 秒后复查一次）------------------------------
+    /* ---- ⑤ 自检：RTC 走时（5 秒后复查一次）------------------------------
      * 判据是"两个时间点的秒数差 ≈ 经过的秒数"。若 RTC 压根没在走，
      * 读回来会和初值**一模一样** —— 那种情况要查 LSE 晶振或时钟源。 */
     if (s_rtc_t0_valid && s_rtc_checked == 0 && now_ms >= 5000U) {
@@ -337,17 +354,17 @@ static void app_poll_at(uint32_t now_ms) {
         }
     }
 
-    /* ---- ⑤ 测量：engine 态机（采集→DSP→发布）→ UI 按新 seq 刷当前页 ------
-     * ⚠️ 顺序有讲究：engine 先跑（本拍可能刚出结果），UI 后刷（同一拍就能
-     *    显示出来），LVGL 最后（重绘/读触摸）。 */
-    app_engine_poll(now_ms);
-    app_ui_poll(now_ms);
-
-    /* ---- ⑥ LVGL：推进时基 + 跑一次定时器（重绘 / 读触摸都在里面）---------
-     * ⚠️ 放在**最后**：界面刷新是"锦上添花"，不该抢在业务之前。
-     * ⚠️ 本函数由 `app_rtos_run()` 每 APP_TICK_PERIOD_MS（10ms）调一次，
-     *    那个周期**就是** LVGL 的时间分辨率 —— 调大会掉帧（见 project_config.h）。 */
-    app_lvgl_poll(now_ms);
+    /* ---- ⑥ 测量 / 界面 ---------------------------------------------------
+     * 正常路径：两者都是**独立任务**（Task_Engine / Task_Ui，由 app_tasks_init 建），
+     * 本循环不再插手 —— 采集阻塞在 ADC 帧信号量上、重测走任务通知、结果走
+     * mailbox（见 app_engine.h / app_tasks.h）。
+     * 降级路径：任务没建起来时（app_tasks_init 失败）退回旧形态，在本拍内联跑
+     * —— 保底可用，绝不静默变砖（engine 先跑，UI 后刷，LVGL 最后）。 */
+    if (!app_tasks_ok()) {
+        app_engine_poll(now_ms);
+        app_ui_poll(now_ms);
+        app_lvgl_poll(now_ms);
+    }
 }
 
 void app_poll(void) {

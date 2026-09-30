@@ -1,0 +1,1992 @@
+{
+    "version": "2.0.0",
+    "components": {
+        "gge1": {
+            "props": {
+                "Unique ID": "gge1",
+                "Add into BOM": "yes",
+                "Convert to PCB": "yes",
+                "Symbol": "fd5679bdc7baaefa",
+                "Designator": "EVK1",
+                "Name": "LCKFB-LSPI-SkyStar-GD32F407VET6-LITE",
+                "Device": "5f0fb5528297032b",
+                "Reuse Block": "",
+                "Group ID": "",
+                "Channel ID": "$1I705",
+                "LCSC Part Name": "立创·天空星开发板-GD32F407VET6-青春版",
+                "Supplier Part": "C20607214",
+                "Manufacturer": "立创开发板",
+                "Manufacturer Part": "LCKFB-LSPI-SkyStar-GD32F407VET6-LITE",
+                "Supplier Footprint": "-",
+                "JLCPCB Part Class": "扩展库",
+                "Datasheet": "https://atta.szlcsc.com/upload/public/pdf/source/20240117/E5B31CAF57E18ACCA1DCAC6024E258DD.pdf",
+                "Supplier": "LCSC",
+                "Footprint": "fc627a1b1000764c",
+                "3D Model": "e826dcdbd9564b01b8abdc307976d13a",
+                "3D Model Title": "DIP-80_L44.97-W69.97-P2.54X2-LS35.9",
+                "3D Model Transform": "1769.654,2753.60473,0,0,0,0,0,-57.087,-157.48",
+                "Description": "单板,不送排针",
+                "DeviceName": "LCKFB-LSPI-SkyStar-GD32F407VET6-LITE",
+                "FootprintName": "DIP-80_L44.97-W69.97-P2.54X2-LS35.9"
+            },
+            "pinInfoMap": {
+                "1": {
+                    "name": "PA2",
+                    "number": "1",
+                    "net": "$1N643",
+                    "props": {
+                        "Pin Number": "1"
+                    }
+                },
+                "2": {
+                    "name": "EXT REF+",
+                    "number": "2",
+                    "net": "$1N664",
+                    "props": {
+                        "Pin Number": "2"
+                    }
+                },
+                "3": {
+                    "name": "PA0",
+                    "number": "3",
+                    "net": "$1N644",
+                    "props": {
+                        "Pin Number": "3"
+                    }
+                },
+                "4": {
+                    "name": "PA1",
+                    "number": "4",
+                    "net": "$1N658",
+                    "props": {
+                        "Pin Number": "4"
+                    }
+                },
+                "5": {
+                    "name": "PA4",
+                    "number": "5",
+                    "net": "$1N645",
+                    "props": {
+                        "Pin Number": "5"
+                    }
+                },
+                "6": {
+                    "name": "PA3",
+                    "number": "6",
+                    "net": "$1N663",
+                    "props": {
+                        "Pin Number": "6"
+                    }
+                },
+                "7": {
+                    "name": "PA6",
+                    "number": "7",
+                    "net": "$1N646",
+                    "props": {
+                        "Pin Number": "7"
+                    }
+                },
+                "8": {
+                    "name": "PA5",
+                    "number": "8",
+                    "net": "$1N662",
+                    "props": {
+                        "Pin Number": "8"
+                    }
+                },
+                "9": {
+                    "name": "PC4",
+                    "number": "9",
+                    "net": "$1N642",
+                    "props": {
+                        "Pin Number": "9"
+                    }
+                },
+                "10": {
+                    "name": "PA7",
+                    "number": "10",
+                    "net": "$1N657",
+                    "props": {
+                        "Pin Number": "10"
+                    }
+                },
+                "11": {
+                    "name": "PB0",
+                    "number": "11",
+                    "net": "$1N641",
+                    "props": {
+                        "Pin Number": "11"
+                    }
+                },
+                "12": {
+                    "name": "PC5",
+                    "number": "12",
+                    "net": "$1N661",
+                    "props": {
+                        "Pin Number": "12"
+                    }
+                },
+                "13": {
+                    "name": "PE7",
+                    "number": "13",
+                    "net": "$1N640",
+                    "props": {
+                        "Pin Number": "13"
+                    }
+                },
+                "14": {
+                    "name": "PB1",
+                    "number": "14",
+                    "net": "$1N656",
+                    "props": {
+                        "Pin Number": "14"
+                    }
+                },
+                "15": {
+                    "name": "PE9",
+                    "number": "15",
+                    "net": "$1N639",
+                    "props": {
+                        "Pin Number": "15"
+                    }
+                },
+                "16": {
+                    "name": "PE8",
+                    "number": "16",
+                    "net": "$1N655",
+                    "props": {
+                        "Pin Number": "16"
+                    }
+                },
+                "17": {
+                    "name": "PE11",
+                    "number": "17",
+                    "net": "$1N638",
+                    "props": {
+                        "Pin Number": "17"
+                    }
+                },
+                "18": {
+                    "name": "PE10",
+                    "number": "18",
+                    "net": "$1N651",
+                    "props": {
+                        "Pin Number": "18"
+                    }
+                },
+                "19": {
+                    "name": "PE13",
+                    "number": "19",
+                    "net": "$1N637",
+                    "props": {
+                        "Pin Number": "19"
+                    }
+                },
+                "20": {
+                    "name": "PE12",
+                    "number": "20",
+                    "net": "$1N660",
+                    "props": {
+                        "Pin Number": "20"
+                    }
+                },
+                "21": {
+                    "name": "PE15",
+                    "number": "21",
+                    "net": "$1N636",
+                    "props": {
+                        "Pin Number": "21"
+                    }
+                },
+                "22": {
+                    "name": "PE14",
+                    "number": "22",
+                    "net": "$1N650",
+                    "props": {
+                        "Pin Number": "22"
+                    }
+                },
+                "23": {
+                    "name": "PB10",
+                    "number": "23",
+                    "net": "$1N635",
+                    "props": {
+                        "Pin Number": "23"
+                    }
+                },
+                "24": {
+                    "name": "PB11",
+                    "number": "24",
+                    "net": "$1N659",
+                    "props": {
+                        "Pin Number": "24"
+                    }
+                },
+                "25": {
+                    "name": "PB13",
+                    "number": "25",
+                    "net": "$1N634",
+                    "props": {
+                        "Pin Number": "25"
+                    }
+                },
+                "26": {
+                    "name": "PB12",
+                    "number": "26",
+                    "net": "$1N654",
+                    "props": {
+                        "Pin Number": "26"
+                    }
+                },
+                "27": {
+                    "name": "PB15",
+                    "number": "27",
+                    "net": "$1N633",
+                    "props": {
+                        "Pin Number": "27"
+                    }
+                },
+                "28": {
+                    "name": "PB14",
+                    "number": "28",
+                    "net": "$1N649",
+                    "props": {
+                        "Pin Number": "28"
+                    }
+                },
+                "29": {
+                    "name": "PD9",
+                    "number": "29",
+                    "net": "$1N689",
+                    "props": {
+                        "Pin Number": "29"
+                    }
+                },
+                "30": {
+                    "name": "PD8",
+                    "number": "30",
+                    "net": "$1N627",
+                    "props": {
+                        "Pin Number": "30"
+                    }
+                },
+                "31": {
+                    "name": "PD11",
+                    "number": "31",
+                    "net": "$1N631",
+                    "props": {
+                        "Pin Number": "31"
+                    }
+                },
+                "32": {
+                    "name": "PD10",
+                    "number": "32",
+                    "net": "$1N653",
+                    "props": {
+                        "Pin Number": "32"
+                    }
+                },
+                "33": {
+                    "name": "PD13",
+                    "number": "33",
+                    "net": "$1N632",
+                    "props": {
+                        "Pin Number": "33"
+                    }
+                },
+                "34": {
+                    "name": "PD12",
+                    "number": "34",
+                    "net": "$1N652",
+                    "props": {
+                        "Pin Number": "34"
+                    }
+                },
+                "35": {
+                    "name": "PD15",
+                    "number": "35",
+                    "net": "$1N628",
+                    "props": {
+                        "Pin Number": "35"
+                    }
+                },
+                "36": {
+                    "name": "PD14",
+                    "number": "36",
+                    "net": "$1N648",
+                    "props": {
+                        "Pin Number": "36"
+                    }
+                },
+                "37": {
+                    "name": "AGND",
+                    "number": "37",
+                    "net": "$1N629",
+                    "props": {
+                        "Pin Number": "37"
+                    }
+                },
+                "38": {
+                    "name": "+3V3",
+                    "number": "38",
+                    "net": "$1N626",
+                    "props": {
+                        "Pin Number": "38"
+                    }
+                },
+                "39": {
+                    "name": "GND",
+                    "number": "39",
+                    "net": "GND",
+                    "props": {
+                        "Pin Number": "39"
+                    }
+                },
+                "40": {
+                    "name": "+5V0",
+                    "number": "40",
+                    "net": "VIN",
+                    "props": {
+                        "Pin Number": "40"
+                    }
+                },
+                "41": {
+                    "name": "PD3",
+                    "number": "41",
+                    "net": "$1N668",
+                    "props": {
+                        "Pin Number": "41"
+                    }
+                },
+                "42": {
+                    "name": "PC9",
+                    "number": "42",
+                    "net": "$1N669",
+                    "props": {
+                        "Pin Number": "42"
+                    }
+                },
+                "43": {
+                    "name": "PC8",
+                    "number": "43",
+                    "net": "$1N667",
+                    "props": {
+                        "Pin Number": "43"
+                    }
+                },
+                "44": {
+                    "name": "PC12",
+                    "number": "44",
+                    "net": "$1N675",
+                    "props": {
+                        "Pin Number": "44"
+                    }
+                },
+                "45": {
+                    "name": "PD2",
+                    "number": "45",
+                    "net": "$1N666",
+                    "props": {
+                        "Pin Number": "45"
+                    }
+                },
+                "46": {
+                    "name": "PC11",
+                    "number": "46",
+                    "net": "$1N670",
+                    "props": {
+                        "Pin Number": "46"
+                    }
+                },
+                "47": {
+                    "name": "PC10",
+                    "number": "47",
+                    "net": "$1N665",
+                    "props": {
+                        "Pin Number": "47"
+                    }
+                },
+                "48": {
+                    "name": "PC13",
+                    "number": "48",
+                    "net": "$1N671",
+                    "props": {
+                        "Pin Number": "48"
+                    }
+                },
+                "49": {
+                    "name": "PE6",
+                    "number": "49",
+                    "net": "$1N611",
+                    "props": {
+                        "Pin Number": "49"
+                    }
+                },
+                "50": {
+                    "name": "PE5",
+                    "number": "50",
+                    "net": "$1N676",
+                    "props": {
+                        "Pin Number": "50"
+                    }
+                },
+                "51": {
+                    "name": "PE4",
+                    "number": "51",
+                    "net": "$1N612",
+                    "props": {
+                        "Pin Number": "51"
+                    }
+                },
+                "52": {
+                    "name": "PE3",
+                    "number": "52",
+                    "net": "$1N672",
+                    "props": {
+                        "Pin Number": "52"
+                    }
+                },
+                "53": {
+                    "name": "PE2",
+                    "number": "53",
+                    "net": "$1N613",
+                    "props": {
+                        "Pin Number": "53"
+                    }
+                },
+                "54": {
+                    "name": "PC0",
+                    "number": "54",
+                    "net": "$1N677",
+                    "props": {
+                        "Pin Number": "54"
+                    }
+                },
+                "55": {
+                    "name": "PC1",
+                    "number": "55",
+                    "net": "$1N614",
+                    "props": {
+                        "Pin Number": "55"
+                    }
+                },
+                "56": {
+                    "name": "PC2",
+                    "number": "56",
+                    "net": "$1N678",
+                    "props": {
+                        "Pin Number": "56"
+                    }
+                },
+                "57": {
+                    "name": "PC3",
+                    "number": "57",
+                    "net": "$1N615",
+                    "props": {
+                        "Pin Number": "57"
+                    }
+                },
+                "58": {
+                    "name": "PE1",
+                    "number": "58",
+                    "net": "$1N683",
+                    "props": {
+                        "Pin Number": "58"
+                    }
+                },
+                "59": {
+                    "name": "PE0",
+                    "number": "59",
+                    "net": "$1N616",
+                    "props": {
+                        "Pin Number": "59"
+                    }
+                },
+                "60": {
+                    "name": "PB9",
+                    "number": "60",
+                    "net": "$1N673",
+                    "props": {
+                        "Pin Number": "60"
+                    }
+                },
+                "61": {
+                    "name": "PB8",
+                    "number": "61",
+                    "net": "$1N617",
+                    "props": {
+                        "Pin Number": "61"
+                    }
+                },
+                "62": {
+                    "name": "PB7",
+                    "number": "62",
+                    "net": "$1N684",
+                    "props": {
+                        "Pin Number": "62"
+                    }
+                },
+                "63": {
+                    "name": "PB6",
+                    "number": "63",
+                    "net": "$1N618",
+                    "props": {
+                        "Pin Number": "63"
+                    }
+                },
+                "64": {
+                    "name": "PB5",
+                    "number": "64",
+                    "net": "$1N674",
+                    "props": {
+                        "Pin Number": "64"
+                    }
+                },
+                "65": {
+                    "name": "PB4",
+                    "number": "65",
+                    "net": "$1N619",
+                    "props": {
+                        "Pin Number": "65"
+                    }
+                },
+                "66": {
+                    "name": "EXT-BAT+",
+                    "number": "66",
+                    "net": "$1N679",
+                    "props": {
+                        "Pin Number": "66"
+                    }
+                },
+                "67": {
+                    "name": "PD7",
+                    "number": "67",
+                    "net": "$1N620",
+                    "props": {
+                        "Pin Number": "67"
+                    }
+                },
+                "68": {
+                    "name": "PD6",
+                    "number": "68",
+                    "net": "$1N685",
+                    "props": {
+                        "Pin Number": "68"
+                    }
+                },
+                "69": {
+                    "name": "PD5",
+                    "number": "69",
+                    "net": "$1N621",
+                    "props": {
+                        "Pin Number": "69"
+                    }
+                },
+                "70": {
+                    "name": "PD4",
+                    "number": "70",
+                    "net": "$1N686",
+                    "props": {
+                        "Pin Number": "70"
+                    }
+                },
+                "71": {
+                    "name": "PD1",
+                    "number": "71",
+                    "net": "$1N622",
+                    "props": {
+                        "Pin Number": "71"
+                    }
+                },
+                "72": {
+                    "name": "PD0",
+                    "number": "72",
+                    "net": "$1N680",
+                    "props": {
+                        "Pin Number": "72"
+                    }
+                },
+                "73": {
+                    "name": "PA15",
+                    "number": "73",
+                    "net": "$1N623",
+                    "props": {
+                        "Pin Number": "73"
+                    }
+                },
+                "74": {
+                    "name": "PA8",
+                    "number": "74",
+                    "net": "$1N681",
+                    "props": {
+                        "Pin Number": "74"
+                    }
+                },
+                "75": {
+                    "name": "PC6",
+                    "number": "75",
+                    "net": "$1N624",
+                    "props": {
+                        "Pin Number": "75"
+                    }
+                },
+                "76": {
+                    "name": "PC7",
+                    "number": "76",
+                    "net": "$1N687",
+                    "props": {
+                        "Pin Number": "76"
+                    }
+                },
+                "77": {
+                    "name": "GND",
+                    "number": "77",
+                    "net": "$1N625",
+                    "props": {
+                        "Pin Number": "77"
+                    }
+                },
+                "78": {
+                    "name": "+3V3",
+                    "number": "78",
+                    "net": "$1N682",
+                    "props": {
+                        "Pin Number": "78"
+                    }
+                },
+                "79": {
+                    "name": "GND",
+                    "number": "79",
+                    "net": "GND",
+                    "props": {
+                        "Pin Number": "79"
+                    }
+                },
+                "80": {
+                    "name": "+5V0",
+                    "number": "80",
+                    "net": "VIN",
+                    "props": {
+                        "Pin Number": "80"
+                    }
+                }
+            }
+        },
+        "gge26": {
+            "props": {
+                "Unique ID": "gge26",
+                "Add into BOM": "yes",
+                "Convert to PCB": "yes",
+                "Symbol": "0cdd0bde4da2ebac",
+                "Designator": "U9",
+                "Name": "2.54-2*20",
+                "Device": "251f4c1498ce7818",
+                "Reuse Block": "",
+                "Group ID": "",
+                "Channel ID": "$1I708",
+                "LCSC Part Name": "间距:2.54mm 2x20P 直插",
+                "Supplier Part": "C2977589",
+                "Manufacturer": "ZHOURI(洲日)",
+                "Manufacturer Part": "2.54-2*20",
+                "Supplier Footprint": "插件,P=2.54mm",
+                "JLCPCB Part Class": "扩展库",
+                "Datasheet": "https://atta.szlcsc.com/upload/public/pdf/source/20220328/834E302BE3C038BBC5C70F5E02589B1E.pdf",
+                "Supplier": "LCSC",
+                "Footprint": "63f266519133dccd",
+                "3D Model": "6c85b3860eb24e43a9d123684eb6d3ee",
+                "3D Model Title": "HDR-TH_40P-P2.54-F-LI-2X20P",
+                "3D Model Transform": "2015.783,196.85,0,0,0,0,0,0,-125.984",
+                "Holes Structure": "2x20P",
+                "Pitch": "2.54mm",
+                "Row Spacing": "2.54mm",
+                "Circular Hole / Square Hole": "方孔",
+                "Mounting Type": "直插",
+                "Number of Rows": "双排",
+                "Number of Holes": "40P",
+                "Current Rating (Max)": "2.5A",
+                "Voltage Rating (Max)": "-",
+                "Holes Direction": "顶部",
+                "Insulation Height": "8.5mm",
+                "Operating Temperature Range": "-40℃~+105℃",
+                "Description": "插孔结构:2x20P;间距:2.54mm;行距:2.54mm;圆孔/方孔:方孔;安装类型:直插;排数:双排;总孔位数:40P;额定电流:2.5A;额定电压:-;插孔方向:顶部;塑高:8.5mm;工作温度范围:-40℃~+105℃;",
+                "DeviceName": "2.54-2*20",
+                "FootprintName": "HDR-TH_40P-P2.54-V-F-R2-C20-S2.54"
+            },
+            "pinInfoMap": {
+                "1": {
+                    "name": "1",
+                    "number": "1",
+                    "net": "$1N643",
+                    "props": {
+                        "Pin Number": "1"
+                    }
+                },
+                "2": {
+                    "name": "2",
+                    "number": "2",
+                    "net": "$1N664",
+                    "props": {
+                        "Pin Number": "2"
+                    }
+                },
+                "3": {
+                    "name": "3",
+                    "number": "3",
+                    "net": "$1N644",
+                    "props": {
+                        "Pin Number": "3"
+                    }
+                },
+                "4": {
+                    "name": "4",
+                    "number": "4",
+                    "net": "$1N658",
+                    "props": {
+                        "Pin Number": "4"
+                    }
+                },
+                "5": {
+                    "name": "5",
+                    "number": "5",
+                    "net": "$1N645",
+                    "props": {
+                        "Pin Number": "5"
+                    }
+                },
+                "6": {
+                    "name": "6",
+                    "number": "6",
+                    "net": "$1N663",
+                    "props": {
+                        "Pin Number": "6"
+                    }
+                },
+                "7": {
+                    "name": "7",
+                    "number": "7",
+                    "net": "$1N646",
+                    "props": {
+                        "Pin Number": "7"
+                    }
+                },
+                "8": {
+                    "name": "8",
+                    "number": "8",
+                    "net": "$1N662",
+                    "props": {
+                        "Pin Number": "8"
+                    }
+                },
+                "9": {
+                    "name": "9",
+                    "number": "9",
+                    "net": "$1N642",
+                    "props": {
+                        "Pin Number": "9"
+                    }
+                },
+                "10": {
+                    "name": "10",
+                    "number": "10",
+                    "net": "$1N657",
+                    "props": {
+                        "Pin Number": "10"
+                    }
+                },
+                "11": {
+                    "name": "11",
+                    "number": "11",
+                    "net": "$1N641",
+                    "props": {
+                        "Pin Number": "11"
+                    }
+                },
+                "12": {
+                    "name": "12",
+                    "number": "12",
+                    "net": "$1N661",
+                    "props": {
+                        "Pin Number": "12"
+                    }
+                },
+                "13": {
+                    "name": "13",
+                    "number": "13",
+                    "net": "$1N640",
+                    "props": {
+                        "Pin Number": "13"
+                    }
+                },
+                "14": {
+                    "name": "14",
+                    "number": "14",
+                    "net": "$1N656",
+                    "props": {
+                        "Pin Number": "14"
+                    }
+                },
+                "15": {
+                    "name": "15",
+                    "number": "15",
+                    "net": "$1N639",
+                    "props": {
+                        "Pin Number": "15"
+                    }
+                },
+                "16": {
+                    "name": "16",
+                    "number": "16",
+                    "net": "$1N655",
+                    "props": {
+                        "Pin Number": "16"
+                    }
+                },
+                "17": {
+                    "name": "17",
+                    "number": "17",
+                    "net": "$1N638",
+                    "props": {
+                        "Pin Number": "17"
+                    }
+                },
+                "18": {
+                    "name": "18",
+                    "number": "18",
+                    "net": "$1N651",
+                    "props": {
+                        "Pin Number": "18"
+                    }
+                },
+                "19": {
+                    "name": "19",
+                    "number": "19",
+                    "net": "$1N637",
+                    "props": {
+                        "Pin Number": "19"
+                    }
+                },
+                "20": {
+                    "name": "20",
+                    "number": "20",
+                    "net": "$1N660",
+                    "props": {
+                        "Pin Number": "20"
+                    }
+                },
+                "21": {
+                    "name": "21",
+                    "number": "21",
+                    "net": "$1N636",
+                    "props": {
+                        "Pin Number": "21"
+                    }
+                },
+                "22": {
+                    "name": "22",
+                    "number": "22",
+                    "net": "$1N650",
+                    "props": {
+                        "Pin Number": "22"
+                    }
+                },
+                "23": {
+                    "name": "23",
+                    "number": "23",
+                    "net": "$1N635",
+                    "props": {
+                        "Pin Number": "23"
+                    }
+                },
+                "24": {
+                    "name": "24",
+                    "number": "24",
+                    "net": "$1N659",
+                    "props": {
+                        "Pin Number": "24"
+                    }
+                },
+                "25": {
+                    "name": "25",
+                    "number": "25",
+                    "net": "$1N634",
+                    "props": {
+                        "Pin Number": "25"
+                    }
+                },
+                "26": {
+                    "name": "26",
+                    "number": "26",
+                    "net": "$1N654",
+                    "props": {
+                        "Pin Number": "26"
+                    }
+                },
+                "27": {
+                    "name": "27",
+                    "number": "27",
+                    "net": "$1N633",
+                    "props": {
+                        "Pin Number": "27"
+                    }
+                },
+                "28": {
+                    "name": "28",
+                    "number": "28",
+                    "net": "$1N649",
+                    "props": {
+                        "Pin Number": "28"
+                    }
+                },
+                "29": {
+                    "name": "29",
+                    "number": "29",
+                    "net": "$1N689",
+                    "props": {
+                        "Pin Number": "29"
+                    }
+                },
+                "30": {
+                    "name": "30",
+                    "number": "30",
+                    "net": "$1N627",
+                    "props": {
+                        "Pin Number": "30"
+                    }
+                },
+                "31": {
+                    "name": "31",
+                    "number": "31",
+                    "net": "$1N631",
+                    "props": {
+                        "Pin Number": "31"
+                    }
+                },
+                "32": {
+                    "name": "32",
+                    "number": "32",
+                    "net": "$1N653",
+                    "props": {
+                        "Pin Number": "32"
+                    }
+                },
+                "33": {
+                    "name": "33",
+                    "number": "33",
+                    "net": "$1N632",
+                    "props": {
+                        "Pin Number": "33"
+                    }
+                },
+                "34": {
+                    "name": "34",
+                    "number": "34",
+                    "net": "$1N652",
+                    "props": {
+                        "Pin Number": "34"
+                    }
+                },
+                "35": {
+                    "name": "35",
+                    "number": "35",
+                    "net": "$1N628",
+                    "props": {
+                        "Pin Number": "35"
+                    }
+                },
+                "36": {
+                    "name": "36",
+                    "number": "36",
+                    "net": "$1N648",
+                    "props": {
+                        "Pin Number": "36"
+                    }
+                },
+                "37": {
+                    "name": "37",
+                    "number": "37",
+                    "net": "$1N629",
+                    "props": {
+                        "Pin Number": "37"
+                    }
+                },
+                "38": {
+                    "name": "38",
+                    "number": "38",
+                    "net": "$1N626",
+                    "props": {
+                        "Pin Number": "38"
+                    }
+                },
+                "39": {
+                    "name": "39",
+                    "number": "39",
+                    "net": "GND",
+                    "props": {
+                        "Pin Number": "39"
+                    }
+                },
+                "40": {
+                    "name": "40",
+                    "number": "40",
+                    "net": "VIN",
+                    "props": {
+                        "Pin Number": "40"
+                    }
+                }
+            }
+        },
+        "gge27": {
+            "props": {
+                "Unique ID": "gge27",
+                "Add into BOM": "yes",
+                "Convert to PCB": "yes",
+                "Symbol": "0cdd0bde4da2ebac",
+                "Designator": "U10",
+                "Name": "2.54-2*20",
+                "Device": "251f4c1498ce7818",
+                "Reuse Block": "",
+                "Group ID": "",
+                "Channel ID": "$1I709",
+                "LCSC Part Name": "间距:2.54mm 2x20P 直插",
+                "Supplier Part": "C2977589",
+                "Manufacturer": "ZHOURI(洲日)",
+                "Manufacturer Part": "2.54-2*20",
+                "Supplier Footprint": "插件,P=2.54mm",
+                "JLCPCB Part Class": "扩展库",
+                "Datasheet": "https://atta.szlcsc.com/upload/public/pdf/source/20220328/834E302BE3C038BBC5C70F5E02589B1E.pdf",
+                "Supplier": "LCSC",
+                "Footprint": "63f266519133dccd",
+                "3D Model": "6c85b3860eb24e43a9d123684eb6d3ee",
+                "3D Model Title": "HDR-TH_40P-P2.54-F-LI-2X20P",
+                "3D Model Transform": "2015.783,196.85,0,0,0,0,0,0,-125.984",
+                "Holes Structure": "2x20P",
+                "Pitch": "2.54mm",
+                "Row Spacing": "2.54mm",
+                "Circular Hole / Square Hole": "方孔",
+                "Mounting Type": "直插",
+                "Number of Rows": "双排",
+                "Number of Holes": "40P",
+                "Current Rating (Max)": "2.5A",
+                "Voltage Rating (Max)": "-",
+                "Holes Direction": "顶部",
+                "Insulation Height": "8.5mm",
+                "Operating Temperature Range": "-40℃~+105℃",
+                "Description": "插孔结构:2x20P;间距:2.54mm;行距:2.54mm;圆孔/方孔:方孔;安装类型:直插;排数:双排;总孔位数:40P;额定电流:2.5A;额定电压:-;插孔方向:顶部;塑高:8.5mm;工作温度范围:-40℃~+105℃;",
+                "DeviceName": "2.54-2*20",
+                "FootprintName": "HDR-TH_40P-P2.54-V-F-R2-C20-S2.54"
+            },
+            "pinInfoMap": {
+                "1": {
+                    "name": "1",
+                    "number": "1",
+                    "net": "$1N668",
+                    "props": {
+                        "Pin Number": "1"
+                    }
+                },
+                "2": {
+                    "name": "2",
+                    "number": "2",
+                    "net": "$1N669",
+                    "props": {
+                        "Pin Number": "2"
+                    }
+                },
+                "3": {
+                    "name": "3",
+                    "number": "3",
+                    "net": "$1N667",
+                    "props": {
+                        "Pin Number": "3"
+                    }
+                },
+                "4": {
+                    "name": "4",
+                    "number": "4",
+                    "net": "$1N675",
+                    "props": {
+                        "Pin Number": "4"
+                    }
+                },
+                "5": {
+                    "name": "5",
+                    "number": "5",
+                    "net": "$1N666",
+                    "props": {
+                        "Pin Number": "5"
+                    }
+                },
+                "6": {
+                    "name": "6",
+                    "number": "6",
+                    "net": "$1N670",
+                    "props": {
+                        "Pin Number": "6"
+                    }
+                },
+                "7": {
+                    "name": "7",
+                    "number": "7",
+                    "net": "$1N665",
+                    "props": {
+                        "Pin Number": "7"
+                    }
+                },
+                "8": {
+                    "name": "8",
+                    "number": "8",
+                    "net": "$1N671",
+                    "props": {
+                        "Pin Number": "8"
+                    }
+                },
+                "9": {
+                    "name": "9",
+                    "number": "9",
+                    "net": "$1N611",
+                    "props": {
+                        "Pin Number": "9"
+                    }
+                },
+                "10": {
+                    "name": "10",
+                    "number": "10",
+                    "net": "$1N676",
+                    "props": {
+                        "Pin Number": "10"
+                    }
+                },
+                "11": {
+                    "name": "11",
+                    "number": "11",
+                    "net": "$1N612",
+                    "props": {
+                        "Pin Number": "11"
+                    }
+                },
+                "12": {
+                    "name": "12",
+                    "number": "12",
+                    "net": "$1N672",
+                    "props": {
+                        "Pin Number": "12"
+                    }
+                },
+                "13": {
+                    "name": "13",
+                    "number": "13",
+                    "net": "$1N613",
+                    "props": {
+                        "Pin Number": "13"
+                    }
+                },
+                "14": {
+                    "name": "14",
+                    "number": "14",
+                    "net": "$1N677",
+                    "props": {
+                        "Pin Number": "14"
+                    }
+                },
+                "15": {
+                    "name": "15",
+                    "number": "15",
+                    "net": "$1N614",
+                    "props": {
+                        "Pin Number": "15"
+                    }
+                },
+                "16": {
+                    "name": "16",
+                    "number": "16",
+                    "net": "$1N678",
+                    "props": {
+                        "Pin Number": "16"
+                    }
+                },
+                "17": {
+                    "name": "17",
+                    "number": "17",
+                    "net": "$1N615",
+                    "props": {
+                        "Pin Number": "17"
+                    }
+                },
+                "18": {
+                    "name": "18",
+                    "number": "18",
+                    "net": "$1N683",
+                    "props": {
+                        "Pin Number": "18"
+                    }
+                },
+                "19": {
+                    "name": "19",
+                    "number": "19",
+                    "net": "$1N616",
+                    "props": {
+                        "Pin Number": "19"
+                    }
+                },
+                "20": {
+                    "name": "20",
+                    "number": "20",
+                    "net": "$1N673",
+                    "props": {
+                        "Pin Number": "20"
+                    }
+                },
+                "21": {
+                    "name": "21",
+                    "number": "21",
+                    "net": "$1N617",
+                    "props": {
+                        "Pin Number": "21"
+                    }
+                },
+                "22": {
+                    "name": "22",
+                    "number": "22",
+                    "net": "$1N684",
+                    "props": {
+                        "Pin Number": "22"
+                    }
+                },
+                "23": {
+                    "name": "23",
+                    "number": "23",
+                    "net": "$1N618",
+                    "props": {
+                        "Pin Number": "23"
+                    }
+                },
+                "24": {
+                    "name": "24",
+                    "number": "24",
+                    "net": "$1N674",
+                    "props": {
+                        "Pin Number": "24"
+                    }
+                },
+                "25": {
+                    "name": "25",
+                    "number": "25",
+                    "net": "$1N619",
+                    "props": {
+                        "Pin Number": "25"
+                    }
+                },
+                "26": {
+                    "name": "26",
+                    "number": "26",
+                    "net": "$1N679",
+                    "props": {
+                        "Pin Number": "26"
+                    }
+                },
+                "27": {
+                    "name": "27",
+                    "number": "27",
+                    "net": "$1N620",
+                    "props": {
+                        "Pin Number": "27"
+                    }
+                },
+                "28": {
+                    "name": "28",
+                    "number": "28",
+                    "net": "$1N685",
+                    "props": {
+                        "Pin Number": "28"
+                    }
+                },
+                "29": {
+                    "name": "29",
+                    "number": "29",
+                    "net": "$1N621",
+                    "props": {
+                        "Pin Number": "29"
+                    }
+                },
+                "30": {
+                    "name": "30",
+                    "number": "30",
+                    "net": "$1N686",
+                    "props": {
+                        "Pin Number": "30"
+                    }
+                },
+                "31": {
+                    "name": "31",
+                    "number": "31",
+                    "net": "$1N622",
+                    "props": {
+                        "Pin Number": "31"
+                    }
+                },
+                "32": {
+                    "name": "32",
+                    "number": "32",
+                    "net": "$1N680",
+                    "props": {
+                        "Pin Number": "32"
+                    }
+                },
+                "33": {
+                    "name": "33",
+                    "number": "33",
+                    "net": "$1N623",
+                    "props": {
+                        "Pin Number": "33"
+                    }
+                },
+                "34": {
+                    "name": "34",
+                    "number": "34",
+                    "net": "$1N681",
+                    "props": {
+                        "Pin Number": "34"
+                    }
+                },
+                "35": {
+                    "name": "35",
+                    "number": "35",
+                    "net": "$1N624",
+                    "props": {
+                        "Pin Number": "35"
+                    }
+                },
+                "36": {
+                    "name": "36",
+                    "number": "36",
+                    "net": "$1N687",
+                    "props": {
+                        "Pin Number": "36"
+                    }
+                },
+                "37": {
+                    "name": "37",
+                    "number": "37",
+                    "net": "$1N625",
+                    "props": {
+                        "Pin Number": "37"
+                    }
+                },
+                "38": {
+                    "name": "38",
+                    "number": "38",
+                    "net": "$1N682",
+                    "props": {
+                        "Pin Number": "38"
+                    }
+                },
+                "39": {
+                    "name": "39",
+                    "number": "39",
+                    "net": "GND",
+                    "props": {
+                        "Pin Number": "39"
+                    }
+                },
+                "40": {
+                    "name": "40",
+                    "number": "40",
+                    "net": "VIN",
+                    "props": {
+                        "Pin Number": "40"
+                    }
+                }
+            }
+        },
+        "": {
+            "props": {
+                "Unique ID": "",
+                "Add into BOM": "yes",
+                "Convert to PCB": "yes",
+                "Designator": "U?",
+                "Symbol": "10018e0dcb9f4ecb",
+                "Multi-Part Group": "",
+                "Relevance": "[]",
+                "Device": "1a9c3947b739c994",
+                "LCSC Part Name": "双路 36V 精密轨到轨输入/输出、低失调电压运算放大器",
+                "Supplier Part": "C1347222",
+                "Manufacturer": "TI(德州仪器)",
+                "Manufacturer Part": "OPA2197ID",
+                "Supplier Footprint": "SOIC-8",
+                "JLCPCB Part Class": "Extended Part",
+                "Datasheet": "https://www.ti.com/cn/lit/ds/symlink/opa4197.pdf",
+                "Supplier": "LCSC",
+                "Footprint": "d8ce77080adbe3fc",
+                "3D Model": "e81d2f7d937b4a6ab1dca543ff5d56a4|0819f05c4eef4c71ace90d822a990e87",
+                "3D Model Title": "SOIC-8_L4.9-W3.9-H1.7-LS6.0-P1.27",
+                "3D Model Transform": "192.913,236.22,0,0,0,0,0,0,0",
+                "Number of Channels": "2",
+                "Single Supply": "4.5V~36V",
+                "Dual Supply": "2.25V~18V；-18V~-2.25V",
+                "Vos - Input Offset Voltage": "25uV",
+                "Input Offset Voltage Drift(Vos TC)": "500nV/℃",
+                "Gain Bandwidth Product": "10MHz",
+                "Rail to Rail": "轨到轨输入,轨到轨输出",
+                "Slew Rate": "20V/us",
+                "Common Mode Rejection Ratio(CMRR)": "140dB",
+                "Input Voltage Noise Density": "5.5nV/√Hz@1kHz",
+                "Ib - Input Bias Current": "5pA",
+                "Quiescent Current(Iq)": "1mA",
+                "Output Current": "65mA",
+                "Input Offset Current(Ios)": "2pA",
+                "Operating Temperature": "-40℃~+125℃",
+                "Features": "EMI滤波/RF抑制；反相位输入保护",
+                "Name": "OPA2197ID",
+                "Description": "放大器数:2;输入失调电压(Vos):25uV;增益带宽积(GBW):10MHz;轨到轨:轨到轨输入,轨到轨输出;压摆率(SR):20V/us;输入偏置电流(Ib):5pA;",
+                "Reuse Block": "",
+                "Group ID": "",
+                "Channel ID": "$3I40",
+                "DeviceName": "OPA2197ID",
+                "FootprintName": "SOIC-8_L4.9-W3.9-P1.27-LS6.0-BL"
+            },
+            "pinInfoMap": {
+                "1": {
+                    "name": "OUTA",
+                    "number": "1",
+                    "net": "",
+                    "props": {
+                        "Pin Number": "1"
+                    }
+                },
+                "2": {
+                    "name": "INA-",
+                    "number": "2",
+                    "net": "",
+                    "props": {
+                        "Pin Number": "2"
+                    }
+                },
+                "3": {
+                    "name": "INA+",
+                    "number": "3",
+                    "net": "",
+                    "props": {
+                        "Pin Number": "3"
+                    }
+                },
+                "4": {
+                    "name": "V-",
+                    "number": "4",
+                    "net": "",
+                    "props": {
+                        "Pin Number": "4"
+                    }
+                },
+                "8": {
+                    "name": "V+",
+                    "number": "8",
+                    "net": "",
+                    "props": {
+                        "Pin Number": "8"
+                    }
+                }
+            }
+        }
+    },
+    "designRule": {
+        "trackPhysics": {
+            "copperThickness1oz": {
+                "name": "copperThickness1oz",
+                "isDefault": true,
+                "unit": "mm",
+                "strokeValue": {
+                    "common": {
+                        "min": 0.127,
+                        "max": 2.54,
+                        "default": 0.254
+                    }
+                }
+            },
+            "copperThickness2oz": {
+                "name": "copperThickness2oz",
+                "isDefault": false,
+                "unit": "mm",
+                "strokeValue": {
+                    "common": {
+                        "min": 0.203,
+                        "max": 2.54,
+                        "default": 0.254
+                    }
+                }
+            }
+        },
+        "netRule": {
+            "VIN": {
+                "net": "VIN",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N611": {
+                "net": "$1N611",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N612": {
+                "net": "$1N612",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N613": {
+                "net": "$1N613",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N614": {
+                "net": "$1N614",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N615": {
+                "net": "$1N615",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N616": {
+                "net": "$1N616",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N617": {
+                "net": "$1N617",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N618": {
+                "net": "$1N618",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N619": {
+                "net": "$1N619",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N620": {
+                "net": "$1N620",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N621": {
+                "net": "$1N621",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N622": {
+                "net": "$1N622",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N623": {
+                "net": "$1N623",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N624": {
+                "net": "$1N624",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N625": {
+                "net": "$1N625",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N626": {
+                "net": "$1N626",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N627": {
+                "net": "$1N627",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N628": {
+                "net": "$1N628",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N629": {
+                "net": "$1N629",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "GND": {
+                "net": "GND",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N631": {
+                "net": "$1N631",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N632": {
+                "net": "$1N632",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N633": {
+                "net": "$1N633",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N634": {
+                "net": "$1N634",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N635": {
+                "net": "$1N635",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N636": {
+                "net": "$1N636",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N637": {
+                "net": "$1N637",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N638": {
+                "net": "$1N638",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N639": {
+                "net": "$1N639",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N640": {
+                "net": "$1N640",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N641": {
+                "net": "$1N641",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N642": {
+                "net": "$1N642",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N643": {
+                "net": "$1N643",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N644": {
+                "net": "$1N644",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N645": {
+                "net": "$1N645",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N646": {
+                "net": "$1N646",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N648": {
+                "net": "$1N648",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N649": {
+                "net": "$1N649",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N650": {
+                "net": "$1N650",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N651": {
+                "net": "$1N651",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N652": {
+                "net": "$1N652",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N653": {
+                "net": "$1N653",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N654": {
+                "net": "$1N654",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N655": {
+                "net": "$1N655",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N656": {
+                "net": "$1N656",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N657": {
+                "net": "$1N657",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N658": {
+                "net": "$1N658",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N659": {
+                "net": "$1N659",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N660": {
+                "net": "$1N660",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N661": {
+                "net": "$1N661",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N662": {
+                "net": "$1N662",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N663": {
+                "net": "$1N663",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N664": {
+                "net": "$1N664",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N665": {
+                "net": "$1N665",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N666": {
+                "net": "$1N666",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N667": {
+                "net": "$1N667",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N668": {
+                "net": "$1N668",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N669": {
+                "net": "$1N669",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N670": {
+                "net": "$1N670",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N671": {
+                "net": "$1N671",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N672": {
+                "net": "$1N672",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N673": {
+                "net": "$1N673",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N674": {
+                "net": "$1N674",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N675": {
+                "net": "$1N675",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N676": {
+                "net": "$1N676",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N677": {
+                "net": "$1N677",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N678": {
+                "net": "$1N678",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N679": {
+                "net": "$1N679",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N680": {
+                "net": "$1N680",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N681": {
+                "net": "$1N681",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N682": {
+                "net": "$1N682",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N683": {
+                "net": "$1N683",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N684": {
+                "net": "$1N684",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N685": {
+                "net": "$1N685",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N686": {
+                "net": "$1N686",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N687": {
+                "net": "$1N687",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            },
+            "$1N689": {
+                "net": "$1N689",
+                "ruleMap": {
+                    "TrackPhysics": ""
+                }
+            }
+        }
+    },
+    "differentialPair": {},
+    "netClass": {},
+    "equalLengthNetGroup": {}
+}

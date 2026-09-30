@@ -5,7 +5,7 @@
 """
 import numpy as np
 
-OUT = r"C:\Users\funiang\Desktop\Project\products\G2026\tools\report_dsp_verify.md"
+OUT = r"C:\Users\funiang\Desktop\Project\projects\G2026\tools\report_dsp_verify.md"
 L = []
 def P(s=""):
     L.append(s)

@@ -39,29 +39,57 @@
 /* ------------------------------------------------------------ LVGL 参数 ---- */
 
 /* draw buffer 的行数：缓冲 = 屏宽 × 本值 × 2 字节。
- *   320 × 40 × 2 = 25.6 KB（在 SRAM1，见 Task/Src/app_lvgl.c）。
+ *   320 × 48 × 2 = 30.7 KB（在 SRAM1，见 Task/Src/app_lvgl.c）。
  * ⚠️ 调大省 flush 次数（FSMC 每次开窗有固定开销），但吃 RAM；
- *    调太小（比如 1~4 行）会让 flush 调用次数暴增，CPU 全花在开窗上。
+ *    2026-09-28 从 40 提到 48：RAM 余量允许（用量 65/128KB），换重绘块数 -20%。
  * ⚠️ 这个缓冲**不能放 CCM**：本工程走 CPU 直写 FSMC 时能跑，
  *    但将来若改成 DMA 搬 FSMC，CCM 会**静默失效**（不报错、花屏/黑屏）。
  *    放 SRAM1 就没有这个隐患，代价只是访问慢一点点。 */
-#define APP_LVGL_DRAW_BUF_LINES 40U
+#define APP_LVGL_DRAW_BUF_LINES 48U
 
 /* ------------------------------------------------------------ FreeRTOS 参数 ----
  * ⚠️ 任务**不要用 CubeMX 的图形界面建** —— CubeMX 里只勾 FreeRTOS 内核（docs/01 规矩 4）。
  *
- * ★ 本工程只有**一个**周期任务，它就是 CubeMX 生成的 `defaultTask`：
+ * ★ CubeMX 生成的 `defaultTask`（**本工程唯一"生成"的任务**）只跑轻量周期：
  *     栈深 / 优先级   → `.ioc` 的 `FREERTOS.Tasks01`（256 words / 优先级 24）
  *                        ⚠️ 它由 CubeMX 生成，参数**只能在 CubeMX 里给**，
  *                           写在这里的宏不会被读 —— 所以这里不重复定义（避免孤儿宏）。
- *     循环体          → `Task/Src/app_rtos.c` 的 `app_rtos_run()`
+ *     循环体          → `Task/Src/app_rtos.c` 的 `app_rtos_run()`（心跳/闪灯/RTC + 建下面两个任务）
  *     ⚠️ 栈深单位是 **word（4 字节）**，不是字节。256 words = 1 KiB。
+ *     业务（测量 / UI）**不在它里面** —— 见下面的双任务小节。
  *
  * ⇒ **加新任务时**才在下面定义它的参数，并在 `Task/` 层用 `xTaskCreate` 建。
  *   例如：
  *       #define APP_SENSOR_TASK_STACK_WORDS 256U
  *       #define APP_SENSOR_TASK_PRIORITY    4U   // 比 defaultTask(24) 高才抢得到 CPU
  *   ⚠️ 优先级数值越大越优先；`configMAX_PRIORITIES` = 56。 */
+
+/* ---- 测量 / UI 双任务（2026-09-28：从"单循环"改为真多任务）----
+ *
+ *  ★ 为什么现在拆：单循环里 engine 与 ui 抢同一拍 CPU，靠"DSP 拆两拍"绕开
+ *    帧抖动；采集完成靠 10ms 轮询（最多白等一拍）。拆成任务后：
+ *      · engine 阻塞在 ADC 帧信号量上 —— **零轮询延迟、采集期让出 CPU**；
+ *      · 重测请求走任务通知（轻量二值信号量），切页即刻响应，不等下一拍；
+ *      · 结果走 1 深 mailbox 队列（跨任务双缓冲），UI 永不读到写一半的结构。
+ *
+ *  ⚠️ 优先级都相对 CubeMX 的 defaultTask(24) 定（那个值只能在 .ioc 里改）：
+ *      engine 26 > defaultTask 24 > ui 23 —— 测量永远优先于界面。
+ *  ⚠️ 栈深单位是 **word（4 字节）**。UI 栈要给 LVGL 重绘 + 标定时的 DSP 链
+ *     （标定按钮回调在 UI 任务里跑同步测量）留余量，故比 engine 大。
+ *  ⚠️ 两个任务都用 `xTaskCreateStatic`（栈/TCB 是静态数组）—— 不动 FreeRTOS 堆。 */
+#define APP_TASK_ENGINE_PRIORITY 26U
+#define APP_TASK_ENGINE_STACK_WORDS 1024U
+#define APP_TASK_UI_PRIORITY 23U
+#define APP_TASK_UI_STACK_WORDS 1536U
+
+/* 等一帧 DMA 的上限。正常一帧 4096 点 @2MSPS = 2.048ms；给 50ms 是"链断了
+ * 也不永久挂死"的看门狗口径（超时由 engine 报错并跳过本帧）。 */
+#define APP_ADC_FRAME_TIMEOUT_MS 50U
+
+/* 任务栈高水位上报的时刻（上电后 ms，一次）。要晚到"DSP 全链 + LVGL 重绘
+ * 都跑过几轮"之后才有意义；标定路径（UI 任务最坏栈）要人手动触发，所以
+ * 想验 UI 栈余量，就**在这个时刻之前完成一次标定**（见 app_tasks_report_stack）。 */
+#define APP_STACK_REPORT_MS 10000U
 
 /* ------------------------------------------------------- AI 闭环验证标记 ---- */
 
@@ -107,7 +135,7 @@
 
 /* 波形页重建曲线的列数。320 = 屏宽 1:1（每像素一列，无插值观感）。
  * op_wave/op_meas 的重建在 UI 刷新时跑：320×3 分量 sinf ≈ 1ms 级，无压力。 */
-#define APP_UI_WAVE_POINTS 320U
+#define APP_UI_WAVE_POINTS 320 /* 不带 U：大量出现在 int 循环里，-Wsign-compare 会炸 */
 
 /* 标定表在 W25Q128 的落点：扇区 0（4KB）。选它是为了离固件尾部测试扇区
  * （app_flash_rw_test 用倒数两个扇区）足够远；表 216B < 1 页 256B。 */

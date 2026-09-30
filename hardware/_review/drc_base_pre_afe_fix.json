@@ -1,0 +1,23 @@
+{
+ "INT-核心板与接口": {
+  "all": 4,
+  "fatal": 0,
+  "error": 0,
+  "warn": 2,
+  "info": 2
+ },
+ "PWR-电源与背光": {
+  "all": 4,
+  "fatal": 0,
+  "error": 0,
+  "warn": 2,
+  "info": 2
+ },
+ "AFE-前端模拟": {
+  "all": 4,
+  "fatal": 0,
+  "error": 0,
+  "warn": 2,
+  "info": 2
+ }
+}

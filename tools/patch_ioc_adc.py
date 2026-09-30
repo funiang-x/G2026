@@ -4,7 +4,7 @@
 """
 import io, re, sys
 
-P = r"C:\Users\funiang\Desktop\Project\products\G2026\firmware\G2026.ioc"
+P = r"C:\Users\funiang\Desktop\Project\projects\G2026\firmware\G2026.ioc"
 src = io.open(P, encoding="utf-8").read()
 orig = src
 

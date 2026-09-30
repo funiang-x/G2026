@@ -1,0 +1,467 @@
+===== PAGE 9 =====
+ 
+P.9 
+n INTERFACE DESCRIPTION 
+HOLOCENE TECHNOLOGY Co.
+LCD MODULE 
+Version : 1.2
+30, 2021
+April
+PIN
+No.
+Symbol
+Description
+Notes
+1
+TE
+Tearing Effect output signal.
+（撕裂效果输出信号，不用时请悬空）
+2
+GND
+Ground
+（接地脚）
+3
+DE
+Data enable signal in DPI operation.
+Low: Select (Accessible)
+High: Not select (inaccessible)
+（RGB 接口信号，不用时接IOVCC1 或者GND）
+4
+PCLK
+Pixel clock signal. The data input timing is set on the rising edge.
+（RGB 接口信号，不用时接IOVCC1 或者GND）
+5
+VSYNC
+Frame synchronous signal. Low active.
+（RGB 接口信号，不用时接IOVCC1 或者GND）
+6
+GND
+Ground
+（接地脚）
+7
+HSYNC
+Line synchronous signal. Low active.
+（RGB 接口信号，不用时接IOVCC1 或者GND）
+8
+IM0
+The R61581 supports MIPI DBI Type B (18/16/9/8 bits) and MIPI DBI
+Type C (Options 1 and 3). The interface is selected by setting
+IM[2:0] pin.（接口选择脚）
+9
+IM1
+10
+IM2
+11
+IOVCC1
+Power supply to interface pins and internal VDD regulator.
+TK035F9629
+
+===== PAGE 10 =====
+（1.8V-3.3V）
+（接口电压）
+12
+VCI
+Power supply to liquid crystal power supply analog circuit.
+（2.8V-3.3V）
+（系统电压）
+13
+DIN
+Serial data input pin in DBI Type C operation to input data on the
+rising edge of SCL signal.
+（串口数据输入）
+14
+DOUT
+Serial data output pin in DBI Type C operation to input data on
+thefalling edge of SCL signal.
+（串口数据输出）
+15
+DB17(R5)
+DB17-DB0：MCU 接口的数据线。
+R5-R0，G5-G0，B5-B0：RGB 接口的信号线
+其中R5，G5，B5 分别为R，G，B 信号的MSB（最高位）
+R0，G0，B0 分别为R，G，B 信号的LSB（最低位）
+16
+DB16(R4)
+17
+DB15(R3)
+18
+DB14(R2)
+19
+DB13(R1)
+20
+DB12(R0)
+21
+DB11(G5)
+22
+DB10(G4)
+23
+DB9(G3)
+24
+DB8(G2)
+25
+DB7(G1)
+26
+DB6(G0)
+27
+DB5(B5)
+28
+DB4(B4)
+29
+DB3(B3)
+30
+DB2(B2)
+31
+DB1(B1)
+32
+DB0(B0)
+33
+RESX
+Reset pin. The R61581 is initialized when RESX is Low. Make
+sure to execute power-on reset when turning the power supply on.
+（屏复位信号）
+34
+RDX
+Read strobe signal. Read out data when RDX is Low.
+（MCU 接口的读控制脚）
+35
+WRX/SCL
+Write strobe signal in DBI Type B operation. Write data when WRX
+is Low. Synchronous clock signal in DBI Type C operation.
+LCD MODULE 
+Version : 1.2
+30, 2021
+TK035F9629
+April
+P.10 
+HOLOCENE TECHNOLOGY Co.
+
+===== PAGE 11 =====
+P.11 
+ 
+n REFERENCE APPLICATION CIRCUIT 
+ 
+Please consult our technical department for detail information. 
+HOLOCENE TECHNOLOGY Co.
+LCD MODULE 
+Version : 1.2
+30, 2021
+April
+（MCU 接口的写控制脚发或者串口的时钟信号）
+36
+DCX
+Command/data select signal
+Low: Select command
+High: Select data
+（寄存器选择脚）
+37
+CSX
+Chip select signal.
+Low: Select (Accessible)
+High: Not select (Inaccessible)
+Make sure to connect to host processor. Follow AC timing to control
+the signal.
+（芯片的片选信号）
+38
+LED-K1
+Cathode of Backlight
+（背光负极供电脚）
+39
+LED-K2
+Cathode of Backlight
+（背光负极供电脚）
+40
+LED-K3
+Cathode of Backlight
+（背光负极供电脚）
+41
+LED-K4
+Cathode of Backlight
+（背光负极供电脚）
+42
+LED-K5
+Cathode of Backlight
+（背光负极供电脚）
+43
+LED-K6
+Cathode of Backlight
+（背光负极供电脚）
+44
+LED-A
+Anode of Backlight （3.0V-3.4V）
+（背光正极供电脚）
+45
+LCD-ID
+LCD Identification
+（LCD 的识别脚，此脚位接100K 欧姆的电阻到地，不用时此脚可悬空）
+TK035F9629
+
+===== PAGE 12 =====
+ 
+P.12 
+n RELIABILITY TEST CONDITIONS 
+ 
+No. 
+Test Item 
+Test Condition 
+Inspection after test 
+1 
+High Temperature Storage  
+80±2℃/200 hours 
+2 
+Low Temperature Storage  
+-30±2℃/200 hours 
+3 
+High Temperature Operating  70±2℃/120 hours 
+4 
+Low Temperature Operating  -20±2℃/120 hours 
+5 
+Temperature Cycle  
+-20±2℃~25~70±2℃×10cycles 
+(30min.)  (5min.)  (30min.) 
+6 
+Damp Proof Test  
+50℃±5℃×90%RH/120 hours 
+7 
+Vibration Test  
+Frequency：10Hz~55Hz~10Hz 
+Amplitude：1.5mm, 
+X，Y，Z direction for total 3hours 
+(Packing condition) 
+8 
+Dropping test  
+Drop to the ground from 1m height, 
+one 
+time,every 
+side 
+of 
+carton. 
+(Packing condition) 
+9 
+ESD test  
+Voltage:±8KV  R: 330Ω  C: 150pF 
+Air discharge, 10time 
+Inspection 
+after 
+2~4hours 
+storage 
+at 
+room temperature, the 
+sample shall be free from 
+defects:  
+1.Air bubble in the LCD;  
+2.Sealleak; 
+3.Non-display; 
+4.missing segments; 
+5.Glass crack; 
+6.Current Idd is twice 
+higher than initial value.  
+Remark: 
+1.The test samples should be applied to only one test item. 
+2.Sample size for each test item is 5~10pcs. 
+3.For Damp Proof Test, Pure water(Resistance＞10MΩ) should be used.  
+4.In case of malfunction defect caused by ESD damage, if it would be recovered to normal state after 
+resetting, it would be judged as a good part. 
+5.EL evaluation should be excepted from reliability test with humidity and temperature: Some defects 
+such as black spot/blemish can happen by natural chemical reaction with humidity and Fluorescence EL 
+has.  
+6.Failure Judgment Criterion: Basic Specification, Electrical Characteristic, Mechanical Characteristic, 
+Optical Characteristic. 
+ 
+HOLOCENE TECHNOLOGY Co.
+LCD MODULE 
+Version : 1.2
+30, 2021
+April
+TK035F9629
+
+===== PAGE 13 =====
+ 
+P.13 
+n INSPECTION CRITERION 
+ 
+OUTGOING QUALITY STANDARD 
+PAGE  1  OF  4 
+TITLE:FUNCTIONAL TEST & INSPECTION CRITERIA 
+MDS Product 
+ 
+This specification is made to be used as the standard acceptance/rejection criteria for Color mobile 
+phone LCM. 
+1 Sample plan 
+  Sampling plan according to GB/T2828.1-2003/ISO 2859-1：1999 and ANSI/ASQC Z1.4-1993, 
+normal level 2 and based on: 
+     Major defect: AQL 0.65 
+Minor defect: AQL 1.5 
+ 2. Inspection condition 
+  Viewing distance for cosmetic inspection is about 30cm with bare eyes, and under an 
+environment of 20~40W light intensity, all directions for inspecting the sample should be within 
+45°against perpendicular line. 
+3. Definition of inspection zone in LCD. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+   
+  Zone A: character/Digit area 
+  Zone B: viewing area except Zone A (ZoneA+ZoneB=minimum Viewing area) 
+  Zone C: Outside viewing area (invisible area after assembly in customer’s product) 
+  Fig.1 Inspection zones in an LCD. 
+  Note: As a general rule, visual defects in Zone C are permissible, when it is no trouble for  
+quality and assembly of customer’s product. 
+    
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+C 
+ 
+B 
+A 
+HOLOCENE TECHNOLOGY Co.
+LCD MODULE 
+Version : 1.2
+30, 2021
+April
+TK035F9629
+
+===== PAGE 14 =====
+ 
+P.14 
+  OUTGOING QUALITY STANDARD 
+PAGE  2  OF  4 
+TITLE:FUNCTIONAL TEST & INSPECTION CRITERIA 
+MDS Product 
+4. Inspection standards 
+4.1 Major Defect 
+Item 
+No 
+Items to be 
+inspected 
+Inspection Standard 
+Classification 
+of defects 
+4.1.1 
+ 
+All 
+functional 
+defects 
+ 
+1) No display 
+2) Display abnormally  
+3) Missing vertical，horizontal segment  
+4) Short circuit 
+5) Back-light no lighting, flickering and abnormal lighting. 
+4.1.2 
+Missing  
+Missing component 
+4.1.3 
+ 
+ 
+Outline 
+dimension 
+ 
+Overall outline dimension beyond the drawing is not allowed. 
+ 
+ 
+ 
+ 
+Major 
+ 
+ 
+4.2 Cosmetic Defect 
+Item 
+No 
+Items to be 
+inspected 
+Inspection Standard 
+Classification of 
+defects 
+For dark/white spot, sizeΦis defined                 y 
+as Φ= 
+2
+)
+(
+y
+x +
+                            x     
+1． 
+Acceptable Qty 
+Zone 
+Size(mm) 
+A 
+B 
+C 
+Φ≤0.10 
+Ignore  
+0.10＜Φ≤0.15 
+2 
+0.15＜Φ≤0.20 
+1 
+Clear 
+Spots 
+ 
+Black and 
+white Spot 
+defect 
+Pinhole, 
+Foreign 
+Particle, 
+Dirt under 
+polarizer 
+ 
+ 
+Φ＞0.20 
+0 
+ 
+ 
+Ignore 
+ 
+ 
+Minor 
+4.2.1 
+Dim Spots 
+ 
+Circle 
+shaped and 
+dim edged 
+defects 
+2.  
+Acceptable Qty 
+2. Zone 
+Size(mm) 
+A 
+B 
+C 
+Φ≤0.2 
+Ignore 
+0.20＜Φ≤0.40 
+3 
+0.40＜Φ≤0.60 
+2 
+0.60＜Φ≤0.80 
+1 
+Ignore 
+0.80＜Φ 
+0 
+ 
+Minor 
+ 
+ 
+ 
+ 
+ 
+HOLOCENE TECHNOLOGY Co.
+LCD MODULE 
+Version : 1.2
+30, 2021
+April
+TK035F9629

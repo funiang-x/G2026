@@ -2,7 +2,7 @@
 """补回 ADC1 触发/DMA 键（ADC1 实例已由 GUI 激活，平铺键名有效）+ Dma 段 + NVIC"""
 import io
 
-P = r"C:\Users\funiang\Desktop\Project\products\G2026\firmware\G2026.ioc"
+P = r"C:\Users\funiang\Desktop\Project\projects\G2026\firmware\G2026.ioc"
 s = io.open(P, encoding="utf-8").read()
 
 # 1) IPParameters 追加三个触发键声明

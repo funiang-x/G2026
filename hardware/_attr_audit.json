@@ -1,0 +1,3343 @@
+{
+ "AFE": [
+  {
+   "id": "9ab49c453d3e56bb",
+   "des": "J1",
+   "name": "={Manufacturer Part}",
+   "val": "",
+   "fp": {
+    "uuid": "69ff1a9aade4386b",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "5d3e003fc8826190",
+   "des": "R1",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "be711b818a9f05c4",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "ac2df7588789e06a",
+   "des": "C1",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "738e724231ecdd4d",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "21ae80ce7b51b802",
+   "des": "JP1",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "be711b818a9f05c4",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "ba13657df474ad19",
+   "des": "R2",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "be711b818a9f05c4",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "f2e48ec37a8f2db5",
+   "des": "U1A",
+   "name": "={Manufacturer Part}",
+   "val": "",
+   "fp": {
+    "uuid": "d8ce77080adbe3fc",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "f7f5d17397a67241",
+   "des": "R3",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "be711b818a9f05c4",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "40b59f91beff47c2",
+   "des": "L7",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "3f5e2eac9dc67dd6",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "8e69b0aeda799e9a",
+   "des": "R4",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "be711b818a9f05c4",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "902f4e53ca743fca",
+   "des": "C9",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "738e724231ecdd4d",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "d70e53b3866f3ecd",
+   "des": "R5",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "be711b818a9f05c4",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "fabf9e67c19f63d3",
+   "des": "R6",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "be711b818a9f05c4",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "9ba8c1a80e6e633e",
+   "des": "R7",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "be711b818a9f05c4",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "543633c01b8faf64",
+   "des": "C10",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "874f74088f8d1341",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "d4cb833c0ea07861",
+   "des": "JP2",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "be711b818a9f05c4",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "eb09f4dcb5cb441e",
+   "des": "U2",
+   "name": "={Manufacturer Part}",
+   "val": "",
+   "fp": {
+    "uuid": "b998db0d46bae5d1",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "52436a48dda5e32a",
+   "des": "C11",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "af9ead2bc0accc36",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "ccb547786cab4b13",
+   "des": "C12",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "81cbc3dd1df4ff54",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "d8f676ef6cd3bd61",
+   "des": "R9",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "be711b818a9f05c4",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "e584c449c600ff04",
+   "des": "R10",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "be711b818a9f05c4",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "db09da3f021abb4e",
+   "des": "C13",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "fd4e4fc2f71461ac",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "9bbe4bfab212f226",
+   "des": "JP3",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "be711b818a9f05c4",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "a3e9b6369dfdbb92",
+   "des": "J2",
+   "name": "={Manufacturer Part}",
+   "val": "",
+   "fp": {
+    "uuid": "be93bb95ccf6b669",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "e080acf526ade866",
+   "des": "TP1",
+   "name": "={Manufacturer Part}",
+   "val": "",
+   "fp": {
+    "uuid": "29573cd78c35e3c0",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "33eb9b42a976b2f1",
+   "des": "TP2",
+   "name": "={Manufacturer Part}",
+   "val": "",
+   "fp": {
+    "uuid": "29573cd78c35e3c0",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "bc7aeb1adb1ed5b2",
+   "des": "TP3",
+   "name": "={Manufacturer Part}",
+   "val": "",
+   "fp": {
+    "uuid": "29573cd78c35e3c0",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "ec483a879ff359c7",
+   "des": "TP4",
+   "name": "={Manufacturer Part}",
+   "val": "",
+   "fp": {
+    "uuid": "29573cd78c35e3c0",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "002f4ea8fcaffc15",
+   "des": "TP5",
+   "name": "={Manufacturer Part}",
+   "val": "",
+   "fp": {
+    "uuid": "29573cd78c35e3c0",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "c06f7a9d7c460947",
+   "des": "TP6",
+   "name": "={Manufacturer Part}",
+   "val": "",
+   "fp": {
+    "uuid": "29573cd78c35e3c0",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "12a998b189f28526",
+   "des": "U1B",
+   "name": "={Manufacturer Part}",
+   "val": "",
+   "fp": {
+    "uuid": "d8ce77080adbe3fc",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "afc05500e5b8bc65",
+   "des": "D1",
+   "name": "={Manufacturer Part}",
+   "val": "",
+   "fp": {
+    "uuid": "383b3626375f1d88",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "18d8f01875955814",
+   "des": "L1",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "47e48160fdbfccfd",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "e9e90131ba3df242",
+   "des": "L3",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "3f5e2eac9dc67dd6",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "2b47267e18a481c1",
+   "des": "L5",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "3f5e2eac9dc67dd6",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "28ec30eb57e2ccb0",
+   "des": "C2",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "fd4e4fc2f71461ac",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "c481994436307bea",
+   "des": "C4",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "fd4e4fc2f71461ac",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "62cca8ba9d435e0f",
+   "des": "C6",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "fd4e4fc2f71461ac",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "0c75f98574dfe415",
+   "des": "C8",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "fd4e4fc2f71461ac",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "937aae99b814f439",
+   "des": "R8",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "be711b818a9f05c4",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "96d94ddeb8e4dc6f",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "c048856c84bf93d3",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "803fee9295ebe281",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "63ebb763b12c89db",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "bd0b52e7787f784c",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "63761228302c1c83",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "4e8cd218dc6a1413",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "84fbd770e42bd560",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "1e8397bc66f41f1b",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "5dd011a0e15059d7",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "f66b6894810c5745",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "3d657d39e2bac69a",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "ffe4b7cf9963dfb5",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "9f5146729ddef484",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "e407cf3f6ddd64e1",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "d11e15cf2171394c",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "632a86f1268b0ed3",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "cfc66f10c95fac25",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "04e55869bde64bc7",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "787980a958605e27",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "6a4c1aa7b37ed351",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "ec9e623cb18757e6",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "9df435f284a52108",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "80a7e834446917cf",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "7cc4d06be69ddb7d",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "658519b4174c38ff",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "bcef010bc649ca81",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "838dac7b7ac45529",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "cf42adb48811fe30",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "d5219f089477d21d",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "e6f5804b397b8e02",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "759f261ddbe152f1",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "322537b09f6e4a36",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "4cb390c0cd552a87",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "6f8e1c07dd09643d",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "0cb6c099ebe59707",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "8c55eed433015085",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "efd67b381ed5ab66",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "8001e17c5e29336c",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "43a48dde4e9e7ffc",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "b75716736f8cb0ae",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "4501970cf8b0f1d4",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "a2f1d860b80d34b1",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "1978138b6d8467d9",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "980d3c1c7cd99ba7",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "ed7e21db09304cf6",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "e04ea2d9b34d6314",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "8be0a054076e96d2",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "bf781a25c620a44c",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "d50608e04e51b9c9",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "dfb9b8a8f48322e4",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "75f32f9d2da2370f",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "138912e575222ccd",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "a8083666f75959e8",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "7a059d4d54cbb88a",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "a1591bbb561e99fe",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "783efa52fa10bb95",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "fbc4d6df4bc70cdd",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "03a6f8ee28cb2e39",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "0bad638c9e357814",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "8abec3c8fb1f4e52",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "e7c51bd417402597",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "a00bb4e9bbea5dae",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "ed9f111904676e5b",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "b2793d1458febf75",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "1c1d278f1d756fed",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "bdeb6180b80b5d02",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "36e8bd485a5139f1",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "74ec0b37c2733e5b",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "4faa4a3794d23921",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "6217f47c01db8187",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "3b259c02da867c22",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "e229ffdf11030642",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "29829fe8aded8576",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "4ef227c2e984b29a",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "fb51a468c3c096a3",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "a0c0a80d96fd94d6",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "0ed3fb6587fc4d21",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "6f6fe0e827b4ebfe",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "f09916daea3cf011",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "8725ee256f9cfba3",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "dea14f8b52eebefc",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "56696e12091cf1aa",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "ce32b57ed02b5afc",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "a6023773893dcda4",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  },
+  {
+   "id": "8a3577c8aaae02b6",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "AFE"
+  }
+ ],
+ "INT": [
+  {
+   "id": "8a46f8d6f5809424",
+   "des": "H3",
+   "name": "={Manufacturer Part}",
+   "val": "",
+   "fp": {
+    "uuid": "105fc05b69d87243",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "55ef99a195c4355e",
+   "des": "H4",
+   "name": "={Manufacturer Part}",
+   "val": "",
+   "fp": {
+    "uuid": "feb89bfc4a8e0649",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "c6fd3164b80a62e0",
+   "des": "J4",
+   "name": "={Manufacturer Part}",
+   "val": "",
+   "fp": {
+    "uuid": "be93bb95ccf6b669",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "00726019c8c2f9ff",
+   "des": "EVK1",
+   "name": "={Manufacturer Part}",
+   "val": "",
+   "fp": {
+    "uuid": "534799ac34ffc47a",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "d95712259d6685d1",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "fa7b91c7c641d6ea",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "3ac7c4a37b5564b1",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "082922494b26f905",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "96ddba93784cbe2e",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "c34dfb97eb5ab242",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "edff821d14c1bad0",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "0c418dc4b8b1104e",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "e48357134d4e1e37",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "37e791b887f26057",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "9253a1a266ce7221",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "75f4eddb1f686aa6",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "5ab17b736f20c46f",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "72949bb6b8fe5bc5",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "1d03bb74a5aff4dd",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "5acc7132981159ff",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "90838c7451d34a38",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "3a08c5bb49df5a34",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "0d0dbf9b9de648fc",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "ac9bb9c2a257b2ed",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "678ea5e787a0aa83",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "c8e8b1f5aa4d8348",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "f5a72a1ea53e91ea",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "39147d64d14c51aa",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "68f80d779ae6abfa",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "b2af9ce657540c0c",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "8887981764be1380",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "b9e28f996e8ba6fd",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "c5e489704f16a697",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "6a6e481c1823b3e2",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "9e8b73a394b02835",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "f901ce92092b5f74",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "cca270c37e7eb4f1",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "0c60592ea6396a54",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "c9c90aae32ff1a8f",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "428699b021ce48a1",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "482ab3f014ae4de2",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "5718014d8fa3725d",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "a954dff1c6f57a41",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "28c3cd52e6159676",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "89ddaa9267435113",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "c37c69b4816a5b5c",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "c6e80ba6515d04fd",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "ceba1719bc523ad6",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "52425c7adb563cbe",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "607bee877f545f48",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "e7adce0dc841cac7",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "d1f171c071ddc4c3",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "16ea487e53ddce12",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "a67bd5c8c2b4675d",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "49f2bb3a4addd788",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "3e30670cbbacc123",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "15899236477208d5",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "a049f92e5598bef8",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "a12cc50ad9a36626",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "3bcd6376e4c6b980",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "6dcefa6269589856",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "02c9d84e9f699ddd",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "80014d49b5ade056",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "ed0168aa811f01b5",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "3aaae5e144d9df92",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "72c29cead1da1715",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "2fc3c19d0aadce93",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "e1b6a3016bd79352",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "462859cd3db95da9",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "0dbd606935101e63",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "6b43b274687101f0",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "331fa4e860d6d538",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "6ddf88a05ba72b9b",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "ce4ed731c8cc0438",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "a19ef86c70ffac69",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "a13ca1fae43cc5b9",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "ded38423fcf74afe",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "797ebea98ef935e2",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "531732e683181c3d",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "c05e1ddbe9fbbe8a",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "a40da66ca1060fb4",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "77b970d714f1537d",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "20d07182d6a349dd",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "3f4c78fe6bc89936",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "56430600d1b993b1",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "fa039657ca0af57b",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "e835bbb169b5cf17",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "963ac77413608c08",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "f99057151714f63b",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "97102ad9b456a2b1",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "24213198850335f2",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "636c426c91ea24cd",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "5299fcabbf15f157",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "2ec50de62392e55b",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "904dd0da626fde76",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "45ba5daf8411481e",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  },
+  {
+   "id": "6ca33565e7eebd82",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "INT"
+  }
+ ],
+ "PWR": [
+  {
+   "id": "d5d56c702b585adc",
+   "des": "J3",
+   "name": "={Manufacturer Part}",
+   "val": "",
+   "fp": {
+    "uuid": "11ccd452acab0402",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "b9be7ece1a795baa",
+   "des": "D2",
+   "name": "={Manufacturer Part}",
+   "val": "",
+   "fp": {
+    "uuid": "18182dd486bd6c93",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "759a40ee92f8e635",
+   "des": "U3",
+   "name": "={Manufacturer Part}",
+   "val": "",
+   "fp": {
+    "uuid": "b2a678edb1a497c6",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "2ea6e106201aceec",
+   "des": "C16",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "af9ead2bc0accc36",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "ca336dc61b362c97",
+   "des": "C17",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "81cbc3dd1df4ff54",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "d4cc88476e1b4f12",
+   "des": "C18",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "fd4e4fc2f71461ac",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "f0762fdb9715828c",
+   "des": "LED1",
+   "name": "={Manufacturer Part}",
+   "val": "",
+   "fp": {
+    "uuid": "08be140dd6c0a57c",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "0c50e451c9f5f463",
+   "des": "R11",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "be711b818a9f05c4",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "54f483ba966c0f66",
+   "des": "Q1",
+   "name": "={Manufacturer Part}",
+   "val": "",
+   "fp": {
+    "uuid": "b998db0d46bae5d1",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "13c0b205bd394675",
+   "des": "R12",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "be711b818a9f05c4",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "689e4c979b738429",
+   "des": "R13",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "be711b818a9f05c4",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "5ab550dd2667403a",
+   "des": "R15",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "be711b818a9f05c4",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "4201b681fcd77473",
+   "des": "R16",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "be711b818a9f05c4",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "3e9f38fe7267b761",
+   "des": "R17",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "be711b818a9f05c4",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "27d30ae8ab850bc4",
+   "des": "R18",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "be711b818a9f05c4",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "ccfabec82f67c21d",
+   "des": "R19",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "be711b818a9f05c4",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "41bebfa2723de373",
+   "des": "R20",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "be711b818a9f05c4",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "4d52694eb60c6be3",
+   "des": "C19",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "fd4e4fc2f71461ac",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "24e6560b340332c0",
+   "des": "C20",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "fd4e4fc2f71461ac",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "1541d5b75410c0be",
+   "des": "R14",
+   "name": "={Value}",
+   "val": "",
+   "fp": {
+    "uuid": "a659c088d596a7b6",
+    "libraryUuid": "0819f05c4eef4c71ace90d822a990e87"
+   },
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "e56d38255976be07",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "2586cfc4264d8530",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "2ef7ed56484d82e7",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "7bbe28606bce56d4",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "e1804e2059e1c5d5",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "f45b8c60e684217c",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "ac13b4b5b42a32ff",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "e6f9778ad7f8f1e6",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "046b525c42fac123",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "743d2d3d15a64177",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "049d7b6ab3750d71",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "e80d4504aa29ff71",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "fa56015631b834ee",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "4b23b6040aaf4d56",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "b47d37b231638df0",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "6ca27df9ad4eb613",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "12e173bd691ed19a",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "89e693db2cefe5e2",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "acc47fdf7ae7852b",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "720cd1eda7c13761",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "12d69dff249d0e0c",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "584dcba94f988b9f",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "a5ad571a331aa9e3",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "a6cc1d7c1d62210e",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "376b5ab1f1ab4344",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "cfad539dd17d6990",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "bdbf52bd6ef74005",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "d7a5787443c5892f",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "7b4e17257a528a06",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "b40adbd85368ebc6",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "2c50c0176c12da5d",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "716569df266d7481",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "dfc71d0e74760185",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "8b8b7652ba701842",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "7dc43b7b138b4bd3",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "2f8e44d5d1d2418d",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "703e77e62ea81bdb",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "a4b1a947757f1a79",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "5c4a08f28ca394a7",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "ad01fbffc58ca781",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "9c5b53b1993528c2",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "02cfd88b8b86b4c2",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "c0ade44fe26008e0",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  },
+  {
+   "id": "98b278c64f245647",
+   "des": "",
+   "name": "",
+   "val": "",
+   "fp": "",
+   "mfr": "",
+   "lcsc": "",
+   "dev": "",
+   "page": "PWR"
+  }
+ ]
+}

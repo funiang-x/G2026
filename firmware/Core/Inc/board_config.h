@@ -301,19 +301,16 @@
 #define BOARD_LED_PORT 1 /* 1 = GPIOB */
 #define BOARD_LED_PIN 2
 
-/* -------------------------------------------------- ⚠️ 用户按键：已被 ADC 占用 ----
+/* -------------------------------------------------- ⚠️ 用户按键（PA0/SW2）----
  * 板上 **SW2 物理接在 PA0**（按下 = 高电平，经 10k 下拉；2026-09-23 上板验证过）。
- * 但总设计 §4.3 把**模拟输入定在 PA0**（`ADC_IN(PA0)`），两者是同一个脚。
  *
- * ⇒ 2026-09-26 取舍：**PA0 让给 ADC1_IN0，板上 SW2 从此不可用**。
- *   理由：① 总设计是唯一口径，§4.5 还要求 R5/C4 紧贴 PA0（前端 PCB 按它布局）；
- *         ② UI 已改为 STM32 侧触摸屏，不再需要这个键。
- *
- * ⚠️ 若将来要**保住按键**：把模拟输入改到 PA1（ADC1_IN1，同排、无冲突），
- *    同步改总设计 §4.3 的网表与本节，再把 PA0 改回 `GPIO_Input + PULLDOWN`。
- *    **不要**两边都留 —— 那会让 PA0 的 .ioc 配置与代码预期不一致。
- *
- * 引脚事实：PA0 = GPIOA(0) 的 0 号脚。见下方 ADC 一节的 BOARD_ADC_IN_* 。 */
+ * 2026-09-28 变更：**模拟输入挪到 PA1（ADC1_IN1，用户在 CubeMX 里配置并拍板）**
+ * —— 原因：① PA0 上还挂着 SW2 的按键电路（10k 下拉 + 触点），对模拟前端是
+ * 一个多余的并联负载/干扰路径；② PA1 干净（ADC1_IN1），CubeMX 里
+ * `PA1.Signal=ADCx_IN1` 已配置。⇒ **PA0 从此空闲**（SW2 电路仍在板上但没有
+ * 代码消费它；要用按键就在 .ioc 里把 PA0 配成 GPIO_Input + PULLDOWN 再建
+ * bsp_key —— 别两边都留半截配置）。 */
+
 
 /* ------------------------------------------------------------ ADC1 + DMA + TIM8 ----
  * 依据：总设计 §2.1 / §5.6。**这一节是采样链的唯一来源**。
@@ -328,13 +325,16 @@
  * ⚠️ **缓冲必须放 SRAM1/SRAM2，绝不能放 CCM**：CCM 不可被 DMA 访问，
  *    放错**不报错、不告警**，采集结果恒为 0。
  *
- * ⚠️ **ADC 与 DMA 的寄存器配置在 Device/Src/bsp_adc.c，不在 CubeMX** ——
- *    CubeMX 会静默丢掉整个 ADC1 IP（详见 bsp_adc.c 文件头）。
- *    所以这一节是它们**唯一**的来源，`fw.py lint` 对它们只会报"单侧有值"。 */
+ * ⚠️ **ADC 的触发/DMA 寄存器配置在 Device/Src/bsp_adc.c，CubeMX 只管引脚** ----
+ *    2026-09-28 现状：用户已在 CubeMX 激活 ADC1（IN1@PA1、3 周期采样、软件
+ *    触发、无 DMA），生成 `MX_ADC1_Init()`。bsp_adc.c 随后会**全量覆写**
+ *    CR1/CR2/SQR/SMPR（TIM8 触发 + DMA2_Stream0 循环）—— 先后覆盖关系是
+ *    刻意接受的：CubeMX 那份负责引脚 Analog 模式与"外设存在性"，本节的
+ *    CHANNEL 宏保证两边选中**同一个通道**（IN1），触发/DMA 以 bsp_adc 为准。 */
 #define BOARD_ADC_IN_PORT 0   /* 0 = GPIOA */
-#define BOARD_ADC_IN_PIN 0    /* PA0 = ADC1_IN0（原板上 SW2，见上一节） */
-#define BOARD_ADC_CHANNEL 0U  /* ADC_CHANNEL_0 */
-#define BOARD_ADC_SAMPLING_CYCLES 3U /* 采样周期数：3 ADCCLK */
+#define BOARD_ADC_IN_PIN 1    /* PA1 = ADC1_IN1（2026-09-28 起，.ioc 同款；PA0 上有 SW2 电路弃用） */
+#define BOARD_ADC_CHANNEL 1U  /* ADC_CHANNEL_1 —— 必须与 .ioc 的 ADC1.Channel-1 一致 */
+#define BOARD_ADC_SAMPLING_CYCLES 3U /* 采样周期数：3 ADCCLK（.ioc ADC_SAMPLETIME_3CYCLES 同款） */
 #define BOARD_ADC_CLOCK_DIV 2U       /* ADCCLK = PCLK2 / 2 = 36MHz */
 
 /* 模拟前端增益（docs/01 §1 定稿 ×4）：码值 → 输入端 mV 的折算系数用它
@@ -342,20 +342,26 @@
 #define BOARD_FRONT_GAIN 4U
 
 /* TIM8：fs 的来源。144MHz / (PSC+1) / (ARR+1) = 144e6 / 72 = 2.000MHz
- * ⚠️ 审计帧（总设计 §5.9，fs_B = 1.6MHz）靠**运行期改 ARR 为 89** 实现，
- *    不另建一路定时器 —— 所以这里是两个值，不是一个。 */
+ *
+ * ⚠️ 这里**只有报数帧一个值**（ARR=71）。原有一个 `BOARD_TIM8_ARR_AUDIT=89`
+ *    （审计帧 fs=1.6MHz，为"双帧变频识别 u_J"预留）**已删除** —— 它没有任何
+ *    代码读，正是本文件末尾警告的"孤儿宏：翻成 1 什么都不会发生"。
+ *    该功能见 `docs/02_优化方案_硬件与软件.md` H9；真要做得先统一 K 口径
+ *    （report_opt.md 用的是 K71/K73，不是 K90），再加回宏并配上实现。 */
 #define BOARD_TIM8_PSC 0U
-#define BOARD_TIM8_ARR 71U        /* 报数帧：fs = 2.000 MHz（K = 72） */
-#define BOARD_TIM8_ARR_AUDIT 89U  /* 审计帧：fs = 1.600 MHz（K = 90） */
+#define BOARD_TIM8_ARR 71U /* fs = 2.000 MHz（K = 72） */
 
 /* DMA：ADC1 → 内存，循环模式。
  * ⚠️ DMA2_Stream0 是 ADC1 的**固定**映射（通道 0），不能换流。
- * ⚠️ 优先级 5 = configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY（见 FreeRTOSConfig.h），
- *    比它更"紧急"（数值更小）的中断里**不许调 FreeRTOS API**（总设计 §5.6）。 */
+ * ⚠️ 优先级 5 = configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY（见 FreeRTOSConfig.h）——
+ *    **正好等于**该值 ⇒ 中断里**允许**调 FromISR 系列（数值再小就不许了）。
+ *    搬满一帧时 `HAL_ADC_ConvCpltCallback` 会 `xSemaphoreGiveFromISR` 唤醒测量任务。 */
 #define BOARD_ADC_DMA_STREAM 0U       /* DMA2_Stream0 */
 #define BOARD_ADC_DMA_IRQ_PRIORITY 5U /* 抢占优先级（分组 4，无子优先级） */
 #define BOARD_ADC_BUF_LEN 4096U       /* N = 4096 点/帧 */
-#define BOARD_ADC_BUF_COUNT 2U        /* 双缓冲：采集与 DSP 并行（门控采集） */
+/* ⚠️ 采集是**单缓冲**（engine 的 s_adc_buf）：门控采集下生产者 2.048ms/帧、
+ *    DSP ~13ms/帧，双缓冲只会让新帧盖掉未处理完的旧帧。原来的
+ *    `BOARD_ADC_BUF_COUNT 2U` 是个与实现矛盾的孤儿宏，已删除。 */
 
 /* --------------------------------------------------------------- 液晶屏（8080）----
  * 屏：3.5″ IPS 320×480 · 驱动 IC **ST7796S**（兼容 HX8357）· 40pin FPC 并口模块。
@@ -410,7 +416,15 @@
 #define BOARD_LCD_RS_PORT 3 /* PD11 · 寄存器选择 DC/RS（FSMC_A16） */
 #define BOARD_LCD_RS_PIN 11
 
-/* 背光与复位：普通 GPIO（CubeMX 生成，非 FSMC） */
+/* 背光与复位：普通 GPIO（CubeMX 生成，非 FSMC）
+ *
+ * ⚠️⚠️ 背光**恒亮、禁 PWM**（2026-09-28 拍板，干扰源管理红线）：
+ *    PWM 调光的开关频率及其谐波是**等间隔谱线列**——20kHz 调光的前 25 次谐波
+ *    全部落在 10k~500kHz 分析带内，在谱线图上是固定频率伪峰制造机
+ *    （固定频率 = 会被误认为真信号；等间隔 = 一眼"像谐波族"），比随机噪声
+ *    恶劣得多。竞赛装置根本不需要调光 —— PB0 只许数字开关（GPIO_Output，
+ *    现状如此），**严禁**在 CubeMX 里把 PB0 改配成 TIM3_CH3 之类 PWM 通道
+ *    （PB0 恰好是 TIM3_CH3 的复用脚，别"顺手"配）。 */
 #define BOARD_LCD_BL_PORT 1 /* 1 = GPIOB */ /* PB0 · 高 = 背光亮 */
 #define BOARD_LCD_BL_PIN 0
 #define BOARD_LCD_RST_PORT 1 /* PB1 · 低有效，空闲置高 */
@@ -479,12 +493,13 @@
  * ★ 需求：**LVGL 的堆放 CCM**（64KB，CPU 独占、不占主 RAM、也不吃 DMA 带宽）。
  *
  * ⚠️ 与 DSP 争 CCM —— 这是本节最重要的约束：
- *    总设计 §5.6 计划把 g_hann(16K) + fft_out(16K) + g_mag(8K) = 40KB 放 CCM。
- *    CCM 只有 64KB，**装不下 56KB 的池 + 40KB 的 DSP**。
  *    ⇒ 本工程按 **32KB 池 + 32KB DSP** 切：
- *         CCM 低 32KB（0x10000000~0x10007FFF）→ `.ccmram` 段（DSP 数组）
+ *         CCM 低 32KB（0x10000000~0x10007FFF）→ `.ccmram` 段
+ *              = **FFT 工作块 s_fft（2N floats = 32KB）**   ← 2026-09-28 修正
  *         CCM 高 32KB（0x10008000~0x1000FFFF）→ LVGL 内存池
- *      代价：g_mag(8KB) 要挪到 SRAM1（它只用于找峰，SRAM1 完全够用）。
+ *      代价（2026-09-28 起）：**加窗时域 s_xw（N floats = 16KB）与 g_mag 都放 SRAM1**
+ *              —— 因为 `arm_cfft_f32` 要求 **2N** 的交织复数缓冲（官方约定
+ *              "size 2*fftLen"），CCM 装不下 s_fft(2N) + s_xw(N)。
  *
  * ⚠️ **池放在 CCM 的"高半边"是刻意的**：链接脚本的 `.ccmram` 段从 CCM 起始
  *    地址往上涨，池放在高半边 ⇒ DSP 数组有完整的 32KB 连续空间，

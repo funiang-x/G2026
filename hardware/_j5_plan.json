@@ -1,0 +1,422 @@
+[
+ {
+  "pin": 1,
+  "net": "LCD_CS",
+  "wid": "6422c035fc57833b",
+  "flag": "f7978e442e4a52bd",
+  "newpin": [
+   670,
+   1120
+  ],
+  "newflag": [
+   650,
+   1120
+  ]
+ },
+ {
+  "pin": 2,
+  "net": "LCD_RS",
+  "wid": "faa6c71ffce1ec1a",
+  "flag": "c377ea8453ee178b",
+  "newpin": [
+   730,
+   1120
+  ],
+  "newflag": [
+   750,
+   1120
+  ]
+ },
+ {
+  "pin": 3,
+  "net": "LCD_WR",
+  "wid": "d93f64f90fe341bd",
+  "flag": "deb0a7d99b6c9ce1",
+  "newpin": [
+   670,
+   1110
+  ],
+  "newflag": [
+   650,
+   1110
+  ]
+ },
+ {
+  "pin": 4,
+  "net": "LCD_RD",
+  "wid": "29eba5554331c81b",
+  "flag": "244b72277831b8b2",
+  "newpin": [
+   730,
+   1110
+  ],
+  "newflag": [
+   750,
+   1110
+  ]
+ },
+ {
+  "pin": 5,
+  "net": "LCD_RST",
+  "wid": "c08169fea838f21b",
+  "flag": "71edd8d0645c6fce",
+  "newpin": [
+   670,
+   1100
+  ],
+  "newflag": [
+   650,
+   1100
+  ]
+ },
+ {
+  "pin": 6,
+  "net": null,
+  "wid": null,
+  "flag": null,
+  "newpin": [
+   730,
+   1100
+  ],
+  "newflag": [
+   750,
+   1100
+  ]
+ },
+ {
+  "pin": 7,
+  "net": "LCD_D1",
+  "wid": "f51c5cc0a11fda18",
+  "flag": "c5b0451e19039105",
+  "newpin": [
+   670,
+   1090
+  ],
+  "newflag": [
+   650,
+   1090
+  ]
+ },
+ {
+  "pin": 8,
+  "net": "LCD_D0",
+  "wid": "a1f265b4391aa200",
+  "flag": "51f13781e9af1770",
+  "newpin": [
+   730,
+   1090
+  ],
+  "newflag": [
+   750,
+   1090
+  ]
+ },
+ {
+  "pin": 9,
+  "net": "LCD_D3",
+  "wid": "c11d62e1630ca622",
+  "flag": "edb1dd109d58a4dd",
+  "newpin": [
+   670,
+   1080
+  ],
+  "newflag": [
+   650,
+   1080
+  ]
+ },
+ {
+  "pin": 10,
+  "net": "LCD_D2",
+  "wid": "6a94a2bc20389e30",
+  "flag": "170a9d6d2ee4097c",
+  "newpin": [
+   730,
+   1080
+  ],
+  "newflag": [
+   750,
+   1080
+  ]
+ },
+ {
+  "pin": 11,
+  "net": "LCD_D5",
+  "wid": "d0d76adf5dd8b93b",
+  "flag": "cef2d9fb9eea034f",
+  "newpin": [
+   670,
+   1070
+  ],
+  "newflag": [
+   650,
+   1070
+  ]
+ },
+ {
+  "pin": 12,
+  "net": "LCD_D4",
+  "wid": "e3367fab8c5b289a",
+  "flag": "a5f601aee36ae5fe",
+  "newpin": [
+   730,
+   1070
+  ],
+  "newflag": [
+   750,
+   1070
+  ]
+ },
+ {
+  "pin": 13,
+  "net": "LCD_D7",
+  "wid": "04d883fc00c32127",
+  "flag": "6e2e6d45d90c93ce",
+  "newpin": [
+   670,
+   1060
+  ],
+  "newflag": [
+   650,
+   1060
+  ]
+ },
+ {
+  "pin": 14,
+  "net": "LCD_D6",
+  "wid": "cc1ef3c2ed079364",
+  "flag": "c504e8536d40bd6e",
+  "newpin": [
+   730,
+   1060
+  ],
+  "newflag": [
+   750,
+   1060
+  ]
+ },
+ {
+  "pin": 15,
+  "net": "LCD_D9",
+  "wid": "cc2c9741cdcd39e3",
+  "flag": "c83863c16cadf7a8",
+  "newpin": [
+   670,
+   1050
+  ],
+  "newflag": [
+   650,
+   1050
+  ]
+ },
+ {
+  "pin": 16,
+  "net": "LCD_D8",
+  "wid": "2dfc43822a4abc74",
+  "flag": "c191e7be84e7bfcf",
+  "newpin": [
+   730,
+   1050
+  ],
+  "newflag": [
+   750,
+   1050
+  ]
+ },
+ {
+  "pin": 17,
+  "net": "LCD_D11",
+  "wid": "3f64603d9385e1d6",
+  "flag": "e0125b01079aaee2",
+  "newpin": [
+   670,
+   1040
+  ],
+  "newflag": [
+   650,
+   1040
+  ]
+ },
+ {
+  "pin": 18,
+  "net": "LCD_D10",
+  "wid": "5faaed182d72c9a0",
+  "flag": "2ca0b68273fee501",
+  "newpin": [
+   730,
+   1040
+  ],
+  "newflag": [
+   750,
+   1040
+  ]
+ },
+ {
+  "pin": 19,
+  "net": "LCD_D13",
+  "wid": "0ba9f0541cd0e3bd",
+  "flag": "5073d7c918a5cfae",
+  "newpin": [
+   670,
+   1030
+  ],
+  "newflag": [
+   650,
+   1030
+  ]
+ },
+ {
+  "pin": 20,
+  "net": "LCD_D12",
+  "wid": "5f8031195d141abe",
+  "flag": "bd851fb53e57267d",
+  "newpin": [
+   730,
+   1030
+  ],
+  "newflag": [
+   750,
+   1030
+  ]
+ },
+ {
+  "pin": 21,
+  "net": "LCD_D15",
+  "wid": "fac167836ec2042a",
+  "flag": "dfb019be87ae18d9",
+  "newpin": [
+   670,
+   1020
+  ],
+  "newflag": [
+   650,
+   1020
+  ]
+ },
+ {
+  "pin": 22,
+  "net": "LCD_D14",
+  "wid": "97a9c60702ec9fda",
+  "flag": "fd568436f5beae50",
+  "newpin": [
+   730,
+   1020
+  ],
+  "newflag": [
+   750,
+   1020
+  ]
+ },
+ {
+  "pin": 23,
+  "net": null,
+  "wid": null,
+  "flag": null,
+  "newpin": [
+   670,
+   1010
+  ],
+  "newflag": [
+   650,
+   1010
+  ]
+ },
+ {
+  "pin": 24,
+  "net": "TP_SCL",
+  "wid": "64f93be12e08f848",
+  "flag": "749a6eed8111a971",
+  "newpin": [
+   730,
+   1010
+  ],
+  "newflag": [
+   750,
+   1010
+  ]
+ },
+ {
+  "pin": 25,
+  "net": null,
+  "wid": null,
+  "flag": null,
+  "newpin": [
+   670,
+   1000
+  ],
+  "newflag": [
+   650,
+   1000
+  ]
+ },
+ {
+  "pin": 26,
+  "net": "TP_SDA",
+  "wid": "1286ef0592dde180",
+  "flag": "a92fe4972e653cbe",
+  "newpin": [
+   730,
+   1000
+  ],
+  "newflag": [
+   750,
+   1000
+  ]
+ },
+ {
+  "pin": 27,
+  "net": "TP_INT",
+  "wid": "c0234ba1a31c2926",
+  "flag": "d9571e697937c9c9",
+  "newpin": [
+   670,
+   990
+  ],
+  "newflag": [
+   650,
+   990
+  ]
+ },
+ {
+  "pin": 28,
+  "net": "LCD_BL_CTL",
+  "wid": "f28c947e33318da5",
+  "flag": "1f2f62b624ced18a",
+  "newpin": [
+   730,
+   990
+  ],
+  "newflag": [
+   750,
+   990
+  ]
+ },
+ {
+  "pin": 29,
+  "net": "GND",
+  "wid": "9e97ebba2723d7ac",
+  "flag": "6d839f7f11f391a6",
+  "newpin": [
+   670,
+   980
+  ],
+  "newflag": [
+   650,
+   980
+  ]
+ },
+ {
+  "pin": 30,
+  "net": "+3V3",
+  "wid": "c682bd72e06990c3",
+  "flag": "4ec3ba1fa442ced3",
+  "newpin": [
+   730,
+   980
+  ],
+  "newflag": [
+   750,
+   980
+  ]
+ }
+]

@@ -14,6 +14,8 @@
 #include "app_rtos.h"
 
 #include "app.h"
+#include "app_tasks.h"
+#include "log.h"
 #include "project_config.h"
 
 #include "cmsis_os.h"
@@ -21,7 +23,17 @@
 void app_rtos_run(void) {
     /* ★ 循环体只负责"什么时候做"，不负责"做什么" ——
      *   周期逻辑一律做成**显式入口**（app_poll），见 docs/07 §周期逻辑做成显式入口。
-     *   这样将来加任务 / 改节拍都在本层动，不用碰生成物。 */
+     *   这样将来加任务 / 改节拍都在本层动，不用碰生成物。
+     *
+     * ★ 业务（测量 / UI）不在本任务里 —— 它们在 app_tasks_init() 建的两个任务中
+     *   （Task_Engine / Task_Ui）。本任务（CubeMX 的 defaultTask）只跑轻量周期：
+     *   心跳、闪灯、RTC 复查。
+     * ⚠️ 建任务失败时**不停机**：app_tasks_ok() 变 0，组合根会把 engine/ui
+     *   内联回 app_poll（降级路径），装置照常可用。 */
+    if (app_tasks_init() != 0) {
+        LOG_E("[RTOS] 多任务未建起 —— 降级为单循环（engine/ui 内联在 app_poll 里）");
+    }
+
     for (;;) {
         app_poll();
         osDelay(APP_TICK_PERIOD_MS);

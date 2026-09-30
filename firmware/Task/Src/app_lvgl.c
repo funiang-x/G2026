@@ -69,13 +69,45 @@ static void lcd_send_cmd(lv_display_t *disp, const uint8_t *cmd, size_t cmd_size
  * ⚠️ 开窗（0x2A/0x2B）**已经由 flush_cb 通过 send_cmd 发过了**，这里只发
  *    写显存命令 + 数据 —— 再发一次开窗不会错，但会白费时间。
  * ⚠️ `cmd` 恒为 0x2C（LV_LCD_CMD_WRITE_MEMORY_START）。bsp_lcd_write_pixels
- *    内部自己会发这条命令，所以这里**故意忽略 cmd 参数**。 */
+ *    内部自己会发这条命令，所以这里**故意忽略 cmd 参数**。
+ * 顺带统计 flush 像素：顶栏的"等效 fps"= 每秒刷屏像素 / 整帧像素 ——
+ * 性能可观测（PARTIAL 模式下一次重绘会被切成多块，数"块数"没有意义）。 */
+static uint32_t s_flush_px = 0;        /* 窗口内累计像素 */
+
 static void lcd_send_color(lv_display_t *disp, const uint8_t *cmd, size_t cmd_size,
                            uint8_t *param, size_t param_size) {
     LV_UNUSED(disp);
     LV_UNUSED(cmd);
     LV_UNUSED(cmd_size);
     bsp_lcd_write_pixels(param, (uint32_t)param_size);
+    s_flush_px += (uint32_t)param_size / 2U;
+}
+
+/* 每秒一次：结算窗口内的像素吞吐 → 等效 fps（0.1 定点，UI 直接显示）。
+ * 等效 fps = 像素吞吐 / 全帧像素（320×480）。静屏时为 0（没有重绘没有耗电），
+ * 滑页/动画时逼近 60 —— 这是"带宽用满没有"的诚实口径，不是渲染节拍。 */
+uint32_t app_lvgl_fps_x10(uint32_t now_ms) {
+    static uint32_t s_win_ms = 0;    /* 窗口起点（避免与 app_lvgl_poll 的同名局部撞 -Wshadow） */
+    static uint32_t s_win_px = 0;
+    static uint32_t s_fps_x10 = 0;
+    static uint8_t  s_init = 0;
+
+    if (!s_init) {
+        s_init = 1;
+        s_win_ms = now_ms;
+        s_win_px = s_flush_px;
+        return 0U;
+    }
+    const uint32_t dt = now_ms - s_win_ms;
+    if (dt < 1000U) {
+        return s_fps_x10;
+    }
+    const uint32_t px = s_flush_px - s_win_px;
+    s_fps_x10 = (uint32_t)((uint64_t)px * 10000U /
+                           ((uint64_t)dt * BOARD_LCD_WIDTH * BOARD_LCD_HEIGHT));
+    s_win_ms = now_ms;
+    s_win_px = s_flush_px;
+    return s_fps_x10;
 }
 
 /* ------------------------------------------------------------------ 触摸回调 */

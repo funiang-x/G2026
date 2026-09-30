@@ -312,7 +312,8 @@ target_link_libraries(task_adapters PUBLIC operation)
 target_link_libraries(task_adapters PRIVATE proj_warnings)
 
 add_library(task_rtos STATIC
-    Task/Src/app_rtos.c)
+    Task/Src/app_rtos.c
+    Task/Src/app_tasks.c) # ★ 任务创建（Task_Engine / Task_Ui）—— 静态栈/TCB 在本文件里
 target_include_directories(task_rtos PUBLIC Task/Inc ${CMAKE_SOURCE_DIR})
 target_link_libraries(task_rtos PUBLIC task_adapters freertos_headers)
 target_link_libraries(task_rtos PRIVATE proj_warnings)
@@ -347,6 +348,9 @@ target_include_directories(task_ops PUBLIC
 target_link_libraries(task_ops PUBLIC
     operation      # op_dsp/op_peak/op_meas/op_wave/op_spec/op_cal
     device         # bsp_adc / bsp_spi（engine）；bsp.h 总入口
+    freertos_headers # ★ app_engine.c/app_ui.c 的任务体要用 FreeRTOS API
+                     #   （xTaskNotifyWait / vTaskDelay）—— 显式声明，
+                     #   不靠 lvgl→freertos_headers 的间接传递
     lvgl)          # app_ui.c
 target_link_libraries(task_ops PRIVATE proj_warnings)
 

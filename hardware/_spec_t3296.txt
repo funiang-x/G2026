@@ -1,0 +1,1245 @@
+##### FILE: TK035F3296规格书v1.2.pdf  (23 pages)
+===== PAGE 1 =====
+LCD MODULE Version : 1.2 30, 2021
+ 
+                             P.1 
+ 
+ 
+ 
+ 
+ 
+SPECIFICATION 
+ 
+Revision: 1.2
+ 
+ 
+This module uses ROHS material 
+ 
+ 
+ 
+ 
+PRODUCT : LCD MODULE 
+MODEL NO. :  
+SUPPLIER : 
+DATE  : 30, 2021
+ abcdef abcdef 
+CERT. No. QAC0946535  CERT. No. HKG002005 
+(ISO9001)              (ISO14001) 
+ 
+TK035F3296
+TK035F3296
+   HOLOCENE TECHNOLOGY Co.
+TK035F3296
+HOLOCENE TECHNOLOGY Co.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ If there is no special request from the customer, will not reserve the tooling 
+of the product under the following conditions: 
+如有下列情况，但客户又没有特别的要求,  
+1.There is no response from the customer in two years after submit the samples. 
+2.There is no order in two years after the latest mass production. 
+在最后一次的批量后两年内没有订单。 
+And correlated data (including quality records) will be reserved for one year more after tooling is discarded. 
+相关的数据(包括质量报告)将会被保留一年或更久直到模具放弃. 
+HOLOCENE TECHNOLOGY Co.
+HOLOCENE TECHNOLOGY Co.      
+从提供样品后两年内客户如果没回应
+好钜润科技公司将不储存产品模具：
+   CUSTOMER: 
+            客户:  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Quality Assurance Department:          
+质量保证部门 
+Approved by:                        
+核准 
+Technical Department:                 
+技术部门 
+ 
+Approved by:          
+核准: 
+ 
+ 
+HOLOCENE TECHNOLOGY Co.
+好钜润科技有限公司
+April
+April
+===== PAGE 2 =====
+ 
+P.2 
+REVISION RECORD 
+ 
+REV NO. 
+REV DATE 
+CONTENTS 
+REMARKS 
+1.0 2017-5-27 First release / 
+1.1 2017-7-29 Update the drawing P.5 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+ 
+ 
+HOLOCENE TECHNOLOGY Co.
+LCD MODULE Version : 1.2 30, 2021TK035F3296 April
+1.2 2021-4-30 Update the P.4~5 driver IC
+===== PAGE 3 =====
+P.3 
+ 
+CONTENTS 
+  
+ 
+■GENERAL INFORMATION 
+ 
+■EXTERNAL DIMENSIONS 
+ 
+■ABSOLUTE MAXIMUM RATINGS 
+ 
+■ELECTRICAL CHARACTERISTICS 
+ 
+■BACKLIGHT CHARACTERISTICS 
+ 
+■ELECTRO-OPTICAL CHARACTERISTICS 
+ 
+■INTERFACE DESCRIPTION 
+ 
+■REFERENCE APPLICATION CIRCUIT 
+ 
+■RELIABILITY TEST CONDITIONS 
+ 
+■INSPECTION CRITERION 
+ 
+■PRECAUTIONS FOR USING LCD MODULES 
+ 
+■PACKING SPECIFICATION 
+ 
+■PRIOR CONSULT MATTER 
+ 
+■FACTORY CONTACT INFORMATION 
+ 
+ 
+ 
+WRITTEN BY CHECKED BY APPROVED BY 
+HUANG SU LING RAO LI HUA GUO XIAO WU 
+ 
+HOLOCENE TECHNOLOGY Co.
+LCD MODULE Version : 1.2 30, 2021TK035F3296 April
+===== PAGE 4 =====
+ 
+P.4 
+n GENERAL INFORMATION   
+ 
+Item of general information Contents Unit 
+LCD type TFT/TRANSMISSIVE / 
+Recommended Viewing Direction O’ Clock 
+Module area (W ×  H × T) ×84.50×2.06 mm3 
+Viewing area (W× H) 52.96×81.34 mm2 
+Active area (W× H) 48.96×73.44 mm2 
+Number of Dots 320RGB×480 / 
+Pixel pitch (W ×  H) 0.1395×0.1395 mm2 
+Driver IC ST7796 / 
+Interface Type System parallel interface / 
+Input voltage 2.8 V 
+Module Power consumption 382 mw 
+Colors 65K / 
+Backlight Type LED / 
+ 
+6
+55.05
+LCD MODULE Version : 1.1 July 29, 2017TK035F5589
+HOLOCENE TECHNOLOGY Co.
+===== PAGE 5 =====
+ 
+P.5 
+n EXTERNAL DIMENSIONS  
+1/1
+31 DB1_B1
+DB2_B230
+DB3_B3
+DB4_B4
+DB5_B5
+DB6_G0
+DB7_G1
+DB8_G2
+DB9_G323
+24
+25
+26
+27
+28
+29
+22
+21
+DB10_G4
+DB11_G5
+DB12_R020
+DB13_R119
+18
+17
+DB14_R2
+DB15_R3
+DB16_R416
+15
+DOUT14
+13 DIN
+VCI12
+11 IOVCC
+10
+IM1
+IM08
+7
+GND6
+5 VSYNC
+PCLK4
+3 DE
+GND2
+1 TE
+NO. DESCRIPTION
+DB17_R5
+45 LCD-ID
+LED-A44
+43 LED-K6
+LED-K542
+LED-K441
+40 LED-K3
+LED-K139
+CS
+38
+37
+36
+35
+34 RD
+WR_SCL
+DC_RS
+RESET33
+32 DB0_B0
+NO. DESCRIPTION
+9
+ 
+K6K1A
+K6K1A
+图纸仅做参考，请以实物为准
+LED-K1
+ST7796
+65K TFT/TRANSMISSIVE
+6 O`CLOCK
+TK035F5589
+好钜润科技有限公司
+LCD MODULE Version : 1.1 July 29, 2017TK035F5589
+HOLOCENE TECHNOLOGY Co.
+7
+7
+7
+77
+HSYNC
+IM2
+9.67
+===== PAGE 6 =====
+ 
+P.6 
+n ABSOLUTE MAXIMUM RATINGS  
+ 
+ 
+Parameter of absolute 
+maximum ratings Symbol Min Max Unit 
+Supply voltage for logic VCC/IOVCC -0.3 4.6 V 
+Input voltage  VIN -0.3 IOVCC+0.3 V 
+Operating temperature  Top -20 70 °C 
+Storage temperature  TST -30 80 °C 
+Humidity  RH - 90%(Max60 °C) RH 
+ 
+n ELECTRICAL CHARACTERISTICS 
+       
+DC CHARACTERISTICS 
+ 
+Parameter of DC 
+characteristics Symbol Min Typ Max Unit 
+Supply voltage for logic VCC 2.7 2.8 2.9 V 
+I/O power supply  IOVCC 1.7/2.7 1.8/2.8 1.9/2.9 V 
+Input Current Idd - 5.5 11.0 mA 
+Input voltage 'H' level VIH 0.8IOVCC - IOVCC V 
+Input voltage 'L' level VIL -0.3 - 0.2IOVCC V 
+Output voltage 'H' level VOH 0.8IOVCC - - V 
+Output voltage 'L' level VOL - - 0.2IOVCC V 
+ 
+n BACKLIGHT CHARACTERISTICS 
+ 
+Item of backlight 
+characteristics Symbol Min. Typ. Max. Unit Condition 
+Forward voltage  Vf 2.9 3.1 3.6 V 
+Luminance   Lv 2600 3000 3400 cd/m2 
+If=60mA 
+Ta=25℃ 
+Number of LED  - - 4 - Piece - 
+Connection mode  P - parallel - - - 
+Using condition: constant current driving method If=60mA(+/-10%). 
+HOLOCENE TECHNOLOGY Co.
+LCD MODULE Version : 1.2 30, 2021TK035F3296 April
+===== PAGE 7 =====
+ 
+P.7 
+n ELECTRO-OPTICAL CHARACTERISTICS 
+ 
+Item of 
+electro-optical 
+characteristics 
+Symbol Condition Min Typ Max Unit Remark Note 
+Response time  Tr+ Tf - 13 21 ms Fig.1 4 
+Contrast ratio  Cr 300 837 - --- FIG 2. 1 
+Luminance 
+uniformity  δ WHITE 74 82 - % FIG 2. 3 
+Surface 
+Luminance  Lv 
+θ=0° 
+∅ =0° 
+Ta=25℃ 
+216 270 - cd/m2 FIG 2. 2 
+∅  = 90° 70 80 - deg FIG 3. 
+∅  = 270° 70 80 - deg FIG 3. 
+∅  = 0° 70 80 - deg FIG 3. 
+Viewing angle 
+range  θ 
+∅  = 180° 70 80 - deg FIG 3. 
+6 
+Red x 0.5603 0.6103  0.6603 - 
+Red y 0.3012 0.3512  0.4012 - 
+Green x 0.2743 0.3243  0.3943 - 
+Green y 0.5303 0.5803  0.6303 - 
+Blue x 0.0986 0.1486  0.1986 - 
+Blue y 0.0195 0.0695  0.1195 - 
+White x 0.2287 0.2887  0.3487 - 
+CIE (x, y) 
+chromaticity 
+White y 
+θ=0° 
+∅ =0° 
+Ta=25℃ 
+0.2285 0.2885  0.3485 - 
+FIG 2. 5 
+ 
+Note1. Contrast Ratio(CR) is defined mathematically by the following formula.  For more 
+information see FIG 2.: 
+     
+( )
+( )
+AverageSurface Luminance with all white p
+ixels P 1, P2,  P 3, P4,  P5 ContrastRatio = Average SurfaceLuminance with all black p
+ixels P1,  P2,  P 3, P4,  P5
+ 
+Note2. Surface luminance is the LCD surface  from the surface with all pixels displaying white.  
+For more information see FIG 2. 
+Lv = Average Surface Luminance with all white pixels  (P1, P2, P 3,P4, P5)   
+Note3. The uniformity in surface luminance （δ WHITE） is determined by measuring luminance at 
+each test position 1 through 5, and then dividing the maximum luminance of 5 points luminance by 
+minimum luminance  of 5 points luminance.  For more information see FIG 2. 
+       ,
+ ,
+ Surface Luminance with all white pixels ( ,  ,  ,  )  WHITE = Maxi  Surface Luminance with allwhite pixels ( ,  ,  ,  )
+d
+1 2 3 45
+1 2 3 45
+Minimum P P P PP
+mum P P P PP  
+Note4. Response time is the time required for the display to transition from White to black(Rise 
+Time, Tr)    and from black to white(Decay Time, Tf). For additional information see FIG 1..  
+Note5. CIE (x, y) chromaticity ,The x,y value is determined by screen active area position 5.  For 
+more information see FIG 2. 
+Note6. Viewing angle is the angle at which the contrast ratio is greater than 2. For TFT module the 
+conrast ratio is greater than 10. The angles are    determined for the horizontal or x axis and the 
+vertical or y axis with respect to the z axis which is normal to the LCD surface.  For more 
+information see FIG 3.  
+Note7. For Viewing angle and response time testing, the testing data is base on Autronic-Melchers’s 
+ConoScope. Series Instruments. For contrast ratio, Surface Luminance, Luminance uniformity and 
+CIE，   the testing data is base on TOPCON’s BM-5 photo detector. 
+Note8. For TFT transmissive module,Gray scale reverse occurs in the direction of  panel viewing 
+angle. 
+HOLOCENE TECHNOLOGY Co.
+LCD MODULE Version : 1.2 30, 2021TK035F3296 April
+===== PAGE 8 =====
+ 
+P.8 
+FIG.1. The definition of Response Time 
+ 
+ 
+ 
+FIG.2. Measuring method for Contrast ratio,surface luminance, Luminance uniformity,CIE (x, 
+y) chromaticity 
+ 
+ 
+FIG.3. The definition of viewing angle 
+ 
+ 
+A : 5 mm
+ 
+B : 5 mm 
+H,V : Active Area 
+Light spot size ∅ =5mm, 500mm distance from the 
+LCD surface to detector lens 
+measurement instrument is TOPCON’s luminance 
+meter BM-5 
+HOLOCENE TECHNOLOGY Co.
+LCD MODULE Version : 1.2 30, 2021TK035F3296 April
+===== PAGE 9 =====
+ 
+P.9 
+n INTERFACE DESCRIPTION 
+HOLOCENE TECHNOLOGY Co.
+LCD MODULE Version : 1.2 30, 2021TK035F3296 April
+PIN
+No. Symbol Description Notes
+1T E
+Tearing Effect output signal.
+（撕裂效果输出信号，不用时请悬空）
+2G N D
+Ground
+（接地脚）
+3D E
+Data enable signal in DPI operation.
+Low: Select (Accessible)
+High: Not select (inaccessible)
+（RGB 接口信号，不用时接 IOVCC1 或者 GND）
+4 PCLK
+Pixel clock signal. The data input timing is set on the rising edge.
+（RGB 接口信号，不用时接 IOVCC1 或者 GND）
+5 VSYNC
+Frame synchronous signal. Low active.
+（RGB 接口信号，不用时接 IOVCC1 或者 GND）
+6G N D
+Ground
+（接地脚）
+7 HSYNC
+Line synchronous signal. Low active.
+（RGB 接口信号，不用时接 IOVCC1 或者 GND）
+8I M 0
+The R61581 supports MIPI DBI Type B (18/16/9/8 bits) and MIPI DBI
+Type C (Options 1 and 3). The interface is selected by setting
+IM[2:0] pin.（接口选择脚）
+9I M 1
+10 IM2
+11 IOVCC1
+Power supply to interface pins and internal VDD regulator.
+===== PAGE 10 =====
+（1.8V-3.3V）
+（接口电压）
+12 VCI
+Power supply to liquid crystal power supply analog circuit.
+（2.8V-3.3V）
+（系统电压）
+13 DIN
+Serial data input pin in DBI Type C operation to input data on the
+rising edge of SCL signal.
+（串口数据输入）
+14 DOUT
+Serial data output pin in DBI Type C operation to input data on
+thefalling edge of SCL signal.
+（串口数据输出）
+15 DB17(R5)
+DB17-DB0：MCU 接口的数据线。
+R5-R0，G5-G0，B5-B0：RGB 接口的信号线
+其中 R5，G5，B5 分别为 R，G，B 信号的 MSB（最高位）
+R0，G0，B0 分别为 R，G，B 信号的 LSB（最低位）
+16 DB16(R4)
+17 DB15(R3)
+18 DB14(R2)
+19 DB13(R1)
+20 DB12(R0)
+21 DB11(G5)
+22 DB10(G4)
+23 DB9(G3)
+24 DB8(G2)
+25 DB7(G1)
+26 DB6(G0)
+27 DB5(B5)
+28 DB4(B4)
+29 DB3(B3)
+30 DB2(B2)
+31 DB1(B1)
+32 DB0(B0)
+33 RESX
+Reset pin. The R61581 is initialized when RESX is Low. Make
+sure to execute power-on reset when turning the power supply on.
+（屏复位信号）
+34 RDX
+Read strobe signal. Read out data when RDX is Low.
+（MCU 接口的读控制脚）
+35 WRX/SCL
+Write strobe signal in DBI Type B operation. Write data when WRX
+is Low. Synchronous clock signal in DBI Type C operation.
+LCD MODULE Version : 1.2 30, 2021TK035F3296 April
+P.10 HOLOCENE TECHNOLOGY Co.
+===== PAGE 11 =====
+P.11 
+ 
+n REFERENCE APPLICATION CIRCUIT 
+ 
+Please consult our technical department for detail information. 
+HOLOCENE TECHNOLOGY Co.
+LCD MODULE Version : 1.2 30, 2021TK035F3296 April
+（MCU 接口的写控制脚发或者串口的时钟信号）
+36 DCX
+Command/data select signal
+Low: Select command
+High: Select data
+（寄存器选择脚）
+37 CSX
+Chip select signal.
+Low: Select (Accessible)
+High: Not select (Inaccessible)
+Make sure to connect to host processor. Follow AC timing to control
+the signal.
+（芯片的片选信号）
+38 LED-K1
+Cathode of Backlight
+（背光负极供电脚）
+39 LED-K2
+Cathode of Backlight
+（背光负极供电脚）
+40 LED-K3
+Cathode of Backlight
+（背光负极供电脚）
+41 LED-K4
+Cathode of Backlight
+（背光负极供电脚）
+42 LED-K5
+Cathode of Backlight
+（背光负极供电脚）
+43 LED-K6
+Cathode of Backlight
+（背光负极供电脚）
+44 LED-A
+Anode of Backlight （3.0V-3.4V）
+（背光正极供电脚）
+45 LCD-ID
+LCD Identification
+（LCD 的识别脚，此脚位接 100K 欧姆的电阻到地，不用时此脚可悬空）
+===== PAGE 12 =====
+ 
+P.12 
+n RELIABILITY TEST CONDITIONS 
+ 
+No. Test Item Test Condition Inspection after test 
+1 High Temperature Storage  80±2℃/200 hours 
+2 Low Temperature Storage  -30±2℃/200 hours 
+3 High Temperature Operating  70±2℃/120 hours 
+4 Low Temperature Operating  -20±2℃/120 hours 
+5 Temperature Cycle  -20±2℃~25~70±2℃×10cycles 
+(30min.)  (5min.)  (30min.) 
+6 Damp Proof Test  50℃±5℃×90%RH/120 hours 
+7 Vibration Test  
+Frequency：10Hz~55Hz~10Hz 
+Amplitude：1.5mm, 
+X，Y，Z direction for total 3hours 
+(Packing condition) 
+8 Dropping test  
+Drop to the ground from 1m height, 
+one time,every side of carton. 
+(Packing condition) 
+9 ESD test  Voltage:±8KV  R: 330Ω  C: 150pF 
+Air discharge, 10time 
+Inspection after 
+2~4hours storage at 
+room temperature, the 
+sample shall be free from 
+defects:  
+1.Air bubble in the LCD;  
+2.Sealleak; 
+3.Non-display; 
+4.missing segments; 
+5.Glass crack; 
+6.Current Idd is twice  
+higher than initial value.  
+Remark: 
+1.The test samples should be applied to only one test item. 
+2.Sample size for each test item is 5~10pcs. 
+3.For Damp Proof Test, Pure water(Resistance＞10MΩ) should be used.  
+4.In case of malfunction defect caused by ESD damage, if it would be recovered to normal state after 
+resetting, it would be judged as a good part. 
+5.EL evaluation should be excepted from reliability test with humidity and temperature: Some defects 
+such as black spot/blemish can happen by natural chemical reaction with humidity and Fluorescence EL 
+has.  
+6.Failure Judgment Criterion: Basic Specification, Electrical Characteristic, Mechanical Characteristic, 
+Optical Characteristic. 
+ 
+HOLOCENE TECHNOLOGY Co.
+LCD MODULE Version : 1.2 30, 2021TK035F3296 April
+===== PAGE 13 =====
+ 
+P.13 
+n INSPECTION CRITERION 
+ 
+OUTGOING QUALITY STANDARD PAGE  1  OF  4 
+TITLE:FUNCTIONAL TEST & INSPECTION CRITERIA MDS Product 
+ 
+This specification is made to be used as the standard acceptance/rejection criteria for Color mobile 
+phone LCM. 
+1 Sample plan 
+  Sampling plan according to GB/T2828.1-2003/ISO 2859-1：1999 and ANSI/ASQC Z1.4-1993, 
+normal level 2 and based on: 
+     Major defect: AQL 0.65 
+Minor defect: AQL 1.5 
+ 2. Inspection condition 
+  Viewing distance for cosmetic inspection is about 30cm with bare eyes, and under an 
+environment of 20~40W light intensity, all directions for inspecting the sample should be within 
+45°against perpendicular line. 
+3. Definition of inspection zone in LCD. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+   
+  Zone A: character/Digit area 
+  Zone B: viewing area except Zone A (ZoneA+ZoneB=minimum Viewing area) 
+  Zone C: Outside viewing area (invisible area after assembly in customer’s product) 
+  Fig.1 Inspection zones in an LCD. 
+  Note: As a general rule, visual defects in Zone C are permissible, when it is no trouble for  
+quality and assembly of customer’s product. 
+    
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+C 
+ 
+B A 
+HOLOCENE TECHNOLOGY Co.
+LCD MODULE Version : 1.2 30, 2021TK035F3296 April
+===== PAGE 14 =====
+ 
+P.14 
+  OUTGOING QUALITY STANDARD PAGE  2  OF  4 
+TITLE:FUNCTIONAL TEST & INSPECTION CRITERIA MDS Product 
+4. Inspection standards 
+4.1 Major Defect 
+Item 
+No 
+Items to be 
+inspected Inspection Standard Classification 
+of defects 
+4.1.1 
+ 
+All 
+functional 
+defects 
+ 
+1) No display 
+2) Display abnormally  
+3) Missing vertical，horizontal segment  
+4) Short circuit 
+5) Back-light no lighting, flickering and abnormal lighting. 
+4.1.2 Missing  Missing component 
+4.1.3 
+ 
+ 
+Outline 
+dimension 
+ 
+Overall outline dimension beyond the drawing is not allowed. 
+ 
+ 
+ 
+ 
+Major 
+ 
+ 
+4.2 Cosmetic Defect 
+Item 
+No 
+Items to be 
+inspected Inspection Standard Classification of 
+defects 
+For dark/white spot, sizeΦis defined                 y 
+as Φ= 
+2
+)( yx +                             x     
+1． 
+Acceptable Qty Zone 
+Size(mm) A B C 
+Φ≤0.10 Ignore  
+0.10＜Φ≤0.15 2 
+0.15＜Φ≤0.20 1 
+Clear 
+Spots 
+ 
+Black and 
+white Spot 
+defect 
+Pinhole, 
+Foreign 
+Particle, 
+Dirt under 
+polarizer 
+ 
+ 
+Φ＞0.20 0 
+ 
+ 
+Ignore 
+ 
+ 
+Minor 
+4.2.1 
+Dim Spots 
+ 
+Circle 
+shaped and 
+dim edged 
+defects 
+2.  
+Acceptable Qty 2. Zone 
+Size(mm) A B C 
+Φ≤0.2 Ignore 
+0.20＜Φ≤0.40 3 
+0.40＜Φ≤0.60 2 
+0.60＜Φ≤0.80 1 
+Ignore 
+0.80＜Φ 0  
+Minor 
+ 
+ 
+ 
+ 
+ 
+HOLOCENE TECHNOLOGY Co.
+LCD MODULE Version : 1.2 30, 2021TK035F3296 April
+===== PAGE 15 =====
+ 
+P.15 
+  OUTGOING QUALITY STANDARD PAGE  3  OF  4 
+TITLE: FUNCTIONAL TEST & INSPECTION CRITERIA MDS Product 
+4.2. Cosmetic Defect 
+Item 
+No 
+Items to be 
+inspected Inspection Standard Classification 
+of defects 
+ 
+ 
+Size(mm) Acceptable Qty 
+Zone 
+ 
+L(Length) W(Width) A B C  
+Ignore W≤0.02 Ignore 
+L≤3.0 0.02＜W≤0.03 2 
+L≤2.0 0.03＜W≤0.05 1 
+ 
+ 0.05＜W Define as spot 
+defect 
+Ignore 
+ 
+ 
+4.2.2 
+Line defect 
+Black line, 
+White line, 
+Foreign 
+material 
+under 
+polarizer, 
+ 
+ 
+Minor 
+4.2.3 
+ 
+ 
+Polarizer 
+scratch 
+ 
+ 
+If the Polarizer scratch can be seen after mobile phone 
+cover assembling or in the operating condition, judge by 
+the line defect of 4.2.2. 
+If the Polarizer scratch can be seen only in non-operating 
+condition or some special angle, judge by the following. 
+Size(mm) Acceptable Qty 
+Zone 
+L(Length) W(Width) 
+A B C 
+Ignore W≤0.03 Ignore 
+5.0＜L≤10.0 0.03＜W≤0.05 2 
+L≤5.0 0.05＜W≤0.08 1 
+ 0.08＜W 0 
+Ignore 
+Minor 
+ 
+4.2.4 
+ 
+Polarize 
+Air bubble 
+ 
+ Air bubbles between glass & polarizer 
+Acceptable Qty 2. Zone 
+Size(mm) A B C 
+Φ≤0.2 Ignore 
+0.20＜Φ≤0.30 2 
+0.30＜Φ≤0.50 1 
+0.50＜Φ 0 
+Ignore 
+Minor 
+ 
+ 
+ 
+ 
+HOLOCENE TECHNOLOGY Co.
+LCD MODULE Version : 1.2 30, 2021TK035F3296 April
+===== PAGE 16 =====
+ 
+P.16 
+  OUTGOING QUALITY STANDARD PAGE  4  OF  4 
+TITLE:FUNCTIONAL TEST & INSPECTION CRITERIA MDS Product 
+4.3. Cosmetic Defect 
+Item 
+No 
+Items to be 
+inspected Inspection Standard Classification of 
+defects 
+(i) Chips on corner 
+ 
+Notes: S=contact pad length 
+Chips on the corner of terminal shall not be allowed to extend 
+into the ITO pad or expose perimeter seal. 
+X Y Z 
+≤2.0 ≤S Disregard 
+Minor 
+(ii)Usual surface cracks 
+  
+X Y Z 
+≤3.0 <Inner border line of the seal Disregard 
+Minor 
+4.3.5 Glass 
+defect 
+(iii) Crack  
+   Cracks tend to break are not allowed. 
+ 
+ 
+ 
+ 
+ 
+ 
+Major 
+4.3.6 Parts 
+alignment 
+1) Not allow IC and FPC/heat-seal lead width is more than 50% 
+beyond lead pattern. 
+2)  Not allow chip or solder component is off center more than 
+50% of the pad outline. 
+Minor 
+4.3.7 SMT 
+According to the <Acceptability of electronic assemblies> 
+IPC-A-610C class 2 standard. Component missing or function 
+defect are Major defect, the others are Minor defect. 
+ 
+ 
+ 
+HOLOCENE TECHNOLOGY Co.
+LCD MODULE Version : 1.2 30, 2021TK035F3296 April
+===== PAGE 17 =====
+ 
+P.17 
+ 
+n PRECAUTIONS FOR USING LCD MODULES 
+ 
+1 Handing Precautions 
+ 
+1.1 The display panel is made of glass and polarizer. As glass is fragile. It tends to become or 
+chipped during handling especially on the edges. Please avoid dropping or jarring. Do not 
+subject it to a mechanical shock by dropping it or impact.  
+1.2 If the display panel is damaged and the liquid crystal substance leaks out, be sure not to get any 
+in your mouth. If the substance contacts your skin or clothes, wash it off using soap and water. 
+1.3 Do not apply excessive force to the display surface or the adjoining areas since this may cause 
+the color tone to vary. Do not touch the display with bare hands. This will stain the display area 
+and degraded insulation between terminals (some cosmetics are determined to the polarizer). 
+1.4 The polarizer covering the display surface of the LCD module is soft and easily scratched. 
+Handle this polarizer carefully. Do not touch, push or rub the exposed polarizers with anything 
+harder than an HB pencil lead (glass, tweezers, etc.). Do not put or attach anything on the 
+display area to avoid leaving marks on it. Condensation on the surface and contact with 
+terminals due to cold will damage, stain or dirty the polarizer. After products are tested at low 
+temperature they must be warmed up in a container before coming in to  contact with room 
+temperature air. 
+1.5 If the display surface becomes contaminated, breathe on the surface and gently wipe it with a 
+soft dry cloth. If it is heavily contaminated, moisten cloth with one of the following solvents  
+  - Isopropyl alcohol 
+  - Ethyl alcohol  
+Do not scrub hard to avoid damaging the display surface.     
+1.6 Solvents other than those above-mentioned may damage the polarizer. Especially, do not use 
+the following. 
+  - Water 
+  - Ketone 
+  - Aromatic solvents 
+Wipe off saliva or water drops immediately, contact with water over a long period of time 
+may cause deformation or color fading. Avoid contact with oil and fats. 
+1.7 Exercise care to minimize corrosion of the electrode. Corrosion of the electrodes is accelerated 
+by water droplets, moisture condensation or a current flow in a high-humidity environment. 
+1.8 Install the LCD Module by using the mounting holes. When mounting the LCD module make 
+sure it is free of twisting, warping and distortion. In particular, do not forcibly pull or bend the 
+I/O cable or the backlight cable. 
+1.9 Do not attempt to disassemble or process the LCD module. 
+1.10 NC terminal should be open. Do not connect anything. 
+1.11 If the logic circuit power is off, do not apply the input signals. 
+1.12 Electro-Static Discharge Control，Since this module uses a CMOS LSI, the same careful 
+attention should be paid to electrostatic discharge as for an ordinary CMOS IC. To prevent 
+destruction of the elements by static electricity, be careful to maintain an optimum work 
+environment. 
+  - Before removing LCM from its packing case or incorporating it into a set, be sure 
+the module and your body have the same electric potential. Be sure to ground the body when 
+handling the LCD modules. 
+  - Tools required for assembling, such as soldering irons, must be properly grounded. 
+Make certain the AC power source for the soldering iron does not leak. When using an 
+electric screwdriver to attach LCM, the screwdriver should be of ground potentiality to 
+minimize as much as possible any transmission of electromagnetic waves produced sparks 
+coming from the commutator of the motor. 
+  - To reduce the amount of static electricity generated, do not conduct assembling 
+HOLOCENE TECHNOLOGY Co.
+LCD MODULE Version : 1.2 30, 2021TK035F3296 April
+===== PAGE 18 =====
+ 
+P.18 
+and other work under dry conditions. To reduce the generation of static electricity be careful 
+that the air in the work is not too dry. A relative humidity of 50%-60% is recommended. As 
+far as possible make the electric potential of your work clothes and that of the work bench 
+the ground potential. 
+  - The LCD module is coated with a film to protect the display surface. Exercise care 
+when peeling off this protective film since static electricity may be generated. 
+1.13 Since LCM has been assembled and adjusted with a high degree of precision, avoid applying 
+excessive shocks to the module or making any alterations or modifications to it. 
+ - Do not alter, modify or change the shape of the tab on the metal frame. 
+ - Do not make extra holes on the printed circuit board, modify its shape or change the 
+positions of components to be attached. 
+ - Do not damage or modify the pattern writing on the printed circuit board. 
+ - Absolutely do not modify the zebra rubber strip (conductive rubber) or heat seal 
+connector. 
+ - Except for soldering the interface, do not make any alterations or modifications with a 
+soldering iron. 
+ - Do not drop, bend or twist the LCM. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+HOLOCENE TECHNOLOGY Co.
+LCD MODULE Version : 1.2 30, 2021TK035F3296 April
+===== PAGE 19 =====
+ 
+P.19 
+2 Handling precaution for LCM   
+2.1 LCM is easy to be damaged. Please note below and be careful for handling. 
+2.2 Correct handling:  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+2.3 Incorrect handling:  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+                                    
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+As above picture, please handle with anti-st
+atic gloves around LCM edges. 
+ 
+ 
+Please don’t hold the surface of panel. 
+Please don’t touch IC directly.  
+Please don’t stack LCM. 
+ 
+ 
+Please don’t operate with sharp stick such as 
+pens. 
+ 
+ 
+Please don’t stretch interface of output, such 
+as FPC cable. 
+ 
+ 
+Please don’t hold the surface of IC. 
+ 
+HOLOCENE TECHNOLOGY Co.
+LCD MODULE Version : 1.2 30, 2021TK035F3296 April
+===== PAGE 20 =====
+P.20 
+ 
+3 Storage Precautions  
+3.1 When storing the LCD modules, the following precaution are necessary. 
+3.1.1 Store them in a sealed polyethylene bag. If properly sealed, there is no need for the 
+desiccant. 
+3.1.2 Store them in a dark place. Do not expose to sunlight or fluorescent light, keep the 
+temperature between 0°C and 35°C, and keep the relative humidity between 40%RH and 
+60%RH. 
+3.1.3 The polarizer surface should not come in contact with any other objects (We advise you to 
+store them in the anti-static electricity container in which they were shipped). 
+ 
+3.2 Others 其它 
+3.2.1 Liquid crystals solidify under low temperature (below the storage temperature range) 
+leading to defective orientation or the generation of air bubbles (black or white). Air 
+bubbles may also be generated if the module is subject to a low temperature. 
+3.2.2 If the LCD modules have been operating for a long time showing the same display 
+patterns, the display patterns may remain on the screen as ghost images and a slight 
+contrast irregularity may also appear. A normal operating status can be regained by 
+suspending use for some time. It should be noted that this phenomenon does not adversely 
+affect performance reliability. 
+3.2.3 To minimize the performance degradation of the LCD modules resulting from destruction 
+caused by static electricity etc., exercise care to avoid holding the following sections when 
+handling the modules. 
+3.2.3.1 - Exposed area of the printed circuit board. 
+3.2.3.2 -Terminal electrode sections. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+4 USING LCD MODULES   
+4.1 Installing LCD Modules     
+ The hole in the printed circuit board is used to fix LCM as shown in the picture below. 
+Attend to the following items when installing the LCM. 
+4.1.1 Cover the surface with a transparent protective plate to protect the polarizer and LC cell. 
+ 
+4.1.2 When assembling the LCM into other equipment, the spacer to the bit between the LCM 
+and the fitting plate should have enough height to avoid causing stress to the module 
+surface, refer to the individual specifications for measurements. The measurement 
+tolerance should be ±0.1mm.  
+HOLOCENE TECHNOLOGY Co.
+LCD MODULE Version : 1.2 30, 2021TK035F3296 April
+===== PAGE 21 =====
+ 
+P.21 
+4.2 Precaution for assemble the module with BTB connector: 
+Please note the position of the male and female connector position, don’t assemble or 
+assemble like the method which the following picture shows 
+ 
+ 
+ 
+ 
+HOLOCENE TECHNOLOGY Co.
+LCD MODULE Version : 1.2 30, 2021TK035F3296 April
+===== PAGE 22 =====
+ 
+P.22 
+ 
+4.3 Precaution for soldering the LCM 
+ 
+ Manual soldering Machine drag soldering Machine press soldering  
+No RoHS 
+Product  
+290°C ~350°C. 
+Time : 3-5S. 
+330°C ~350°C. 
+Speed : 15-17 mm/s. 
+300°C ~330°C. 
+Time : 3-6S. 
+Press: 0.8~1.2Mpa 
+RoHS 
+Product  
+340°C ~370°C. 
+Time : 3-5S. 
+350°C ~370°C. 
+Speed : 15-17 mm/s. 
+330°C ~360°C. 
+Time : 3-6S. 
+Press: 0.8~1.2Mpa 
+  
+4.3.1 If soldering flux is used, be sure to remove any remaining flux after finishing to soldering 
+operation (This does not apply in the case of a non-halogen type of flux).  It is 
+recommended that you protect the LCD surface with a cover during soldering to prevent 
+any damage due to flux spatters. 
+4.3.2 When soldering the electroluminescent panel and PC board, the panel and board should not 
+be detached more than three times. This maximum number is determined by the 
+temperature and time conditions mentioned above, though there may be some variance 
+depending on the temperature of the soldering iron. 
+4.3.3 When remove the electroluminescent panel from the PC board, be sure the solder has 
+completely melted, the soldered pad on the PC board could be damaged. 
+  
+ 
+4.4 Precautions for Operation    
+4.4.1 Viewing angle varies with the change of liquid crystal driving voltage (VLCD). Adjust 
+VLCD to show the best contrast. 
+4.4.2 It is an indispensable condition to drive LCD's within the specified voltage limit since the 
+higher voltage then the limit cause the shorter LCD life. An electrochemical reaction due 
+to direct current causes LCD's undesirable deterioration, so that the use of direct current 
+drive should be avoided. 
+4.4.3 Response time will be extremely delayed at lower temperature than the operating 
+temperature range and on the other hand at higher temperature LCD's show dark color in 
+them. However those phenomena do not mean malfunction or out of order with LCD's, 
+which will come back in the specified operating temperature. 
+4.4.4 If the display area is pushed hard during operation, the display will become abnormal. 
+However, it will return to normal if it is turned off and then back on. 
+4.4.5  A slight dew depositing on terminals is a cause for electro-chemical reaction resulting in 
+terminal open circuit. Usage under the maximum operating temperature, 50%RH or less is 
+required. 
+4.4.6 Input logic voltage before apply analog high voltage such as LCD driving voltage when 
+power on.  Remove analog high voltage before logic voltage when power off the module. 
+Input each signal after the positive/negative voltage becomes stable. 
+4.4.7 Please keep the temperature within the specified range for use and storage. Polarization 
+degradation, bubble generation or polarizer peel-off may occur with high temperature and 
+high humidity. 
+ 
+4.5 Safety  
+4.5.1 It is recommended to crush damaged or unnecessary LCDs into pieces and wash them off 
+with solvents such as acetone and ethanol, which should later be burned. 
+ 
+4.5.2 If any liquid leaks out of a damaged glass cell and comes in contact with the hands, wash 
+off thoroughly with soap and water. 
+ 
+HOLOCENE TECHNOLOGY Co.
+LCD MODULE Version : 1.2 30, 2021TK035F3296 April
+===== PAGE 23 =====
+ 
+P.23 
+4.6 Limited Warranty  
+ 
+4.7 Return LCM under warranty  
+4.7.1 No warranty can be granted if the precautions stated above have been disregarded. The 
+typical examples of violations are : 
+ 
+4.7.1.1 - Broken LCD glass. 
+ 
+4.7.1.2 - PCB eyelet is damaged or modified. 
+   
+4.7.1.3 -PCB conductors damaged. 
+ 
+4.7.1.4  - Circuit modified in any way, including addition of components. 
+ 
+4.7.1.5 - PCB tampered with by grinding, engraving or painting varnish. 
+ 
+4.7.1.6  - Soldering to or modifying the bezel in any manner. 
+ 
+4.7.2 Module repairs will be invoiced to the customer upon mutual agreement. Modules must be returned 
+with sufficient description of the failures or defects. Any connectors or cable installed by the customer 
+must be removed completely without damaging the PCB eyelet, conductors and terminals.       
+ 
+n PACKING SPECIFICATION 
+ 
+Please consult our technical department for detail information. 
+ 
+ 
+ 
+n PRIOR CONSULT MATTER  
+1 For standard products, we keep the right to change material, process ... for improving the 
+product property without prior notice to our customer. 
+2 For OEM products, if any changes are needed which may affect the product property, we will 
+consult with our customer in advance. 
+3 If you have special requirement about reliability condition, please let us know before you start the 
+test on our samples. 
+our
+ 
+n FACTORY CONTACT INFORMATION 
+工厂联系信息 
+ 
+FACTORY NAME: 
+工厂名称:
+FACTORY ADDRESS: 
+工厂地址：
+P.C: 518109  URL:   
+邮政编码: 518109 : 网站:
+HOLOCENE TECHNOLOGY Co.
+好钜润科技有限公司
+www.hjrkj.com
+www.hjrkj.com
+深圳市龙华新区清湖雪岗北路366号
+HOLOCENE TECHNOLOGY Co.
+ Unless agreed  between and the customer,  will replace or repair
+ any its LCD modules which are found to be functionally defective when inspected in 
+with our LCD acceptance standards (copies available upon request) for a period 
+ year from date of production. Cosmetic/visual defects must be returned to within 10 
+days of shipment . Confirmation of such date shall be based on data code on product. The 
+warranty liability of limited to repair and/or replace on the terms set forth above. 
+will not be res onsible for a ent or conse uential events. 
+HOLOCENE HOLOCENE
+half
+of 
+accordance 
+usof
+HOLOCENE
+HOLOCENE
+LCD MODULE Version : 1.2 30, 2021TK035F3296 April

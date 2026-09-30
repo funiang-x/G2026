@@ -2,7 +2,7 @@
 """ADC1 段重建（带 IPParameters 声明）+ IP 列表加 ADC1 —— 不依赖锚点行"""
 import io, re
 
-P = r"C:\Users\funiang\Desktop\Project\products\G2026\firmware\G2026.ioc"
+P = r"C:\Users\funiang\Desktop\Project\projects\G2026\firmware\G2026.ioc"
 s = io.open(P, encoding="utf-8").read()
 
 # 1) ADC1 段重建

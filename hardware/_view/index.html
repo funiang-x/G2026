@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>easyeda-viewer harness</title>
+<style>html,body{margin:0;height:100%;overflow:hidden}iframe{border:0;width:100%;height:100%;display:block}</style>
+</head>
+<body>
+<!--
+  easyeda-viewer 独立产物（dist/index.html）**不支持** ?file= 参数（那只在仓库的 qa/viewer.html 里实现）。
+  本页是 skill `easyeda-viewer` 的包装层：把 dist 产物放 iframe，读 ?file= / ?files= 后用
+  postMessage 的 `load` 指令（base64）把文件喂进去，从而拿到等价的 ?file= 语义。
+  支持的参数：file=（可重复）/ files=（逗号分隔）/ open= / theme= / chrome=canvas|1
+-->
+<iframe id="v" src="viewer.html?chrome=canvas"></iframe>
+<script>
+const params = new URLSearchParams(location.search);
+const files = params.getAll('file').filter((p) => p && p !== 'none')
+  .concat(params.get('files') ? params.get('files').split(',') : []);
+const open = params.get('open') || '';
+const theme = params.get('theme') || '';
+const chrome = params.get('chrome') || '';
+const q = [];
+if (theme) q.push('theme=' + encodeURIComponent(theme));
+if (chrome) q.push('chrome=' + encodeURIComponent(chrome));
+const frame = document.getElementById('v');
+if (q.length) frame.src = 'viewer.html?' + q.join('&');
+window.__harness = { status: 'init', files: files.length };
+
+function toB64(u8) {
+  let bin = '';
+  const CH = 0x8000;
+  for (let i = 0; i < u8.length; i += CH) {
+    bin += String.fromCharCode.apply(null, u8.subarray(i, i + CH));
+  }
+  return btoa(bin);
+}
+
+frame.addEventListener('load', async () => {
+  try {
+    const list = [];
+    for (const p of files) {
+      const buf = await fetch(p).then((r) => {
+        if (!r.ok) throw new Error(p + ' HTTP ' + r.status);
+        return r.arrayBuffer();
+      });
+      list.push({ name: p.split('/').pop(), dataBase64: toB64(new Uint8Array(buf)) });
+    }
+    window.__harness.status = 'loaded';
+    frame.contentWindow.postMessage({ source: 'easyeda-viewer', cmd: 'load', files: list }, '*');
+    if (open) {
+      setTimeout(() => frame.contentWindow.postMessage(
+        { source: 'easyeda-viewer', cmd: 'open', nodeId: open }, '*'), 800);
+    }
+    // 让自动化能等到"渲染完成"
+    setTimeout(() => { window.__harness.status = 'ready'; }, 2500);
+    // 可选：模拟滚轮缩放（zoom=fx,fy,times），便于局部放大截图
+    const zoom = params.get('zoom');
+    if (zoom) {
+      const [fx, fy, times] = zoom.split(',').map(Number);
+      await new Promise((r) => setTimeout(r, 3000));
+      try {
+        const doc = frame.contentDocument;
+        const cv = doc.querySelector('.ev-canvas') || doc.querySelector('canvas');
+        const rect = cv.getBoundingClientRect();
+        const x = rect.left + rect.width * (fx || 0.5), y = rect.top + rect.height * (fy || 0.5);
+        for (let i = 0; i < (times || 2); i++) {
+          cv.dispatchEvent(new frame.contentWindow.WheelEvent('wheel',
+            { deltaY: -400, clientX: x, clientY: y, bubbles: true, cancelable: true }));
+        }
+        window.__harness.zoomed = times || 2;
+      } catch (e) { window.__harness.status = 'zoom-error:' + (e.message || e); }
+    }
+  } catch (e) {
+    window.__harness.status = 'error:' + (e.message || e);
+  }
+});
+window.addEventListener('message', (e) => {
+  const m = e.data;
+  if (m && m.source === 'easyeda-viewer' && m.event === 'error') {
+    window.__harness.status = 'viewer-error:' + m.message;
+  }
+});
+</script>
+</body>
+</html>

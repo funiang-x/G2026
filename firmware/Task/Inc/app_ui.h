@@ -30,6 +30,14 @@ int app_ui_init(void);
  * （切到才刷 —— 测量周期 500ms，四页全刷是无谓的 FSMC 带宽）。 */
 void app_ui_poll(uint32_t now_ms);
 
+/* UI 任务体（由 `app_tasks_init()` 用 xTaskCreateStatic 建）。**不返回**。
+ *
+ * 每 APP_TICK_PERIOD_MS 一拍：先做"采集窗静默"（engine 采集中就等一下，
+ * 不写 FSMC），再 `app_ui_poll` + `app_lvgl_poll`（LVGL 重绘/读触摸都在里面）。
+ * ⚠️ 全工程**只有本任务**碰 LVGL —— 它没有线程安全保证（除自带 mutex 的
+ *    内存池），多任务同时调 lv_timer_handler 会坏。 */
+void app_ui_task(void *arg);
+
 #ifdef __cplusplus
 }
 #endif

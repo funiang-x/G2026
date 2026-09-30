@@ -25,12 +25,10 @@
 /* ★ 崩溃取证：HardFault_Handler 要把栈帧交给 Device 层。
  *   Core/ 是生成物，但 USER CODE 段可以 include 手写层的头（同 main.c 的做法）。 */
 #include "bsp_fault.h"
-/* ★ 采样链的 DMA 完成中断也要转给 Device 层 —— 理由同上。
- *   为什么必须转发而不是让 Device 自己定义这个 handler：CubeMX **总会**生成一个
- *   空的 `DMA2_Stream0_IRQHandler()`（哪怕 .ioc 里没给 DMA 配请求），
- *   而它在 USER CODE 段之外、按 R4 不能删 ⇒ 两边都定义会 multiple definition。 */
-#include "bsp_adc.h"
-/* USER CODE END Includes */
+/* ★ 2026-09-28：ADC 的 DMA 中断已由 CubeMX 生成的
+ *   `DMA2_Stream0_IRQHandler → HAL_DMA_IRQHandler(&hdma_adc1)` 直接接管
+ *   （.ioc 勾选了 DMA2_Stream0 中断），旧的 bsp_adc 转发机制退役。
+ * USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN TD */
@@ -63,6 +61,7 @@
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
+extern DMA_HandleTypeDef hdma_adc1;
 extern SD_HandleTypeDef hsd;
 extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
 extern TIM_HandleTypeDef htim6;
@@ -209,6 +208,20 @@ void TIM6_DAC_IRQHandler(void)
   /* USER CODE BEGIN TIM6_DAC_IRQn 1 */
 
   /* USER CODE END TIM6_DAC_IRQn 1 */
+}
+
+/**
+  * @brief This function handles DMA2 stream0 global interrupt.
+  */
+void DMA2_Stream0_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA2_Stream0_IRQn 0 */
+
+  /* USER CODE END DMA2_Stream0_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_adc1);
+  /* USER CODE BEGIN DMA2_Stream0_IRQn 1 */
+
+  /* USER CODE END DMA2_Stream0_IRQn 1 */
 }
 
 /**

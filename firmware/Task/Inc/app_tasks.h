@@ -1,89 +1,52 @@
 #ifndef APP_TASKS_H
 #define APP_TASKS_H
 /* ============================================================================
- *  app_tasks.h —— 任务划分与 **DSP → UI 数据交接**（配置文档 §9 / §10）
+ *  app_tasks —— 任务创建（全静态）· 见 project_config.h 的参数小节
  *
- *  ---- 任务表（优先级铁律见 project_config.h）----
- *      Task_Meas  5  ·  Task_Dsp  4  ·  Task_Link  3  ·  Task_Ui  2  ·  Task_Sys  1
+ *  ---- 任务表（2026-09-28 定）----
+ *      Task_Engine  26  ·  Task_Ui  23  ·  defaultTask(CubeMX)  24
  *
- *  ---- 交接机制（**没有 UART 组帧了**）----
- *  单芯片方案把"UART 921600 组帧发 ESP32"整条删掉，改成：
+ *      Task_Engine  测量编排：阻塞等 ADC 帧信号量 → DSP 链 → 发结果（app_engine.c）
+ *      Task_Ui      LVGL 主循环 + 四页面刷新（app_ui.c）—— 全工程唯一碰 LVGL 的任务
+ *      defaultTask  心跳 / 闪灯 / RTC（app_rtos.c 的 app_rtos_run）—— CubeMX 生成
  *
- *      Task_Meas ──[q_raw：帧引用，几十字节]──▶ Task_Dsp
- *      Task_Dsp  ──[q_result：dsp_result_t 拷贝，≤128 B]──▶ Task_Ui
- *      Task_Dsp  ──[g_wave 双缓冲 ping-pong + 有效索引]────▶ Task_Ui
+ *  ---- 跨任务数据通路 ----
+ *      Task_Engine ──[结果 mailbox：1 深队列 + xQueueOverwrite，≤64B]──▶ Task_Ui
+ *      帧就绪       ──[ADC 帧二值信号量：DMA 中断给、engine 取]──▶ Task_Engine
+ *      重测请求     ──[任务通知：UI 发、engine 收]──▶ Task_Engine
  *
- *  三条约束（文档 §10.2）：
- *    1. `dsp_result_t` **必须 ≤ 128 B**，由 `_Static_assert` 把关 ——
- *       **绝不许把频谱/波形数组塞进去**（队列是按值拷贝的，代价随大小线性涨）；
- *    2. `g_wave` 用**乒乓双缓冲**（`g_wave[2][256]`，1 KB）：DSP 写 A 时 UI 读 B，
- *       结果结构体里带"当前有效缓冲号"。比加锁简单，也不会撕裂；
- *    3. **UI 只读，不回写** —— UI 不做任何测量判定。
+ *  ---- 为什么全部用 `xTaskCreateStatic` ----
+ *  栈与 TCB 一律是本文件的 **static 数组**，不动 FreeRTOS 堆（堆只留给内核对象
+ *  与 LVGL 的互斥量，configTOTAL_HEAP_SIZE = 15KB）。代价是"栈深写在编译期"，
+ *  换来的是**不会有运行期分配失败**。
  *
- *  ⚠️ 结构体里**不放指针指向会被覆写的缓冲**，只放值 + 索引（文档 §10.3）。
+ *  ---- 降级 ----
+ *  `app_tasks_init()` 失败时返回非 0；组合根（app.c）据 `app_tasks_ok()`
+ *  退回旧形态：在 app_poll 里每 10ms 内联跑 engine/ui（保底可用，不静默变砖）。
  * ==========================================================================*/
-#include <stdint.h>
 
-#include "project_config.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-/* ---------------------------------------------------------------- 报警位 ----
- * 依据配置文档 §15.4（来自上游总设计 §5.5）：
- *     DSP_FLAG_ALARM = 0x0ED7   全部报警位之和
- *     信息位          = 0x1128   ALIGNED | DEGRADED | OUTBAND | AUDIT_OK
- *     并集            = 0x1FFF   13 位全定义
- * ⚠️ **判异常一律写 `(flags & DSP_FLAG_ALARM) != 0`，禁止写 `flags == 0`**
- *    —— 信息位也在 flags 里，后者会把"有信息位"误判成异常。 */
-#define DSP_FLAG_ALARM 0x0ED7U
-#define DSP_FLAG_INFO 0x1128U
-
-/* 结果结构体的硬上限（文档 §13-10）。 */
-#define DSP_RESULT_MAX_BYTES 128U
-
-/* DSP → UI 的一帧结果。**只放值**，不放指针。 */
-typedef struct {
-    uint32_t seq;      /* 帧序号：UI 用它判断"这是不是新结果" */
-    float    freq_hz;  /* 主频（Hz）*/
-    float    vpp_mv;   /* 峰峰值（mV）*/
-    float    vrms_mv;  /* 有效值（mV）*/
-    float    duty;     /* 占空比 0~1（测不出时填 0）*/
-    uint16_t wave_idx; /* g_wave 的**有效缓冲号**（乒乓：0 或 1）*/
-    uint16_t flags;    /* DSP_FLAG_* 位域 */
-} dsp_result_t;
-
-/* ★ 文档 §13-10 的机器强制：超了就**编译失败**，不会等到跑起来才发现队列拷贝变慢。 */
-_Static_assert(sizeof(dsp_result_t) <= DSP_RESULT_MAX_BYTES, "dsp_result_t 超 128 B");
-
-/* 原始帧的**引用**（不是数据本身）：4096 点的 uint16 是 8KB，
- * 走队列拷贝不现实 ⇒ 只传"是哪一块缓冲 + 多少点"，数据本体在 app_tasks.c 里。 */
-typedef struct {
-    uint8_t buf_idx; /* 采集缓冲号（乒乓：0 或 1）*/
-    uint8_t _pad[3];
-    uint32_t count; /* 有效点数 */
-} dsp_frame_t;
-
-/* 命令（UI / 调试口 → Task_Meas）。具体命令集等命令协议定下来再补。 */
-typedef struct {
-    uint16_t id;
-    uint16_t arg;
-} app_cmd_t;
-
-/* 波形乒乓缓冲：`g_wave[有效号][0..APP_WAVE_POINTS-1]`。
- * ⚠️ **UI 只读**；写它的一律是 Task_Dsp。 */
-extern uint16_t g_wave[2][APP_WAVE_POINTS];
-
-/* 创建 4 个**静态**任务（Meas / Dsp / Link / Ui）与全部队列。
- * 返回 0 = 成功；-1 = 有对象没建起来（内存/配置问题，日志里会指出是哪个）。
- *
- * ⚠️ 必须在**调度器启动之前**调用（组合根 `app_init()` 里）——
- *    `xTaskCreateStatic` 在 vTaskStartScheduler 之前调用是允许的。
- * ⚠️ `Task_Sys` **不在本函数里建**：它是 CubeMX 强制保留的那个 `defaultTask`
- *    （`.ioc` 的 FREERTOS.Tasks01，优先级 1 / 256 words），任务体是
- *    `Task/Src/app_rtos.c` 的 `app_rtos_run()`。原因见 project_config.h。 */
+/* 建 Task_Engine / Task_Ui（静态）。0 = 成功，-1 = 失败。
+ * ⚠️ 由 `app_rtos_run()`（defaultTask 体）在调度器启动后调一次。 */
 int app_tasks_init(void);
 
-/* 打印各任务的**栈高水位**（剩余栈的最小值，单位 word）。
- * 由 Task_Sys 周期性调用 —— 栈溢出是本工程最难查的一类故障，
- * 高水位是唯一能"提前看到"它的手段。 */
+/* 1 = 上面两个任务确实建起来了（组合根据此决定是否走降级路径）。 */
+int app_tasks_ok(void);
+
+/* 把两个任务的**栈高水位**（剩余栈最小值，单位 word）打进日志。
+ *
+ * ★ 为什么需要它：栈溢出在裸机上是"随机跑飞"，极难归因。高水位只降不升，
+ *   所以"它贴近 0"就是栈快不够的**提前预警** —— 这是 `configCHECK_FOR_STACK_OVERFLOW`
+ *   之外唯一的观测手段。
+ * ⚠️ 要**上板跑够久**才有意义：至少覆盖 DSP 全链 + LVGL 重绘 + 一次标定
+ *   （标定在 UI 任务里跑同步测量，是 UI 栈的最坏路径）。
+ * 由组合根在 APP_STACK_REPORT_MS 时调一次（见 app.c）。 */
 void app_tasks_report_stack(void);
 
+#ifdef __cplusplus
+}
+#endif
 #endif /* APP_TASKS_H */

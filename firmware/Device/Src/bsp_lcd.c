@@ -76,6 +76,9 @@ int bsp_lcd_init(void) {
 }
 
 void bsp_lcd_backlight(int on) {
+    /* ⚠️ 数字开关、恒亮、禁 PWM —— PWM 调光的谐波列会全落 10k~500k 分析带，
+     *    是固定频率伪峰制造机（干扰源管理红线，见 board_config.h 背光节）。
+     *    本层也不提供调光接口 —— 没有调光需求，接口留了就会被用。 */
     bsp_gpio_write(s_bl, on ? 1 : 0);
 }
 
