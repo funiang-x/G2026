@@ -148,24 +148,33 @@ SECTIONS
     . = ALIGN(4);
   } >FLASH
 
-  _siccmram = LOADADDR(.ccmram);
-
-  /* CCM-RAM section
-  *
-  * IMPORTANT NOTE!
-  * If initialized variables will be placed in this section,
-  * the startup code needs to be modified to copy the init-values.
-  */
-  .ccmram :
+  /* CCM-RAM 段：**只放"用前必先写"的大缓冲**（app_engine 的 s_fft = 32KB）。
+   *
+   * ⚠️ 2026-10-02 两处修正（原因/证据见 hardware/25 §6-S3）：
+   *   ① 加 (NOLOAD)：原来 `AT> FLASH` 把这 32KB 当成"有初值"塞进 FLASH 的 LMA
+   *      （readelf 实测 .ccmram 占 FLASH 0x8000），而 startup_stm32f407xx.s 只处理
+   *      _sidata/_sbss/_ebss、**没有 .ccmram 的拷贝循环** ⇒ 既不拷也不读，纯浪费 FLASH。
+   *      加 NOLOAD 后 LMA 消失，FLASH 立省 32KB。
+   *   ② 本段内容**开机时不确定**（没人清它）⇒ 这里只许放"用前必被全量写"的缓冲，
+   *      声明时不要带初值（带初值只会静默无效）。
+   * ⚠️ 越界会**静默压进 LVGL 堆**：BOARD_LVGL_MEM_ADDR = 0x10008000 正好紧邻本段末尾
+   *    （CCM 低半区给 .ccmram、高半区给 LVGL 池）⇒ 下面两条 ASSERT 就是那道闸。
+   *    原来 app_engine 的注释声称"链接脚本有越界 ASSERT"——其实**没有**，本次补上。 */
+  .ccmram (NOLOAD) :
   {
     . = ALIGN(4);
-    _sccmram = .;       /* create a global symbol at ccmram start */
+    _sccmram = .;       /* .ccmram 起址（CCMRAM 低半区） */
     *(.ccmram)
     *(.ccmram*)
 
     . = ALIGN(4);
-    _eccmram = .;       /* create a global symbol at ccmram end */
-  } >CCMRAM AT> FLASH
+    _eccmram = .;       /* .ccmram 末址 —— 必须 ≤ LVGL 池基址 */
+  } >CCMRAM
+
+  ASSERT(_eccmram <= 0x10008000,
+         "CCMRAM 低半区溢出：.ccmram 压进了 LVGL 堆（BOARD_LVGL_MEM_ADDR=0x10008000）")
+  ASSERT(_eccmram <= 0x10010000,
+         "CCMRAM 段超出 64KB 物理容量")
 
   /* used by the startup to initialize data */
   _sidata = LOADADDR(.data);

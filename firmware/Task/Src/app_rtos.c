@@ -34,6 +34,19 @@ void app_rtos_run(void) {
         LOG_E("[RTOS] 多任务未建起 —— 降级为单循环（engine/ui 内联在 app_poll 里）");
     }
 
+    /* ★ 采样链自检放在这里，不放 app_init()：它要真启动一次采集，路上有
+     *   `xSemaphoreTake` 与 DMA 中断里的 `xSemaphoreGiveFromISR` 两处 FreeRTOS
+     *   原语，调度器启动前跑会被 ISR 入栈校验断言拦成死循环（2026-10-02 实测）。
+     *   建任务成功与否都跑 —— 降级路径下采样链照样要能用。
+     *
+     * ★ 2026-10-03：**先等模拟轨建立**。`VBIAS` 由 `2.0kΩ`（R9//R10//R2//R5//R7）
+     *   充 `C13 = 10µF` ⇒ τ = 20ms、到 0.1% 要 138ms；不等就采，帧直流均值会偏出
+     *   半量程带 ⇒ 报一行**假的**「模拟轨可疑」。
+     *   改前靠 `bsp_lcd_init()` 里 140ms 的 HAL_Delay 侥幸盖住 —— 那是屏的时序需求，
+     *   不该被当成 AFE 的依赖。机理与取值见 `board_config.h` 的 `BOARD_AFE_SETTLE_MS`。 */
+    osDelay(APP_AFE_SETTLE_MS);
+    app_adc_selftest();
+
     for (;;) {
         app_poll();
         osDelay(APP_TICK_PERIOD_MS);

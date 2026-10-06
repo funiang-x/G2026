@@ -43,6 +43,13 @@ int bsp_touch_self_check(void);
  * 返回 -1 = I2C 出错。 */
 int bsp_touch_read(bsp_touch_point_t *pt);
 
+/* ---- 轴映射开关（2026-10-02 新增；默认值取自 board_config.h 的三个宏）----
+ * 为什么做成运行时可改：横屏/竖屏差一个轴交换、面板贴合方向差镜像，**只有实物上
+ * 点四角才知道**。UI 第 5 页"TOUCH"用它们现场试，凑对了再写回 board_config.h 固化。
+ * 参数：swap_xy/ inv_x / inv_y，非 0 即开启。 */
+void bsp_touch_set_mapping(int swap_xy, int inv_x, int inv_y);
+void bsp_touch_get_mapping(int *swap_xy, int *inv_x, int *inv_y);
+
 #ifdef __cplusplus
 }
 #endif

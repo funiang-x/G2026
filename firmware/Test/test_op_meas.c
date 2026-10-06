@@ -27,12 +27,14 @@
 #include "test_util.h"
 
 #define FS_HZ 2000000.0f
-#define LSB_MV (3300.0f / 4096.0f / 4.0f) /* 输入端 LSB，verify_dsp 的 LSB_IN */
+#define LSB_MV (3300.0f / 4096.0f / 2.0f) /* 输入端 LSB：VREF≈3.3V（官方 .epro 核实，见 board_config.h）、净增益 2.0 */
 
 /* u_J 源端峰值（mVpk）：题面 200mVpp。与 verify_dsp.py 的 UJ_PEAK 同值。 */
 #define UJ_PEAK_MV 100.0
 
-/* 抗混叠低通的角频率（Hz）：8 阶巴特沃斯 fc=800k，硬件定稿值。 */
+/* 抗混叠低通的角频率（Hz）：**保守模型**取 8 阶巴特沃斯 fc=800k（门限反解出的
+ * 最坏允许值）；图纸实落的无源 LC 梯形是 fc≈650k（@1.5M 归一化 −59.3dB，见
+ * hardware/17）。用 800k 建模 = 假定滤波器比实物差 ⇒ 混叠残留测得更严。 */
 #define LPF_FC_HZ 800000.0
 
 /* 静态缓冲：host 上无所谓；大小与 MCU 侧一致，防止"测试悄悄比板子宽裕"。

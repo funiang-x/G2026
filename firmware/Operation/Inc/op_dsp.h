@@ -8,7 +8,7 @@
  *        → FFT → mag[k]（k=1..N/2−1；mag[0] 含 DC+Nyquist，写 0 丢弃）
  *
  *  ---- 量纲 ----
- *  全链 mV（输入端口径）：lsb_in_mv = 3.3V/4096/前端增益（verify_dsp 的 LSB_IN），
+ *  全链 mV（输入端口径）：lsb_in_mv = VREF/4096/净增益（verify_dsp 的 LSB_IN），
  *  由 Task 注入（Operation 不读 board_config —— R2，PC 上要能单测）。
  *
  *  ---- 缓冲归调用方 ----

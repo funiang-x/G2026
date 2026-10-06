@@ -1,0 +1,21 @@
+{
+    "cmake.sourceDirectory": "C:/Users/funiang/Desktop/Project/projects/G2026/firmware",
+    // 隐藏原则：给你看的=骨架文件+编号文档+你写的源码；其余（AI 工作区/厂商库/构建产物/历史归档）全藏。
+    // 用途与证据清单见 AGENTS.md 与 _archive/MANIFEST.md。
+    "files.exclude": {
+        "**/.ai-skills-state": true,
+        "**/.codebuddy": true,
+        "**/.easyeda": true,
+        "**/.trae": true,
+        "**/.workbuddy-ai": true,
+        "**/.vscode": true,
+        "**/_archive": true,
+        "**/_work": true,
+        "docs/立创·梁山派·天空星STM32F407VET6开发板资料（标准库）": true,
+        "docs/TK035F5687_9629_整理资料_(含SPI及并口版)": true,
+        "firmware/build": true,
+        "firmware/Middlewares": true,
+        "firmware/Drivers": true,
+        "hardware/data": true
+    }
+}

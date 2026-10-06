@@ -17,8 +17,9 @@
  *     每 10ms 调 `app_engine_poll()`。两条路径共用 `engine_measure_once()`。
  *
  *  ---- 内存落点 ----
- *  s_adc_buf 在 SRAM1（DMA 可达）；s_xw/s_fft 两块 f32 在 CCM 低 32KB
- *  （section .ccmram，链接脚本有越界 ASSERT；CCM 不能被 DMA 摸 —— 它们不碰 DMA）。
+ *  s_adc_buf 在 SRAM1（DMA 可达）；**只有 s_fft(32KB)** 在 CCM 低半区（section .ccmram，
+ *  `s_xw` 在 SRAM）；CCM 不能被 DMA 摸 —— 它们不碰 DMA。
+ *  ⚠️ 越界**目前没有**链接脚本 ASSERT 拦（原注释说的那条不存在），见 hardware/25 §6-S3。
  *
  *  ---- ⚠️ 为什么采集侧**不做**乒乓双缓冲（诚实标注）----
  *  本机是"按需采一帧"的门控采集：生产者 2.048ms/帧、消费者(DSP) ~13ms/帧，
@@ -76,8 +77,16 @@ const meas_result_t *app_engine_result(void);
 
 /* 1 = 采样窗进行中（engine 正在等 DMA 搬满）。
  * UI 任务据此**推迟** FSMC 刷新 —— 机制性消除"采集瞬间 LCD 总线噪声灌进 AFE"
- * 这一最大板内干扰源（硬件方案 02 §6 O1）。 */
+ * 这一最大板内干扰源（硬件方案 02 §6 O1）。
+ * ⚠️ **这个标志位本身不足以保证静默**：它只能在"下一次 flush 开始前"生效，
+ *    而一次 flush（320×48px @DS=85/144MHz）≈9ms ≫ 采样窗 2.048ms ——
+ *    已经开始的写屏会横跨整个采样窗。真正落地靠下面那把**总线闸**。 */
 int app_engine_acquiring(void);
+
+/* ---- LCD 总线闸：**实现在 Device 层**（`bsp_lcd_bus_take/give`，见 bsp_lcd.h）----
+ * 这里只留说明：engine 在开采集之前 take、采完 give；写屏侧每 `APP_LCD_CHUNK_PX`
+ * 像素 take/give 一次。两边靠**同一把闸**在块边界交接 ⇒ 采样窗内 FSMC 静态。
+ * （放 Device 而不是 Task，是为了不引入 task_root→task_ops 的跨库依赖。） */
 
 /* 场景标注（MODE 切换，算法唯一 —— docs/01 §7）。 */
 void    app_engine_set_scene(uint8_t scene);

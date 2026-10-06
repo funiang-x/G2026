@@ -122,7 +122,17 @@
  * - LV_OS_MQX
  * - LV_OS_SDL2
  * - LV_OS_CUSTOM */
-#define LV_USE_OS   LV_OS_FREERTOS
+/* ★ 本工程 = LV_OS_NONE（2026-10-02 上板实测后定，别改回去）：
+ *   LVGL 只在 app_ui_task 一个任务里被碰（app_lvgl_poll），本不需要跨任务锁。
+ *   而 LV_OS_FREERTOS 会让 lv_init() 与绘制路径里的 lv_mutex_init/lv_mutex_lock
+ *   去建/取 FreeRTOS 互斥量（lv_draw_sw_mask.c / lv_image_decoder.c）—— 那要进
+ *   临界区；而本工程的 LVGL 初始化跑在**调度器启动前**（app_init）⇒
+ *   uxCriticalNesting 是哨兵值、退出时不恢复中断 ⇒ BASEPRI 被钉住 →
+ *   TIM6 时基与 ADC DMA 中断全失效 → lv_delay_ms() 死等（机理见 bsp_log.c 顶部）。
+ *   ponytail: 天花板 = LVGL 从此**只能单任务访问**。哪天要从别的任务调
+ *   lv_async_call 之类，必须改回 LV_OS_FREERTOS **并且**把 LVGL 初始化挪到
+ *   调度器启动之后 —— 只改这一行会把上面那条死链原样请回来。 */
+#define LV_USE_OS   LV_OS_NONE
 
 #if LV_USE_OS == LV_OS_CUSTOM
     #define LV_OS_CUSTOM_INCLUDE <stdint.h>
@@ -768,7 +778,7 @@
 
 #define LV_USE_ANIMIMG    0
 
-#define LV_USE_ARC        0
+#define LV_USE_ARC        1
 
 #define LV_USE_ARCLABEL  0
 
@@ -797,15 +807,15 @@
 
 #define LV_USE_CHART      1
 
-#define LV_USE_CHECKBOX   0
+#define LV_USE_CHECKBOX   1
 
-#define LV_USE_DROPDOWN   0   /**< Requires: lv_label */
+#define LV_USE_DROPDOWN   1   /**< Requires: lv_label */
 
 #define LV_USE_IMAGE      1   /**< Requires: lv_label */
 
 #define LV_USE_IMAGEBUTTON     0
 
-#define LV_USE_KEYBOARD   0
+#define LV_USE_KEYBOARD   1
 
 #define LV_USE_LABEL      1
 #if LV_USE_LABEL
@@ -824,13 +834,13 @@
 
 #define LV_USE_MENU       0
 
-#define LV_USE_MSGBOX     0
+#define LV_USE_MSGBOX     1
 
-#define LV_USE_ROLLER     0   /**< Requires: lv_label */
+#define LV_USE_ROLLER     1   /**< Requires: lv_label */
 
-#define LV_USE_SCALE      0
+#define LV_USE_SCALE      1
 
-#define LV_USE_SLIDER     0   /**< Requires: lv_bar */
+#define LV_USE_SLIDER     1   /**< Requires: lv_bar */
 
 #define LV_USE_SPAN       0
 #if LV_USE_SPAN
@@ -838,17 +848,17 @@
     #define LV_SPAN_SNIPPET_STACK_SIZE 64
 #endif
 
-#define LV_USE_SPINBOX    0
+#define LV_USE_SPINBOX    1
 
-#define LV_USE_SPINNER    0
+#define LV_USE_SPINNER    1
 
-#define LV_USE_SWITCH     0
+#define LV_USE_SWITCH     1
 
-#define LV_USE_TABLE      0
+#define LV_USE_TABLE      1
 
-#define LV_USE_TABVIEW    0
+#define LV_USE_TABVIEW    1
 
-#define LV_USE_TEXTAREA   0   /**< Requires: lv_label */
+#define LV_USE_TEXTAREA   1   /**< Requires: lv_label */
 #if LV_USE_TEXTAREA != 0
     #define LV_TEXTAREA_DEF_PWD_SHOW_TIME 1500    /**< [ms] */
 #endif
@@ -1458,6 +1468,10 @@
 
 #if LV_BUILD_DEMOS
     /** Show some widgets. This might be required to increase `LV_MEM_SIZE`. */
+    /* ★ 2026-10-02 关闭（S5 清残留）：交付态是业务 UI（`APP_LVGL_USE_DEMO=0`），
+     *   demo 不再被任何代码引用 ⇒ 关掉它，widgets 源码也就不进 lvgl target
+     *   （见 CMakeLists.txt）。要再上板验证显示/触摸时，把这里和 project_config.h
+     *   的 `APP_LVGL_USE_DEMO` 一起改回 1，并把 CMakeLists 的 demo 源加回去。 */
     #define LV_USE_DEMO_WIDGETS 0
 
     /** Demonstrate usage of encoder and keyboard. */

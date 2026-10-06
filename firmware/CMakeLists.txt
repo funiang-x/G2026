@@ -221,7 +221,6 @@ add_library(device STATIC
     Device/Src/bsp_rtc.c
     Device/Src/bsp_sd.c
     Device/Src/bsp_spi.c
-    Device/Src/bsp_stack.c
     Device/Src/bsp_tick.c
     Device/Src/bsp_touch.c)
 target_include_directories(device PUBLIC Device/Inc)
@@ -266,6 +265,14 @@ target_compile_definitions(freertos_headers INTERFACE STM32F407xx)
 # ============================================================================
 file(GLOB_RECURSE LVGL_SOURCES
     ${CMAKE_SOURCE_DIR}/Middlewares/LVGL/src/*.c)
+
+# 官方 demos：**2026-10-02 起不再进构建**（S5 清残留）。
+# 理由：交付态 `APP_LVGL_USE_DEMO=0`（业务 UI），demo 无人引用；`LV_USE_DEMO_WIDGETS`
+# 也已关（lv_conf.h）。要再上板验证显示/触摸时：打开这两个开关 + 把下面两行放回来。
+# file(GLOB LVGL_WIDGET_DEMO_SOURCES
+#     ${CMAKE_SOURCE_DIR}/Middlewares/LVGL/demos/widgets/lv_demo_widgets.c
+#     ${CMAKE_SOURCE_DIR}/Middlewares/LVGL/demos/widgets/assets/*.c)
+# list(APPEND LVGL_SOURCES ${LVGL_WIDGET_DEMO_SOURCES})
 
 add_library(lvgl STATIC ${LVGL_SOURCES})
 target_include_directories(lvgl SYSTEM PUBLIC

@@ -18,9 +18,9 @@ CRIT_AMP = 5.0          # mV 幅值判据
 CRIT_F = 1000.0         # Hz 基频判据
 F_MIN, F_MAX = 10e3, 500e3
 UJ_PEAK = 100.0         # mV，u_J 200mVpp 的峰值
-ADC_FS_MV = 3300.0
+ADC_FS_MV = 3300.0      # VREF+ ≈ VDDA(3V3 经磁珠) 经 R4 47Ω；板载 REF3030 不贴（官方 .epro，2026-10-02）
 ADC_BITS = 12
-G_FRONT = 4.0           # 前端增益
+G_FRONT = 2.0           # 源端→ADC 净增益：0.5(端接)×0.5(LC插损)×≈8(U1B)（2026-09-30 改图后）
 LSB_IN = ADC_FS_MV / (2**ADC_BITS) / G_FRONT  # 输入端等效 LSB (mV)
 
 # BH4 (Blackman-Harris 4-term)

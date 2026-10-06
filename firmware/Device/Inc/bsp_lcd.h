@@ -76,6 +76,25 @@ void bsp_lcd_write_pixels(const uint8_t *px, uint32_t len);
 /* ---- 纯色填充（分步点亮用，不经 LVGL）---- */
 void bsp_lcd_fill(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t rgb565);
 
+/* ================= LCD 总线闸（2026-10-02 新增）=================
+ * 目的：**采样窗静默**（硬件方案 02 §6 O1）的真正落地机制。一次 flush
+ * （320×48px @DS=85/144MHz）≈9ms，比 engine 的采样窗 2.048ms 长得多；
+ * 只靠"flush 前看一眼标志"挡不住已经开始的写屏。
+ *
+ * 用法（两边都调这两个函数）：
+ *   · engine（app_engine.c）：**开采集之前** take、采完（或启动失败）give；
+ *   · 写屏侧（app_lvgl.c 的 flush）：每写 `APP_LCD_CHUNK_PX` 像素 take/give 一次。
+ * ⇒ 采样窗内一次 FSMC 写都不会发生；代价是 engine 起采最多晚 1 块（≈0.6ms）、
+ *    flush 被推迟 ≤2ms（屏刷新率本就不敏感）。
+ *
+ * 语义：标准互斥量（带优先级继承 —— 写屏侧持闸时 engine 来抢，会让写屏侧
+ * 临时提权把当前块写完再让闸）。`bsp_lcd_bus_take` 超时返回 0。
+ * 闸没建起来（init 失败）时两者都是空操作：不阻塞、不崩。
+ * ⚠️ 放在 Device 层是因为**总线的主人**在这里；task_root 与 task_ops 都链 device，
+ *    放 Task 层会引入 task_root→task_ops 的跨库依赖（那要改 CMake 目标划分）。 */
+int  bsp_lcd_bus_take(uint32_t timeout_ms);
+void bsp_lcd_bus_give(void);
+
 /* 屏的分辨率（= board_config.h 的 BOARD_LCD_WIDTH/HEIGHT）。 */
 uint32_t bsp_lcd_width(void);
 uint32_t bsp_lcd_height(void);

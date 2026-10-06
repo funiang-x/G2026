@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>G2026 · 引脚映射核对报告 · 2026-10-05</title>
+<style>
+:root{--ink:#1c2733;--mut:#5b6b7b;--line:#d9e1e8;--blue:#1d6fd6;--red:#c9184a;--green:#0b6e4f;--bg:#fffcf8}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.7 "Segoe UI",system-ui,"Microsoft YaHei",sans-serif}
+main{max-width:1080px;margin:0 auto;padding:18px 22px 80px}
+h1{font-size:23px;margin:14px 0 4px} h1 small{display:block;font-weight:400;color:var(--mut);font-size:13.5px;margin-top:4px}
+h2{font-size:18px;margin:30px 0 8px;padding:6px 12px;background:#eef3f8;border-left:4px solid var(--blue)}
+.ok{border:2px solid var(--green);background:#f2fbf7;border-radius:10px;padding:12px 16px;margin:12px 0 16px}
+.ok b{color:var(--green);font-size:16px}
+table{border-collapse:collapse;width:100%;margin:10px 0;font-size:12.5px}
+th,td{border:1px solid var(--line);padding:5px 8px;text-align:left;vertical-align:top}
+th{background:#eef3f8;font-weight:700;white-space:nowrap}
+td.m{font-family:Consolas,monospace;font-size:12px;white-space:nowrap}
+td.v{text-align:center;font-weight:700;color:var(--green)}
+tr.grp td{background:#f7fafc;font-weight:700;color:#1450a0}
+ol{font-size:13.5px} li{margin:6px 0}
+code{background:#f1f5f9;border-radius:3px;padding:0 3px;font-family:Consolas,monospace;font-size:12.5px}
+footer{color:var(--mut);font-size:12px;margin-top:36px;border-top:1px solid var(--line);padding-top:10px}
+@media print{body{font-size:11px}}
+</style></head><body><main>
+<h1>G2026 · 核心板引脚映射与 CubeMX 配置核对 <small>2026-10-05 · 只读核对，未改动任何文件</small></h1>
+<div class="ok">
+<p><b>结论：你的引脚配置没有搞错。</b></p>
+<p>我用<b>五份证据</b>逐脚对过：① 你的截图 ② <code>firmware/G2026.ioc</code>（CubeMX 实际状态）
+③ <code>firmware/Core/Inc/board_config.h</code>（工程口径）④ <code>hardware/04-pinout连接表.md</code>
+⑤ ST 的 FSMC/AF 复用表（公开资料）。<b>47 个已用引脚全部一致，0 处冲突。</b></p>
+<p>另外：截图里那些「着色但无标签」的脚（PB3~PB9 / PC0~PC3 / PE0~PE6 等），
+在 <code>.ioc</code> 里<b>确实没有任何配置</b>（已逐脚 grep 确认）—— 与工程口径「NC-排针悬空」一致，
+着色只是 CubeMX 在提示「该脚有可用复用功能」，不是「已配置」。</p>
+</div>
+
+<h2>§1 逐脚核对表</h2>
+<table><thead><tr><th>MCU 脚</th><th>你的截图</th><th>.ioc 实际</th><th>board_config.h</th>
+<th>外部资料依据</th><th>判定</th></tr></thead><tbody><tr class="grp"><td colspan="7">模拟输入</td></tr><tr><td class="m">PA1</td><td class="m">ADC1_IN1</td><td class="m">ADCx_IN1（未设 Label）</td><td>ADC1_IN1 · SMP=3 · DMA2_S0</td><td>STM32F407: ADC1_IN1 = PA1</td><td class="v">✔ 一致</td></tr><tr class="grp"><td colspan="7">屏背光</td></tr><tr><td class="m">PB0</td><td class="m">LCD_BL</td><td class="m">GPIO_Output</td><td>LCD_BL · 高=亮 · 禁 PWM</td><td>PB0 亦为 TIM3_CH3（勿配）</td><td class="v">✔ 一致</td></tr><tr class="grp"><td colspan="7">屏复位</td></tr><tr><td class="m">PB1</td><td class="m">LCD_RST</td><td class="m">GPIO_Output / Label=LCD_RST</td><td>LCD_RST · 低有效 · 闲置高</td><td>—</td><td class="v">✔ 一致</td></tr><tr class="grp"><td colspan="7">板载 LED</td></tr><tr><td class="m">PB2</td><td class="m">green_led</td><td class="m">GPIO_Output / Label=green_led</td><td>LED2 · 高电平点亮 · 初值 RESET</td><td>PB2 同时是 BOOT1（板载 10k 下拉）</td><td class="v">✔ 一致</td></tr><tr class="grp"><td colspan="7">触摸 SCL</td></tr><tr><td class="m">PB10</td><td class="m">TP_SCL</td><td class="m">I2C2_SCL (AF4)</td><td>I2C2 · 100 kHz · AF4</td><td>STM32F407: I2C2_SCL = PB10</td><td class="v">✔ 一致</td></tr><tr class="grp"><td colspan="7">触摸 SDA</td></tr><tr><td class="m">PB11</td><td class="m">TP_SDA</td><td class="m">I2C2_SDA (AF4)</td><td>I2C2 · AF4</td><td>STM32F407: I2C2_SDA = PB11</td><td class="v">✔ 一致</td></tr><tr class="grp"><td colspan="7">VBIAS 自检</td></tr><tr><td class="m">PC4</td><td class="m">VBIAS_SENSE</td><td class="m">GPIO_Input / PuPd=NOPULL / Label=VBIAS_SENSE</td><td>VBIAS_SENSE · 输入不驱动 · 不配 ADC1_IN14</td><td>—</td><td class="v">✔ 一致</td></tr><tr class="grp"><td colspan="7">触摸 INT</td></tr><tr><td class="m">PC5</td><td class="m">TP_INT</td><td class="m">GPIO_Input（内部上拉）</td><td>TP_INT · FT6336 开漏输出</td><td>—</td><td class="v">✔ 一致</td></tr><tr class="grp"><td colspan="7">SPI Flash CS</td></tr><tr><td class="m">PA4</td><td class="m">FLASH_CS</td><td class="m">GPIO_Output（软件 CS）</td><td>SPI_FLASH_CS · 软件片选</td><td>官方例程 014：NSS=PA4</td><td class="v">✔ 一致</td></tr><tr class="grp"><td colspan="7">SPI Flash SCK</td></tr><tr><td class="m">PA5</td><td class="m">FLASH_SCK</td><td class="m">SPI1_SCK (AF5)</td><td>SPI1_SCK · AF5</td><td>STM32F407: SPI1_SCK = PA5</td><td class="v">✔ 一致</td></tr><tr class="grp"><td colspan="7">SPI Flash MISO</td></tr><tr><td class="m">PA6</td><td class="m">FLASH_MISO</td><td class="m">SPI1_MISO (AF5)</td><td>SPI1_MISO · AF5</td><td>STM32F407: SPI1_MISO = PA6</td><td class="v">✔ 一致</td></tr><tr class="grp"><td colspan="7">SPI Flash MOSI</td></tr><tr><td class="m">PA7</td><td class="m">FLASH_MOSI</td><td class="m">SPI1_MOSI (AF5)</td><td>SPI1_MOSI · AF5</td><td>STM32F407: SPI1_MOSI = PA7</td><td class="v">✔ 一致</td></tr><tr class="grp"><td colspan="7">日志 TX</td></tr><tr><td class="m">PA9</td><td class="m">LOG_TX</td><td class="m">USART1_TX (AF7)</td><td>USART1 · AF7</td><td>STM32F407: USART1_TX = PA9</td><td class="v">✔ 一致</td></tr><tr class="grp"><td colspan="7">日志 RX</td></tr><tr><td class="m">PA10</td><td class="m">LOG_RX</td><td class="m">USART1_RX (AF7)</td><td>USART1 · AF7</td><td>STM32F407: USART1_RX = PA10</td><td class="v">✔ 一致</td></tr><tr class="grp"><td colspan="7">调试口</td></tr><tr><td class="m">PA13</td><td class="m">SWDIO</td><td class="m">SYS_JTMS-SWDIO</td><td>SWD · 禁止复用为 GPIO</td><td>STM32F407: SWDIO = PA13</td><td class="v">✔ 一致</td></tr><tr><td class="m">PA14</td><td class="m">SWCLK</td><td class="m">SYS_JTCK-SWCLK</td><td>SWD</td><td>STM32F407: SWCLK = PA14</td><td class="v">✔ 一致</td></tr><tr class="grp"><td colspan="7">FSMC 数据</td></tr><tr><td class="m">PD14</td><td class="m">FSMC_D0</td><td class="m">FSMC_D0 (AF12)</td><td>LCD_D0</td><td>FSMC_D0 = PD14</td><td class="v">✔ 一致</td></tr><tr><td class="m">PD15</td><td class="m">FSMC_D1</td><td class="m">FSMC_D1</td><td>LCD_D1</td><td>FSMC_D1 = PD15</td><td class="v">✔ 一致</td></tr><tr><td class="m">PD0</td><td class="m">FSMC_D2</td><td class="m">FSMC_D2</td><td>LCD_D2</td><td>FSMC_D2 = PD0</td><td class="v">✔ 一致</td></tr><tr><td class="m">PD1</td><td class="m">FSMC_D3</td><td class="m">FSMC_D3</td><td>LCD_D3</td><td>FSMC_D3 = PD1</td><td class="v">✔ 一致</td></tr><tr><td class="m">PE7</td><td class="m">FSMC_D4</td><td class="m">FSMC_D4</td><td>LCD_D4</td><td>FSMC_D4 = PE7</td><td class="v">✔ 一致</td></tr><tr><td class="m">PE8</td><td class="m">FSMC_D5</td><td class="m">FSMC_D5</td><td>LCD_D5</td><td>FSMC_D5 = PE8</td><td class="v">✔ 一致</td></tr><tr><td class="m">PE9</td><td class="m">FSMC_D6</td><td class="m">FSMC_D6</td><td>LCD_D6</td><td>FSMC_D6 = PE9</td><td class="v">✔ 一致</td></tr><tr><td class="m">PE10</td><td class="m">FSMC_D7</td><td class="m">FSMC_D7</td><td>LCD_D7</td><td>FSMC_D7 = PE10</td><td class="v">✔ 一致</td></tr><tr><td class="m">PE11</td><td class="m">FSMC_D8</td><td class="m">FSMC_D8</td><td>LCD_D8</td><td>FSMC_D8 = PE11</td><td class="v">✔ 一致</td></tr><tr><td class="m">PE12</td><td class="m">FSMC_D9</td><td class="m">FSMC_D9</td><td>LCD_D9</td><td>FSMC_D9 = PE12</td><td class="v">✔ 一致</td></tr><tr><td class="m">PE13</td><td class="m">FSMC_D10</td><td class="m">FSMC_D10</td><td>LCD_D10</td><td>FSMC_D10 = PE13</td><td class="v">✔ 一致</td></tr><tr><td class="m">PE14</td><td class="m">FSMC_D11</td><td class="m">FSMC_D11</td><td>LCD_D11</td><td>FSMC_D11 = PE14</td><td class="v">✔ 一致</td></tr><tr><td class="m">PE15</td><td class="m">FSMC_D12</td><td class="m">FSMC_D12</td><td>LCD_D12</td><td>FSMC_D12 = PE15</td><td class="v">✔ 一致</td></tr><tr><td class="m">PD8</td><td class="m">FSMC_D13</td><td class="m">FSMC_D13</td><td>LCD_D13</td><td>FSMC_D13 = PD8</td><td class="v">✔ 一致</td></tr><tr><td class="m">PD9</td><td class="m">FSMC_D14</td><td class="m">FSMC_D14</td><td>LCD_D14</td><td>FSMC_D14 = PD9</td><td class="v">✔ 一致</td></tr><tr><td class="m">PD10</td><td class="m">FSMC_D15</td><td class="m">FSMC_D15</td><td>LCD_D15</td><td>FSMC_D15 = PD10</td><td class="v">✔ 一致</td></tr><tr class="grp"><td colspan="7">FSMC 控制</td></tr><tr><td class="m">PD4</td><td class="m">FSMC_NOE</td><td class="m">FSMC_NOE (AF12)</td><td>LCD_RD · 读选通</td><td>FSMC_NOE = PD4</td><td class="v">✔ 一致</td></tr><tr><td class="m">PD5</td><td class="m">FSMC_NWE</td><td class="m">FSMC_NWE</td><td>LCD_WR · 写选通</td><td>FSMC_NWE = PD5</td><td class="v">✔ 一致</td></tr><tr><td class="m">PD7</td><td class="m">FSMC_NE1</td><td class="m">FSMC_NE1</td><td>LCD_CS · Bank1 0x60000000</td><td>FSMC_NE1 = PD7</td><td class="v">✔ 一致</td></tr><tr><td class="m">PD11</td><td class="m">FSMC_A16</td><td class="m">FSMC_A16</td><td>LCD_RS · 数据=基址+0x20000</td><td>FSMC_A16 = PD11</td><td class="v">✔ 一致</td></tr><tr class="grp"><td colspan="7">SDIO 时钟</td></tr><tr><td class="m">PC12</td><td class="m">SD_CK</td><td class="m">SDIO_CK (AF12)</td><td>SDIO_CLK · AF12</td><td>SDIO_CK = PC12</td><td class="v">✔ 一致</td></tr><tr class="grp"><td colspan="7">SDIO 命令</td></tr><tr><td class="m">PD2</td><td class="m">SD_CMD</td><td class="m">SDIO_CMD</td><td>SDIO_CMD</td><td>SDIO_CMD = PD2</td><td class="v">✔ 一致</td></tr><tr class="grp"><td colspan="7">SDIO 数据</td></tr><tr><td class="m">PC8</td><td class="m">SD_D0</td><td class="m">SDIO_D0</td><td>SDIO_D0</td><td>SDIO_D0 = PC8</td><td class="v">✔ 一致</td></tr><tr><td class="m">PC9</td><td class="m">SD_D1</td><td class="m">SDIO_D1</td><td>SDIO_D1</td><td>SDIO_D1 = PC9</td><td class="v">✔ 一致</td></tr><tr><td class="m">PC10</td><td class="m">SD_D2</td><td class="m">SDIO_D2</td><td>SDIO_D2</td><td>SDIO_D2 = PC10</td><td class="v">✔ 一致</td></tr><tr><td class="m">PC11</td><td class="m">SD_D3</td><td class="m">SDIO_D3</td><td>SDIO_D3</td><td>SDIO_D3 = PC11</td><td class="v">✔ 一致</td></tr><tr class="grp"><td colspan="7">卡检测</td></tr><tr><td class="m">PD3</td><td class="m">SD_CARD_DET</td><td class="m">GPIO_Input（上拉）</td><td>SDIO_DET · 插卡=低</td><td>板载 R20 47k 上拉</td><td class="v">✔ 一致</td></tr><tr class="grp"><td colspan="7">LSE 晶振</td></tr><tr><td class="m">PC14</td><td class="m">LSE_IN</td><td class="m">RCC_OSC32_IN</td><td>RTC 时钟源 = LSE</td><td>—</td><td class="v">✔ 一致</td></tr><tr><td class="m">PC15</td><td class="m">LSE_OUT</td><td class="m">RCC_OSC32_OUT</td><td>RTC · LSE</td><td>—</td><td class="v">✔ 一致</td></tr><tr class="grp"><td colspan="7">HSE 晶振</td></tr><tr><td class="m">PH0</td><td class="m">HSE_IN</td><td class="m">RCC_OSC_IN</td><td>HSE = 8 MHz</td><td>—</td><td class="v">✔ 一致</td></tr><tr><td class="m">PH1</td><td class="m">HSE_OUT</td><td class="m">RCC_OSC_OUT</td><td>HSE = 8 MHz</td><td>—</td><td class="v">✔ 一致</td></tr></tbody></table>
+
+<h2>§2 五条「不是错、但要知道」</h2>
+<ol><li><b>PB2 = green_led 同时是 <b>BOOT1</b></b><br>核心板上 PB2 带 10k 下拉（保证默认从 Flash 启动）。当 LED 用没问题（BOOT0=0 时 PB2 不参与启动判定），但**不要把它拉到高电平再复位**。</li><li><b>PA13 / PA14 = SWD，<b>绝不能复用成 GPIO</b></b><br>否则烧录/调试失联，而且症状是「探针连不上」，很容易误判成探针坏了。</li><li><b>PC4 = VBIAS_SENSE 是<b>只读探针</b></b><br>固件不采它（不配 ADC1_IN14，那会改掉 TIM8+DMA 采集链）。「模拟轨是否在线」改由 AFE 输出帧的直流均值判。</li><li><b>PB0 恰好是 <b>TIM3_CH3</b></b><br>背光必须恒亮、<b>禁 PWM</b>——PWM 谐波列全落在 10k~500kHz 分析带，是固定频率伪峰源。别在 CubeMX 里「顺手」把 PB0 配成 TIM3_CH3。</li><li><b>图上那些<b>着色但无标签</b>的脚（PB3~PB9 / PC0~PC3 / PE0~PE6 等）</b><br>在 <code>G2026.ioc</code> 里<b>没有任何配置</b>（已逐脚 grep 确认）⇒ 与工程口径「NC-排针悬空」一致。着色只是 CubeMX 在提示「该脚有可用复用功能」。</li></ol>
+
+<h2>§3 核心板排针映射（P1/P2 ↔ MCU 引脚）</h2>
+<p>你问的「核心板的引脚映射」—— 指 <b>EVK1 符号的脚号（P1=1~40 / P2=41~80）↔ MCU 引脚</b>。
+这条工程侧已定案（<code>hardware/04 §6.12</code>），用的是<b>双重证据</b>：</p>
+<ul>
+<li><b>PCB 焊盘几何</b>：解核心板 EDA 工程文件，从 40 个 PAD 的局部坐标 + 网络名反推 ——
+<code>e57</code>（板左）pad1=<code>PA2</code>、pad13=<code>PE7</code>、pad23=<code>PB10</code>、pad37=<code>AGND</code> ⇒ <b>e57 = P1</b>；
+<code>e56</code>（板右）pad27=<code>PD7</code>、pad29=<code>PD5</code> ⇒ <b>e56 = P2</b>。</li>
+<li><b>官方实物渲染图</b>：对背面高清图做焊盘检测（4 列 20 行，行距 121.2 px），
+拟合镜像映射后逐脚目视复核 —— <code>B01|E07</code> 行中 <code>B01(=P1-14)</code> 在左孔、
+<code>E07(=P1-13)</code> 在右孔，与丝印名左右顺序完全一致 ✅</li>
+</ul>
+<p>⇒ <b>该映射没有搞错</b>，且「P1 奇数脚在外侧、偶数脚在内侧」这条已落到 PCB 布局约束里。</p>
+
+<h2>§4 一点提醒：资料包是 VET6 版，实物是 VGT6-PRO</h2>
+<p>核心板资料包（<code>docs/立创·梁山派·天空星…/</code>）开头写明是 <b>STM32F407VET6 版</b>
+（与 GD 版对比：换芯片 + C8/C9 电容贴上，其余一致），而工程实物是 <b>VGT6-PRO</b>。</p>
+<p>两者都是 <b>LQFP100</b>、引脚完全兼容，差异只在 <b>Flash 容量</b>（VET6=512KB / VGT6=1MB）。
+当前 <code>board_config.h</code> 按 <b>1024KB</b> 登记，固件占用约 508KB（48.5%）。
+⇒ 若实物其实是 VET6（512KB），余量会从 48% 掉到 <b>~1%</b>，必须复核。
+<b>这是工程待办里挂了很久的一条（<code>PROJECT.md</code> 待办 6），建议上板前用 ST-Link 读一次芯片 ID 定案。</b></p>
+
+<footer>生成 2026-10-05 · 证据：截图 + <code>G2026.ioc</code> + <code>board_config.h</code> +
+<code>hardware/04</code> + ST 公开复用表 · 只读核对，未改动任何文件。</footer>
+</main></body></html>

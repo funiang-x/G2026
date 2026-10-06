@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>G2026 底板 · 信号流全程讲解与设计推导 · 2026-10-05</title>
+<style>
+:root{--ink:#1c2733;--mut:#5b6b7b;--line:#d9e1e8;--blue:#1d6fd6;--red:#c9184a;
+--green:#0b6e4f;--purple:#5b4a86;--orange:#ff7a00;--bg:#fffcf8}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+font:15px/1.72 "Segoe UI",system-ui,"Microsoft YaHei",sans-serif}
+main{max-width:1120px;margin:0 auto;padding:18px 22px 90px}
+h1{font-size:24px;margin:16px 0 4px} h1 small{display:block;font-weight:400;color:var(--mut);font-size:13.5px;margin-top:4px}
+h2{font-size:19px;margin:34px 0 10px;padding:7px 13px;background:#eef3f8;border-left:4px solid var(--blue)}
+h3{font-size:16px;margin:22px 0 6px;color:#1450a0}
+p{margin:8px 0}
+.lead{color:#33414f}
+figure{margin:12px 0 20px}
+.figwrap{position:relative;border:1px solid var(--line);background:#fff;border-radius:8px;overflow:hidden}
+.figwrap img{display:block;width:100%;height:auto}
+svg.ovl{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+path.flowline{stroke:#ff7a00;stroke-width:5;fill:none;opacity:.45;stroke-dasharray:16 10;stroke-linejoin:round}
+line.flead{stroke:#ff7a00;stroke-width:4;opacity:.45;stroke-dasharray:10 8}
+circle.fnode{fill:#fff;stroke:#ff7a00;stroke-width:5;opacity:.95}
+text.flab{font-weight:700}
+.svgbox{border:1px solid var(--line);background:#fdfefe;border-radius:8px;padding:6px;overflow-x:auto}
+svg.flowmap{display:block;min-width:640px}
+text.nid{font-weight:700}
+text.nname{font-weight:600}
+figcaption{font-size:12.5px;color:var(--mut);margin-top:6px}
+.banner{border:2px solid var(--blue);background:#f4f8fd;border-radius:10px;padding:11px 15px;margin:12px 0 18px}
+.banner p{margin:3px 0;font-size:13.5px}
+.stage{border:1px solid var(--line);border-radius:10px;margin:14px 0;overflow:hidden;background:#fff}
+.shead{display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f3f7fb;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.sid{font-weight:700;color:#fff;background:var(--blue);border-radius:5px;padding:1px 8px;font-size:12.5px}
+.sname{font-weight:700;font-size:15px}
+.srole{color:var(--mut);font-size:12.5px;border:1px solid var(--line);border-radius:20px;padding:0 9px}
+.srow{display:flex;gap:12px;padding:8px 12px;border-top:1px dashed #e7eef5}
+.srow:first-of-type{border-top:none}
+.skey{flex:0 0 118px;font-size:12.5px;font-weight:700;color:#1450a0;padding-top:2px}
+.sval{flex:1;min-width:0;font-size:14px}
+.sval ul{margin:2px 0 2px 0;padding-left:18px}
+.sval li{margin:3px 0;font-size:13.5px;line-height:1.65}
+.srow.eq{background:#fbfdff}
+.srow.eq .sval{font-family:Consolas,"Cascadia Mono","Microsoft YaHei",monospace;font-size:13px}
+.srow.why{background:#fcfcfa}
+.snote{padding:8px 12px;background:#fff8ec;color:#7a4a12;font-size:13px;border-top:1px dashed #f0dfc0}
+.snote b{color:#b35806}
+table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:#eef3f8;font-weight:700}
+td.mono,.mono{font-family:Consolas,monospace;font-size:12.5px}
+table.vt tr.bad{background:#fff5f7}
+table.vt tr.bad td{border-color:#f0c3ce}
+.badx{color:#c9184a;font-size:12.5px;margin-top:4px}
+ul.checks{font-size:13.5px}
+p.warn{border-left:4px solid var(--red);background:#fff7f9;padding:9px 12px;font-size:13.5px}
+footer{color:var(--mut);font-size:12px;margin-top:40px;border-top:1px solid var(--line);padding-top:10px}
+a{color:var(--blue)}
+code{background:#f1f5f9;border-radius:3px;padding:0 3px;font-family:Consolas,monospace;font-size:12.5px}
+nav.toc{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;background:#fff;border:1px solid var(--line);
+border-radius:10px;padding:10px 14px;margin:14px 0 6px;font-size:13.5px}
+nav.toc b{margin-right:6px}
+nav.toc a{text-decoration:none;border-bottom:1px dashed #9fb0bf}
+nav.toc a:hover{color:#c9520a;border-bottom-color:#c9520a}
+@media print{body{font-size:12px}.stage{break-inside:avoid}}
+</style></head><body><main>
+
+<h1>G2026 底板 · 信号流全程讲解与设计推导 <small>从 SMA 输入到 LCD 显示：逐级信号变化 · 选型依据 · 公式推导</small></h1>
+<div class="banner">
+<p><b>核查声明（先回答"信号流是否连续"）</b></p>
+<p>① 用 2026-10-04 活体网表对三页做了机械判据核查：<b>单引脚网 0 条 · 悬空脚 0 个 · 孤桩 0 条 · 全工程 68 张网</b>
+⇒ <b>电气上不存在断点，信号流是连续的</b>，无需"重新布局并重新接线"。</p>
+<p>② 信号链上唯一的"跨页"发生在 AFE 页 → MCU 的 PA1，这是原理图的物理限制（一张图装不下整个系统）。
+本文的处理：<b>不靠网络标签"糊"过去，而是把整条链画成一条连续通路</b>（见 §1 图 1-1）。</p>
+<p>③ 逐件核对"图面值 vs 实体料号"时发现 <b>3 处不一致</b>（C5 / C7 / R11）——不是断点，但会让成板失效，见 §7.3。</p>
+<p>④ 全部数值口径：活体回读 + 独立复算（<code>_archive/_review4/afe_recheck.py</code> 等可复跑）。<b>凡"上板会怎样"一律未验证</b>（装置尚未制造）。</p>
+</div>
+
+<nav class="toc"><b>目录</b>
+<a href="#sec1">§1 一屏总览</a>
+<a href="#sec2">§2 AFE 页 · 模拟信号链逐级讲解（S1~S17）</a>
+<a href="#sec3">§3 偏置链与电源链（B1~B3）</a>
+<a href="#sec4">§4 INT 页 · 数字与显示链（D1~D5）</a>
+<a href="#sec5">§5 公式推导总表（25 条）</a>
+<a href="#sec6">§6 选型依据总表</a>
+<a href="#sec7">§7 图纸核查：连续性 / 网络标签 / 图面值</a>
+<a href="#sec8">§8 诚实边界</a>
+</nav>
+
+<h2 id="sec1">§1 一屏总览</h2>
+<p class="lead">信号只有一条主干：<b>SMA → 端接 → 隔直 → 缓冲 → 8 阶抗混叠 → 放大 → ADC → DSP → FSMC → 屏</b>。下图把这条链画成<b>连续不中断</b>的一条通路（蛇形折返，箭头首尾相接），每一格标注信号在此发生的变化。</p>
+<figure><div class="svgbox"><svg class="flowmap" viewBox="0 0 1166 646" xmlns="http://www.w3.org/2000/svg">
+<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ff7a00"/></marker><marker id="ahb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1d6fd6"/></marker><marker id="ahg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0b6e4f"/></marker></defs>
+<rect x="0" y="0" width="1166" height="646" rx="10" fill="#fdfefe" stroke="#e3e9ef"/>
+<line x1="202" y1="59.0" x2="254" y2="59.0" class="lnk" stroke="#ff7a00" marker-end="url(#ah)"/>
+<line x1="438" y1="59.0" x2="490" y2="59.0" class="lnk" stroke="#ff7a00" marker-end="url(#ah)"/>
+<line x1="674" y1="59.0" x2="726" y2="59.0" class="lnk" stroke="#ff7a00" marker-end="url(#ah)"/>
+<line x1="910" y1="59.0" x2="962" y2="59.0" class="lnk" stroke="#ff7a00" marker-end="url(#ah)"/>
+<path d="M 964 59.0 L 937.0 59.0 L 937.0 213.0 L 962 213.0" class="lnk" stroke="#ff7a00" fill="none" marker-end="url(#ah)"/>
+<line x1="964" y1="213.0" x2="908" y2="213.0" class="lnk" stroke="#ff7a00" marker-end="url(#ah)"/>
+<line x1="728" y1="213.0" x2="672" y2="213.0" class="lnk" stroke="#ff7a00" marker-end="url(#ah)"/>
+<line x1="492" y1="213.0" x2="436" y2="213.0" class="lnk" stroke="#ff7a00" marker-end="url(#ah)"/>
+<line x1="256" y1="213.0" x2="200" y2="213.0" class="lnk" stroke="#ff7a00" marker-end="url(#ah)"/>
+<path d="M 20 213.0 L -7.0 213.0 L -7.0 367.0 L 18 367.0" class="lnk" stroke="#ff7a00" fill="none" marker-end="url(#ah)"/>
+<line x1="202" y1="367.0" x2="254" y2="367.0" class="lnk" stroke="#ff7a00" marker-end="url(#ah)"/>
+<line x1="438" y1="367.0" x2="490" y2="367.0" class="lnk" stroke="#ff7a00" marker-end="url(#ah)"/>
+<line x1="674" y1="367.0" x2="726" y2="367.0" class="lnk" stroke="#ff7a00" marker-end="url(#ah)"/>
+<line x1="910" y1="367.0" x2="962" y2="367.0" class="lnk" stroke="#ff7a00" marker-end="url(#ah)"/>
+<path d="M 964 367.0 L 937.0 367.0 L 937.0 521.0 L 962 521.0" class="lnk" stroke="#ff7a00" fill="none" marker-end="url(#ah)"/>
+<line x1="964" y1="521.0" x2="908" y2="521.0" class="lnk" stroke="#ff7a00" marker-end="url(#ah)"/>
+<rect x="20" y="22" width="182" height="74" rx="7" fill="#ffffff" stroke="#1d6fd6" stroke-width="1.2"/>
+<rect x="20" y="22" width="34" height="74" rx="7" fill="#1d6fd6" stroke="none" opacity="0.10"/>
+<text x="27" y="42" font-size="11" text-anchor="start" class="nid" fill="#1d6fd6">S1</text>
+<text x="27" y="60" font-size="10.5" text-anchor="start" class="nname" fill="#1c2733">SMA-KE 母座</text>
+<text x="27" y="79" font-size="9.5" text-anchor="start" class="nsig" fill="#5b6b7b">入口·无变换</text>
+<rect x="256" y="22" width="182" height="74" rx="7" fill="#ffffff" stroke="#1d6fd6" stroke-width="1.2"/>
+<rect x="256" y="22" width="34" height="74" rx="7" fill="#1d6fd6" stroke="none" opacity="0.10"/>
+<text x="263" y="42" font-size="11" text-anchor="start" class="nid" fill="#1d6fd6">S2</text>
+<text x="263" y="60" font-size="10.5" text-anchor="start" class="nname" fill="#1c2733">49.9Ω 1%</text>
+<text x="263" y="79" font-size="9.5" text-anchor="start" class="nsig" fill="#5b6b7b">×0.5 · 50Ω端接</text>
+<rect x="492" y="22" width="182" height="74" rx="7" fill="#ffffff" stroke="#1d6fd6" stroke-width="1.2"/>
+<rect x="492" y="22" width="34" height="74" rx="7" fill="#1d6fd6" stroke="none" opacity="0.10"/>
+<text x="499" y="42" font-size="11" text-anchor="start" class="nid" fill="#1d6fd6">S3</text>
+<text x="499" y="60" font-size="10.5" text-anchor="start" class="nname" fill="#1c2733">PESD5V0X1BT（SOT-23-3，单路对地）</text>
+<text x="499" y="79" font-size="9.5" text-anchor="start" class="nsig" fill="#5b6b7b">ESD钳位·透明</text>
+<rect x="728" y="22" width="182" height="74" rx="7" fill="#ffffff" stroke="#1d6fd6" stroke-width="1.2"/>
+<rect x="728" y="22" width="34" height="74" rx="7" fill="#1d6fd6" stroke="none" opacity="0.10"/>
+<text x="735" y="42" font-size="11" text-anchor="start" class="nid" fill="#1d6fd6">S4</text>
+<text x="735" y="60" font-size="10.5" text-anchor="start" class="nname" fill="#1c2733">C1 100nF (C0G, 1206) + R2 10kΩ</text>
+<text x="735" y="79" font-size="9.5" text-anchor="start" class="nsig" fill="#5b6b7b">隔直·159Hz高通</text>
+<rect x="964" y="22" width="182" height="74" rx="7" fill="#ffffff" stroke="#1d6fd6" stroke-width="1.2"/>
+<rect x="964" y="22" width="34" height="74" rx="7" fill="#1d6fd6" stroke="none" opacity="0.10"/>
+<text x="971" y="42" font-size="11" text-anchor="start" class="nid" fill="#1d6fd6">S5</text>
+<text x="971" y="60" font-size="10.5" text-anchor="start" class="nname" fill="#1c2733">0Ω</text>
+<text x="971" y="79" font-size="9.5" text-anchor="start" class="nsig" fill="#5b6b7b">断点·0Ω</text>
+<rect x="964" y="176" width="182" height="74" rx="7" fill="#ffffff" stroke="#1d6fd6" stroke-width="1.2"/>
+<rect x="964" y="176" width="34" height="74" rx="7" fill="#1d6fd6" stroke="none" opacity="0.10"/>
+<text x="971" y="196" font-size="11" text-anchor="start" class="nid" fill="#1d6fd6">S6</text>
+<text x="971" y="214" font-size="10.5" text-anchor="start" class="nname" fill="#1c2733">OPA2197 半片（跟随器 G=1）</text>
+<text x="971" y="233" font-size="9.5" text-anchor="start" class="nsig" fill="#5b6b7b">×1 缓冲</text>
+<rect x="728" y="176" width="182" height="74" rx="7" fill="#ffffff" stroke="#1d6fd6" stroke-width="1.2"/>
+<rect x="728" y="176" width="34" height="74" rx="7" fill="#1d6fd6" stroke="none" opacity="0.10"/>
+<text x="735" y="196" font-size="11" text-anchor="start" class="nid" fill="#1d6fd6">S7</text>
+<text x="735" y="214" font-size="10.5" text-anchor="start" class="nname" fill="#1c2733">49.9Ω 1%</text>
+<text x="735" y="233" font-size="9.5" text-anchor="start" class="nsig" fill="#5b6b7b">源端50Ω</text>
+<rect x="492" y="176" width="182" height="74" rx="7" fill="#ffffff" stroke="#1d6fd6" stroke-width="1.2"/>
+<rect x="492" y="176" width="34" height="74" rx="7" fill="#1d6fd6" stroke="none" opacity="0.10"/>
+<text x="499" y="196" font-size="11" text-anchor="start" class="nid" fill="#1d6fd6">S8</text>
+<text x="499" y="214" font-size="10.5" text-anchor="start" class="nname" fill="#1c2733">L1 4.7µH + C2 6.2nF</text>
+<text x="499" y="233" font-size="9.5" text-anchor="start" class="nsig" fill="#5b6b7b">第1节·开始衰减</text>
+<rect x="256" y="176" width="182" height="74" rx="7" fill="#ffffff" stroke="#1d6fd6" stroke-width="1.2"/>
+<rect x="256" y="176" width="34" height="74" rx="7" fill="#1d6fd6" stroke="none" opacity="0.10"/>
+<text x="263" y="196" font-size="11" text-anchor="start" class="nid" fill="#1d6fd6">S9</text>
+<text x="263" y="214" font-size="10.5" text-anchor="start" class="nname" fill="#1c2733">L3 22µH + C4 10nF</text>
+<text x="263" y="233" font-size="9.5" text-anchor="start" class="nsig" fill="#5b6b7b">第2节</text>
+<rect x="20" y="176" width="182" height="74" rx="7" fill="#ffffff" stroke="#1d6fd6" stroke-width="1.2"/>
+<rect x="20" y="176" width="34" height="74" rx="7" fill="#1d6fd6" stroke="none" opacity="0.10"/>
+<text x="27" y="196" font-size="11" text-anchor="start" class="nid" fill="#1d6fd6">S10</text>
+<text x="27" y="214" font-size="10.5" text-anchor="start" class="nname" fill="#1c2733">L5 22µH + C6 9.1nF</text>
+<text x="27" y="233" font-size="9.5" text-anchor="start" class="nsig" fill="#5b6b7b">第3节</text>
+<rect x="20" y="330" width="182" height="74" rx="7" fill="#ffffff" stroke="#1d6fd6" stroke-width="1.2"/>
+<rect x="20" y="330" width="34" height="74" rx="7" fill="#1d6fd6" stroke="none" opacity="0.10"/>
+<text x="27" y="350" font-size="11" text-anchor="start" class="nid" fill="#1d6fd6">S11</text>
+<text x="27" y="368" font-size="10.5" text-anchor="start" class="nname" fill="#1c2733">L7 12µH + C8 1.8nF</text>
+<text x="27" y="387" font-size="9.5" text-anchor="start" class="nsig" fill="#5b6b7b">第4节·−65dB</text>
+<rect x="256" y="330" width="182" height="74" rx="7" fill="#ffffff" stroke="#1d6fd6" stroke-width="1.2"/>
+<rect x="256" y="330" width="34" height="74" rx="7" fill="#1d6fd6" stroke="none" opacity="0.10"/>
+<text x="263" y="350" font-size="11" text-anchor="start" class="nid" fill="#1d6fd6">S12</text>
+<text x="263" y="368" font-size="10.5" text-anchor="start" class="nname" fill="#1c2733">C7 10µF + R4 49.9Ω</text>
+<text x="263" y="387" font-size="9.5" text-anchor="start" class="nsig" fill="#5b6b7b">隔直终接×0.5</text>
+<rect x="492" y="330" width="182" height="74" rx="7" fill="#ffffff" stroke="#1d6fd6" stroke-width="1.2"/>
+<rect x="492" y="330" width="34" height="74" rx="7" fill="#1d6fd6" stroke="none" opacity="0.10"/>
+<text x="499" y="350" font-size="11" text-anchor="start" class="nid" fill="#1d6fd6">S13</text>
+<text x="499" y="368" font-size="10.5" text-anchor="start" class="nname" fill="#1c2733">C9 100nF (C0G) + R5 10kΩ</text>
+<text x="499" y="387" font-size="9.5" text-anchor="start" class="nsig" fill="#5b6b7b">隔直·159Hz</text>
+<rect x="728" y="330" width="182" height="74" rx="7" fill="#ffffff" stroke="#1d6fd6" stroke-width="1.2"/>
+<rect x="728" y="330" width="34" height="74" rx="7" fill="#1d6fd6" stroke="none" opacity="0.10"/>
+<text x="735" y="350" font-size="11" text-anchor="start" class="nid" fill="#1d6fd6">S14</text>
+<text x="735" y="368" font-size="10.5" text-anchor="start" class="nname" fill="#1c2733">OPA2197 半片 + R6 24.9kΩ / R7 3.57kΩ</text>
+<text x="735" y="387" font-size="9.5" text-anchor="start" class="nsig" fill="#5b6b7b">×7.975 · 直流=VBIAS</text>
+<rect x="964" y="330" width="182" height="74" rx="7" fill="#ffffff" stroke="#1d6fd6" stroke-width="1.2"/>
+<rect x="964" y="330" width="34" height="74" rx="7" fill="#1d6fd6" stroke="none" opacity="0.10"/>
+<text x="971" y="350" font-size="11" text-anchor="start" class="nid" fill="#1d6fd6">S15</text>
+<text x="971" y="368" font-size="10.5" text-anchor="start" class="nname" fill="#1c2733">R11 100Ω + C10 470pF (C0G)</text>
+<text x="971" y="387" font-size="9.5" text-anchor="start" class="nsig" fill="#5b6b7b">3.39MHz LPF</text>
+<rect x="964" y="484" width="182" height="74" rx="7" fill="#ffffff" stroke="#1d6fd6" stroke-width="1.2"/>
+<rect x="964" y="484" width="34" height="74" rx="7" fill="#1d6fd6" stroke="none" opacity="0.10"/>
+<text x="971" y="504" font-size="11" text-anchor="start" class="nid" fill="#1d6fd6">S16</text>
+<text x="971" y="522" font-size="10.5" text-anchor="start" class="nname" fill="#1c2733">0Ω → AFE_ADC_IN → EVK1.4 (PA1)</text>
+<text x="971" y="541" font-size="9.5" text-anchor="start" class="nsig" fill="#5b6b7b">断点·跨域</text>
+<rect x="728" y="484" width="182" height="74" rx="7" fill="#ffffff" stroke="#1d6fd6" stroke-width="1.2"/>
+<rect x="728" y="484" width="34" height="74" rx="7" fill="#1d6fd6" stroke="none" opacity="0.10"/>
+<text x="735" y="504" font-size="11" text-anchor="start" class="nid" fill="#1d6fd6">S17</text>
+<text x="735" y="522" font-size="10.5" text-anchor="start" class="nname" fill="#1c2733">12 bit @ fs = 2.0 MHz</text>
+<text x="735" y="541" font-size="9.5" text-anchor="start" class="nsig" fill="#5b6b7b">12bit@2MSPS</text>
+</svg></div><figcaption>图 1-1　模拟信号链（S1~S17）连续流图。注意：<b>全链净增益 = 0.5(端接) × 0.5(LC 双端接) × 7.975 = 1.995</b>。</figcaption></figure>
+<p class="lead">数字/显示链与电源链是主干的两条支线，用同样的方式画在下面。</p>
+<figure><div class="svgbox"><svg class="flowmap" viewBox="0 0 1166 184" xmlns="http://www.w3.org/2000/svg">
+<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ff7a00"/></marker><marker id="ahb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1d6fd6"/></marker><marker id="ahg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0b6e4f"/></marker></defs>
+<rect x="0" y="0" width="1166" height="184" rx="10" fill="#fdfefe" stroke="#e3e9ef"/>
+<line x1="202" y1="59.0" x2="254" y2="59.0" class="lnk" stroke="#ff7a00" marker-end="url(#ah)"/>
+<line x1="438" y1="59.0" x2="490" y2="59.0" class="lnk" stroke="#ff7a00" marker-end="url(#ah)"/>
+<line x1="674" y1="59.0" x2="726" y2="59.0" class="lnk" stroke="#ff7a00" marker-end="url(#ah)"/>
+<line x1="910" y1="59.0" x2="962" y2="59.0" class="lnk" stroke="#ff7a00" marker-end="url(#ah)"/>
+<rect x="20" y="22" width="182" height="74" rx="7" fill="#ffffff" stroke="#0b6e4f" stroke-width="1.2"/>
+<rect x="20" y="22" width="34" height="74" rx="7" fill="#0b6e4f" stroke="none" opacity="0.10"/>
+<text x="27" y="42" font-size="11" text-anchor="start" class="nid" fill="#0b6e4f">D1</text>
+<text x="27" y="60" font-size="10.5" text-anchor="start" class="nname" fill="#1c2733">立创天空星 F407VGT6-PRO（核心板）</text>
+<text x="27" y="79" font-size="9.5" text-anchor="start" class="nsig" fill="#5b6b7b">模拟→数字码</text>
+<rect x="256" y="22" width="182" height="74" rx="7" fill="#ffffff" stroke="#0b6e4f" stroke-width="1.2"/>
+<rect x="256" y="22" width="34" height="74" rx="7" fill="#0b6e4f" stroke="none" opacity="0.10"/>
+<text x="263" y="42" font-size="11" text-anchor="start" class="nid" fill="#0b6e4f">D2</text>
+<text x="263" y="60" font-size="10.5" text-anchor="start" class="nname" fill="#1c2733">21 × 33Ω ±1%</text>
+<text x="263" y="79" font-size="9.5" text-anchor="start" class="nsig" fill="#5b6b7b">边沿阻尼 47%→8%</text>
+<rect x="492" y="22" width="182" height="74" rx="7" fill="#ffffff" stroke="#0b6e4f" stroke-width="1.2"/>
+<rect x="492" y="22" width="34" height="74" rx="7" fill="#0b6e4f" stroke="none" opacity="0.10"/>
+<text x="499" y="42" font-size="11" text-anchor="start" class="nid" fill="#0b6e4f">D3</text>
+<text x="499" y="60" font-size="10.5" text-anchor="start" class="nname" fill="#1c2733">2×15P 母座（30 脚）</text>
+<text x="499" y="79" font-size="9.5" text-anchor="start" class="nsig" fill="#5b6b7b">屏接口 30 脚</text>
+<rect x="728" y="22" width="182" height="74" rx="7" fill="#ffffff" stroke="#0b6e4f" stroke-width="1.2"/>
+<rect x="728" y="22" width="34" height="74" rx="7" fill="#0b6e4f" stroke="none" opacity="0.10"/>
+<text x="735" y="42" font-size="11" text-anchor="start" class="nid" fill="#0b6e4f">D4</text>
+<text x="735" y="60" font-size="10.5" text-anchor="start" class="nname" fill="#1c2733">4.7kΩ（I²C 上拉）</text>
+<text x="735" y="79" font-size="9.5" text-anchor="start" class="nsig" fill="#5b6b7b">开漏上拉 796ns</text>
+<rect x="964" y="22" width="182" height="74" rx="7" fill="#ffffff" stroke="#0b6e4f" stroke-width="1.2"/>
+<rect x="964" y="22" width="34" height="74" rx="7" fill="#0b6e4f" stroke="none" opacity="0.10"/>
+<text x="971" y="42" font-size="11" text-anchor="start" class="nid" fill="#0b6e4f">D5</text>
+<text x="971" y="60" font-size="10.5" text-anchor="start" class="nname" fill="#1c2733">1kΩ（背光控制）</text>
+<text x="971" y="79" font-size="9.5" text-anchor="start" class="nsig" fill="#5b6b7b">栅极阻尼</text>
+</svg></div><figcaption>图 1-2　数字与显示链（D1~D5）。</figcaption></figure>
+<figure><div class="svgbox"><svg class="flowmap" viewBox="0 0 694 184" xmlns="http://www.w3.org/2000/svg">
+<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ff7a00"/></marker><marker id="ahb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1d6fd6"/></marker><marker id="ahg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0b6e4f"/></marker></defs>
+<rect x="0" y="0" width="694" height="184" rx="10" fill="#fdfefe" stroke="#e3e9ef"/>
+<line x1="202" y1="59.0" x2="254" y2="59.0" class="lnk" stroke="#ff7a00" marker-end="url(#ah)"/>
+<line x1="438" y1="59.0" x2="490" y2="59.0" class="lnk" stroke="#ff7a00" marker-end="url(#ah)"/>
+<rect x="20" y="22" width="182" height="74" rx="7" fill="#ffffff" stroke="#5b4a86" stroke-width="1.2"/>
+<rect x="20" y="22" width="34" height="74" rx="7" fill="#5b4a86" stroke="none" opacity="0.10"/>
+<text x="27" y="42" font-size="11" text-anchor="start" class="nid" fill="#5b4a86">B1</text>
+<text x="27" y="60" font-size="10.5" text-anchor="start" class="nname" fill="#1c2733">R9 10kΩ / R10 10kΩ / C5 10µF</text>
+<text x="27" y="79" font-size="9.5" text-anchor="start" class="nsig" fill="#5b6b7b">3.3V→1.650V</text>
+<rect x="256" y="22" width="182" height="74" rx="7" fill="#ffffff" stroke="#5b4a86" stroke-width="1.2"/>
+<rect x="256" y="22" width="34" height="74" rx="7" fill="#5b4a86" stroke="none" opacity="0.10"/>
+<text x="263" y="42" font-size="11" text-anchor="start" class="nid" fill="#5b4a86">B2</text>
+<text x="263" y="60" font-size="10.5" text-anchor="start" class="nname" fill="#1c2733">R21 4.7Ω + C11 22µF + C14 100nF</text>
+<text x="263" y="79" font-size="9.5" text-anchor="start" class="nsig" fill="#5b6b7b">1.54kHz 隔离</text>
+<rect x="492" y="22" width="182" height="74" rx="7" fill="#ffffff" stroke="#5b4a86" stroke-width="1.2"/>
+<rect x="492" y="22" width="34" height="74" rx="7" fill="#5b4a86" stroke="none" opacity="0.10"/>
+<text x="499" y="42" font-size="11" text-anchor="start" class="nid" fill="#5b4a86">B3</text>
+<text x="499" y="60" font-size="10.5" text-anchor="start" class="nname" fill="#1c2733">C16 22µF（+5V 入口储能）</text>
+<text x="499" y="79" font-size="9.5" text-anchor="start" class="nsig" fill="#5b6b7b">入口储能</text>
+</svg></div><figcaption>图 1-3　偏置与电源链（B1~B3）。</figcaption></figure>
+<h3>1.4 关键数字一览</h3>
+<table><thead><tr><th>量</th><th>值</th><th>怎么来的</th></tr></thead><tbody>
+<tr><td>端接分压</td><td>×0.4995</td><td>R1/(Rs+R1)，Rs=R1=50Ω</td></tr>
+<tr><td>输入高通拐点</td><td>159.2 Hz</td><td>1/(2π·10k·100n)</td></tr>
+<tr><td>抗混叠滤波器</td><td>8 阶巴特沃斯 · 双端接 50Ω · fc≈660 kHz</td><td>g 值 → 元件换算（§2 S8~S11）</td></tr>
+<tr><td>阻带衰减 @1.5 MHz</td><td>−65.3 dB（归一化 −64.3 dB）</td><td>ABCD 级联复算，判据 ≤ −42.5 dB ⇒ 余量 21.8 dB</td></tr>
+<tr><td>带内起伏 10k~500k</td><td>0.0025 dB</td><td>同上</td></tr>
+<tr><td>增益级</td><td>×7.975</td><td>1 + R6/R7 = 1 + 24.9k/3.57k</td></tr>
+<tr><td>闭环 −3 dB</td><td>1.254 MHz</td><td>GBW(10 MHz)/7.975</td></tr>
+<tr><td>全链净增益</td><td>1.995</td><td>0.5 × 0.5 × 7.975（固件 BOARD_NET_GAIN = 2U）</td></tr>
+<tr><td>ADC</td><td>12 bit @ 2.0 MSPS · VREF ≈ 3.3 V</td><td>LSB = 805.66 µV@ADC = 403.84 µV@源端</td></tr>
+<tr><td>VBIAS</td><td>1.650 V</td><td>3V3 × 10k/(10k+10k)</td></tr>
+<tr><td>+5V_A 隔离</td><td>fc = 1.54 kHz · 压降 9.4 mV</td><td>1/(2π·4.7·22µ)；2 mA × 4.7Ω</td></tr>
+<tr><td>ADC 反冲 RC</td><td>3.386 MHz / τ = 47 ns</td><td>1/(2π·100·470p)；采样窗 500 ns 的 9.4%</td></tr>
+</tbody></table>
+
+<h2 id="sec2">§2 AFE 页 · 模拟信号链逐级讲解</h2>
+<p class="lead">本页原理图（活体矢量渲染，2026-10-04）：</p>
+<figure><div class="figwrap"><a href="45-讲解配图/AFE.svg" target="_blank" title="点击查看原尺寸"><img src="45-讲解配图/AFE.svg" alt="AFE 页原理图"></a><svg class="ovl" viewBox="29.5 -1739 2801 929.5" xmlns="http://www.w3.org/2000/svg">
+<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ff7a00"/></marker><marker id="ahb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1d6fd6"/></marker><marker id="ahg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0b6e4f"/></marker></defs>
+<line x1="100" y1="-1255" x2="2690" y2="-1255" class="flowline" marker-end="url(#ah)"/>
+<line x1="100" y1="-1255" x2="100" y2="-1050" class="flead"/>
+<circle cx="100" cy="-1255" r="17" class="fnode"/>
+<text x="100" y="-1240" font-size="30" text-anchor="middle" class="flab" fill="#c9520a">S1</text>
+<line x1="280" y1="-1255" x2="280" y2="-950" class="flead"/>
+<circle cx="280" cy="-1255" r="17" class="fnode"/>
+<text x="280" y="-1240" font-size="30" text-anchor="middle" class="flab" fill="#c9520a">S2</text>
+<line x1="210" y1="-1255" x2="210" y2="-960" class="flead"/>
+<circle cx="210" cy="-1255" r="17" class="fnode"/>
+<text x="210" y="-1240" font-size="30" text-anchor="middle" class="flab" fill="#c9520a">S3</text>
+<line x1="400" y1="-1255" x2="400" y2="-1050" class="flead"/>
+<circle cx="400" cy="-1255" r="17" class="fnode"/>
+<text x="400" y="-1240" font-size="30" text-anchor="middle" class="flab" fill="#c9520a">S4</text>
+<line x1="540" y1="-1255" x2="540" y2="-1050" class="flead"/>
+<circle cx="540" cy="-1255" r="17" class="fnode"/>
+<text x="540" y="-1240" font-size="30" text-anchor="middle" class="flab" fill="#c9520a">S5</text>
+<line x1="760" y1="-1255" x2="760" y2="-1050" class="flead"/>
+<circle cx="760" cy="-1255" r="17" class="fnode"/>
+<text x="760" y="-1240" font-size="30" text-anchor="middle" class="flab" fill="#c9520a">S6</text>
+<line x1="900" y1="-1255" x2="900" y2="-1050" class="flead"/>
+<circle cx="900" cy="-1255" r="17" class="fnode"/>
+<text x="900" y="-1240" font-size="30" text-anchor="middle" class="flab" fill="#c9520a">S7</text>
+<line x1="1020" y1="-1255" x2="1020" y2="-1050" class="flead"/>
+<circle cx="1020" cy="-1255" r="17" class="fnode"/>
+<text x="1020" y="-1240" font-size="30" text-anchor="middle" class="flab" fill="#c9520a">S8</text>
+<line x1="1260" y1="-1255" x2="1260" y2="-1050" class="flead"/>
+<circle cx="1260" cy="-1255" r="17" class="fnode"/>
+<text x="1260" y="-1240" font-size="30" text-anchor="middle" class="flab" fill="#c9520a">S9</text>
+<line x1="1500" y1="-1255" x2="1500" y2="-1050" class="flead"/>
+<circle cx="1500" cy="-1255" r="17" class="fnode"/>
+<text x="1500" y="-1240" font-size="30" text-anchor="middle" class="flab" fill="#c9520a">S10</text>
+<line x1="1740" y1="-1255" x2="1740" y2="-1050" class="flead"/>
+<circle cx="1740" cy="-1255" r="17" class="fnode"/>
+<text x="1740" y="-1240" font-size="30" text-anchor="middle" class="flab" fill="#c9520a">S11</text>
+<line x1="1980" y1="-1255" x2="1980" y2="-1010" class="flead"/>
+<circle cx="1980" cy="-1255" r="17" class="fnode"/>
+<text x="1980" y="-1240" font-size="30" text-anchor="middle" class="flab" fill="#c9520a">S12</text>
+<line x1="2095" y1="-1255" x2="2095" y2="-1050" class="flead"/>
+<circle cx="2095" cy="-1255" r="17" class="fnode"/>
+<text x="2095" y="-1240" font-size="30" text-anchor="middle" class="flab" fill="#c9520a">S13</text>
+<line x1="2300" y1="-1255" x2="2300" y2="-1150" class="flead"/>
+<circle cx="2300" cy="-1255" r="17" class="fnode"/>
+<text x="2300" y="-1240" font-size="30" text-anchor="middle" class="flab" fill="#c9520a">S14</text>
+<line x1="2400" y1="-1255" x2="2400" y2="-1050" class="flead"/>
+<circle cx="2400" cy="-1255" r="17" class="fnode"/>
+<text x="2400" y="-1240" font-size="30" text-anchor="middle" class="flab" fill="#c9520a">S15</text>
+<line x1="2600" y1="-1255" x2="2600" y2="-1050" class="flead"/>
+<circle cx="2600" cy="-1255" r="17" class="fnode"/>
+<text x="2600" y="-1240" font-size="30" text-anchor="middle" class="flab" fill="#c9520a">S16</text>
+</svg></div><figcaption>图 2-0　AFE 页完整原理图（点击图片可在新窗口查看原尺寸）。橙色虚线 = 按真实元件坐标串起来的信号主干，S1→S16 编号与下文各级一一对应。</figcaption></figure>
+<p class="lead">下面逐级讲解。<b>每一级都回答三件事：信号在此发生了什么变化、用什么公式算出来的、为什么选这个数值与型号。</b></p>
+
+<div class="stage" id="S1">
+  <div class="shead"><span class="sid">S1</span><span class="sname">J1 · SMA-KE 母座</span><span class="srole">信号入口</span></div>
+  <div class="srow"><div class="skey">信号在此的变化</div><div class="sval">被测信号由 BNC 电缆经 SMA↔BNC 转接件进入底板。这一级信号<b>不发生任何变换</b>——它只完成「电缆 → PCB」的物理转接。50Ω 同轴系统要求接口的<b>特征阻抗连续</b>，所以座子必须是 50Ω 同轴结构，不能换成排针/端子。</div></div>
+  <div class="srow eq"><div class="skey">理论公式与计算过程</div><div class="sval"><ul><li>入口点的信号＝信号源电动势 E<sub>s</sub> 经源内阻 R<sub>s</sub> 后的分压（见 S2）。</li><li>转接件引入的阻抗不连续量级：ΔZ 引起的反射系数 Γ = (Z<sub>2</sub>−Z<sub>1</sub>)/(Z<sub>2</sub>+Z<sub>1</sub>)。SMA↔BNC 转接件的标称 ΔZ 很小，Γ 通常 &lt; 0.05（≈ −26 dB），在 500 kHz 以下可忽略。</li></ul></div></div>
+  <div class="srow why"><div class="skey">选型依据</div><div class="sval">题面说明 7 要求板上焊 BNC 座；用户已有 SMA-KE + BNC 转接件，电气上仍是 50Ω 同轴接口，机械上 SMA 座更小、可贴板边。外壳 4 脚全部接 AGND，给同轴信号电流提供屏蔽层回流路径，兼把外壳静电导入地。</div></div>
+  <div class="snote">⚠ PCB 硬约束：<b>R1 必须贴 J1 中心针 2~3 mm 内</b>——端接必须发生在电缆口，否则电缆与端接点之间的走线本身就成了未端接的传输线。</div>
+</div>
+
+<div class="stage" id="S2">
+  <div class="shead"><span class="sid">S2</span><span class="sname">R1 · 49.9Ω 1%</span><span class="srole">50Ω 端接</span></div>
+  <div class="srow"><div class="skey">信号在此的变化</div><div class="sval">把入口节点从「高阻测量点」变成「50Ω 低阻节点」。信号幅度<b>降到源电动势的一半</b>：V<sub>node</sub> = E<sub>s</sub>·49.9/(50+49.9) ≈ 0.4995·E<sub>s</sub>。阻抗 50Ω → 50∥(后级高阻) ≈ 50Ω；相位不变；频率不变。</div></div>
+  <div class="srow eq"><div class="skey">理论公式与计算过程</div><div class="sval"><ul><li>分压：V<sub>node</sub> = E<sub>s</sub> · R1/(R<sub>s</sub> + R1)，取 R<sub>s</sub> = R1 = 50Ω ⇒ V<sub>node</sub> = E<sub>s</sub>/2。</li><li>反射系数：Γ = (R1 − Z<sub>0</sub>)/(R1 + Z<sub>0</sub>) = (49.9 − 50)/(49.9 + 50) = −0.001 ⇒ 回波损耗 RL = −20·log₁₀|Γ| = 60 dB。</li><li>按 1% 容差取最坏 R1 = 50.4Ω：Γ = 0.4/100.4 = 0.004 ⇒ RL ≈ 48 dB（仍远优于 20 dB 的工程门槛）。</li><li>端接对阻带残留的绝对压降（与信号同比例，不改变信噪比）：见 S12 的折叠带复算。</li></ul></div></div>
+  <div class="srow why"><div class="skey">选型依据</div><div class="sval">判据①匹配题面 50Ω 电缆；判据②让<b>读数与源内阻无关</b>（源内阻从 0 漂到 50Ω，端接后节点幅度只从 E<sub>s</sub> 变到 E<sub>s</sub>/2，且这是可标定的常数）；判据③把折叠残留的绝对值压到门限以内。<b>49.9 而不是 50</b>：E96 标准档位，1% 容差下回波损耗已经足够。</div></div>
+  <div class="snote">⚠ 禁错：不要为了「拿回 6 dB」删掉它——删了幅度翻倍、源阻抗重新变成未知量。真正压住折叠带的是 8 阶 LC 的 −65 dB（S8~S12），不是这一级。</div>
+</div>
+
+<div class="stage" id="S3">
+  <div class="shead"><span class="sid">S3</span><span class="sname">D1 · PESD5V0X1BT（SOT-23-3，单路对地）</span><span class="srole">ESD 钳位</span></div>
+  <div class="srow"><div class="skey">信号在此的变化</div><div class="sval">正常工作时对信号<b>几乎透明</b>：结电容 C<sub>j</sub> 只有 pF 级，在 500 kHz 处|Z| = 1/(2πfC<sub>j</sub>) ≈ 1/(2π·500k·1.5p) ≈ 212 kΩ，远大于节点阻抗 50Ω，分压影响 &lt; 0.03%。静电/过压瞬间则导通，把节点电压钳在安全区。</div></div>
+  <div class="srow eq"><div class="skey">理论公式与计算过程</div><div class="sval"><ul><li>结电容旁路影响：|Z<sub>Cj</sub>| = 1/(2πf·C<sub>j</sub>)，f = 500 kHz、C<sub>j</sub> = 1.5 pF ⇒ 212 kΩ。</li><li>对 50Ω 节点的分压误差：Δ ≈ 50/212000 = 2.4×10⁻⁴ ⇒ 幅值误差 &lt; 0.03%（可忽略）。</li><li>负向钳位点 = −V<sub>F</sub> ≈ −0.7 V（二极管正向）；正向钳位点 = 器件击穿电压档（&gt; 5 V）。</li></ul></div></div>
+  <div class="srow why"><div class="skey">选型依据</div><div class="sval">选它是因为 <b>C<sub>j</sub> 只有 pF 级</b>：普通 TVS 是几十 pF，会在 500 kHz 引入不可控的相移与增益漂移。当前接法是<b>单通道对地钳位</b>（C1→信号节点、A→AGND、C2→NC），不是 SRV05-4 的四通道双轨钳位。</div></div>
+  <div class="snote">⚠ 边界：钳位电平高于运放 U1A 的绝对最大输入（V+ +0.5 V = 5.5 V），<b>挡得住 ESD、挡不住持续过压</b>。竞赛场景（信号源输出可预期）可接受。另：该件的「型号↔符号↔封装」三者尚未完全对齐（待确认项），本文只讲接法与角色，不引用具体 datasheet 数值。</div>
+</div>
+
+<div class="stage" id="S4">
+  <div class="shead"><span class="sid">S4</span><span class="sname">C1 100nF (C0G, 1206) + R2 10kΩ</span><span class="srole">隔直 + 输入高通</span></div>
+  <div class="srow"><div class="skey">信号在此的变化</div><div class="sval">C1 把信号源的直流分量<b>挡在门外</b>，只放交流通过；R2 给运放同相端提供一条到 VBIAS 的直流回路，于是「交流信号骑在 1.650 V 上」进入缓冲器。这一级把信号从「源域」搬进「单电源域」，直流工作点被重新定义为 VBIAS。频域上形成一个一阶高通：f<sub>c</sub> = 159 Hz。</div></div>
+  <div class="srow eq"><div class="skey">理论公式与计算过程</div><div class="sval"><ul><li>高通拐点：f<sub>c</sub> = 1/(2π·R2·C1) = 1/(2π × 10×10³ × 100×10⁻⁹) = 1/(6.2832×10⁻³) = 159.15 Hz。</li><li>带内误差（分析带下限 10 kHz）：ωRC = 2π×10⁴×10⁻³ = 62.83；|H| = ωRC/√(1+(ωRC)²) = 62.83/62.838 = 0.99987 ⇒ −0.001 dB。</li><li>与下限的余量：10 kHz / 159 Hz = 63×（拐点远在带外，带内平坦）。</li><li>为什么取 10 kΩ：既要「不加载源」（≥50Ω 的 200 倍）又要「不被运放偏置电流顶偏」——OPA2197 的 I<sub>b</sub> = ±5 pA，在 10 kΩ 上只产生 50 nV 失调。</li></ul></div></div>
+  <div class="srow why"><div class="skey">选型依据</div><div class="sval">C1 用 <b>C0G</b> 而不是 X7R：X7R 的容值随电压/温度漂移，会在拐点附近引入不可标定的相移；用 <b>1206</b> 是 C0G 做到 100 nF 的封装代价。R2 取 10 kΩ 是「高阻不加载 / 低阻不被 I<sub>b</sub> 顶偏」的折中。</div></div>
+  <div class="snote">⚠ 这一级的直流回路是<b>必须</b>的：没有 R2，运放同相端没有直流通路，会漂到轨。</div>
+</div>
+
+<div class="stage" id="S5">
+  <div class="shead"><span class="sid">S5</span><span class="sname">JP1 · 0Ω</span><span class="srole">可拆断点</span></div>
+  <div class="srow"><div class="skey">信号在此的变化</div><div class="sval">装上时等于一根导线，信号<b>原样通过</b>；拆掉后前半段（端接/隔直）与后半段（缓冲/滤波）电气解耦，可以单独给任一半注入测试信号。</div></div>
+  <div class="srow eq"><div class="skey">理论公式与计算过程</div><div class="sval"><ul><li>0Ω 跳线的直流压降 = 0；寄生电感 &lt; 1 nH，在 500 kHz 处 |Z| &lt; 3 mΩ，可忽略。</li></ul></div></div>
+  <div class="srow why"><div class="skey">选型依据</div><div class="sval">调试基础设施：扫频标定时可以把 AFE 一分为二，分别验证「端接是否生效」与「滤波器是否对」。成本 ¥0.01，但把「整链猜」变成「分段测」。</div></div>
+  <div class="snote">⚠ 另一处同类断点是 JP2（ADC 前，见 S16）。两个断点把 AFE 切成三段。</div>
+</div>
+
+<div class="stage" id="S6">
+  <div class="shead"><span class="sid">S6</span><span class="sname">U1A · OPA2197 半片（跟随器 G=1）</span><span class="srole">单位增益缓冲</span></div>
+  <div class="srow"><div class="skey">信号在此的变化</div><div class="sval">高阻输入、低阻输出：<b>电压幅度不变</b>（G=1），但把信号从「50Ω 测量点」搬到「能驱动容性负载的源」。输出阻抗从 50Ω 降到运放闭环输出阻抗（&lt; 1Ω @低频）。相位在带内基本为 0，仅在高频有轻微滞后。</div></div>
+  <div class="srow eq"><div class="skey">理论公式与计算过程</div><div class="sval"><ul><li>跟随器：V<sub>out</sub> = V<sub>in</sub>，增益 = 1（U1.1 OUT 与 U1.2 −IN 直连）。</li><li>输入偏置电流影响：V<sub>os,err</sub> = I<sub>b</sub>·R<sub>eq</sub> = 5 pA × 10 kΩ = 50 nV（可忽略）。</li><li>容性负载稳定：R3 = 49.9Ω 把 LC 输入端（C2 = 6.2 nF，在 1 MHz 处 |Z| = 25.7Ω）与输出隔离，避免直接驱动大容性负载引起振铃。</li></ul></div></div>
+  <div class="srow why"><div class="skey">选型依据</div><div class="sval"><b>为什么必须有这一级</b>：① 端接节点是高阻测量点，直接挂 LC 会让 LC 的输入阻抗与 R1 分压，端接值不再精确；② LC 输入端的 C2 在 MHz 处只有几 Ω，直接挂电缆/TVS 会被容性扰动。<b>为什么刻意不加增益</b>：u<sub>J</sub> 是 ±50 mV<sub>pk</sub> 的大干扰，若先放大 ×8 再滤波，运放会被推入非线性区产生 IM3，而 IM3 产物落在分析带内、滤波器在它后面<b>根本去不掉</b>。所以顺序被钉死为：<b>缓冲 → 滤波 → 放大</b>。</div></div>
+  <div class="snote">⚠ OPA2197 选型理由：GBW = 10 MHz、压摆率 ≈ 20 V/µs、失调 &lt; 250 µV、单电源 4.5~36 V、轨到轨 I/O、静态电流 ≈ 1 mA/通道。对 500 kHz 带宽有 20× 余量。</div>
+</div>
+
+<div class="stage" id="S7">
+  <div class="shead"><span class="sid">S7</span><span class="sname">R3 · 49.9Ω 1%</span><span class="srole">梯形源端阻抗 + 容性隔离</span></div>
+  <div class="srow"><div class="skey">信号在此的变化</div><div class="sval">与后级 LC 一起构成<b>双端接梯形</b>的源端 50Ω。信号在此进入滤波器，幅度基本不变（R3 与 LC 的输入阻抗分压），但<b>滤波器的形状由它定义</b>。</div></div>
+  <div class="srow eq"><div class="skey">理论公式与计算过程</div><div class="sval"><ul><li>双端接条件：源端阻抗 R3 = R4 = 50Ω，与滤波器特征阻抗 R<sub>0</sub> = 50Ω 匹配。</li><li>端阻抗对滤波器的影响：把 R3 从 49.9 改成 59Ω（仿真 O1）⇒ 阻带改善 0.94 dB，但通带起伏从 0.39 dB 恶化到 0.60 dB —— 方向反了，故否决。</li><li>容性隔离：C2 在 1 MHz 处 |Z| = 25.7Ω；串入 49.9Ω 后，运放看到的负载从「纯容性 25.7Ω」变成「49.9 + 25.7∠−90°」，相位裕度不再被容性负载吃掉。</li></ul></div></div>
+  <div class="srow why"><div class="skey">选型依据</div><div class="sval">它同时是两个角色：① 双端接梯形的源端阻抗（与 R4 配对，<b>改它 = 改滤波器</b>）；② 把 U1A 输出与梯形的大容性输入隔开。E96 标准值 49.9Ω、1%。</div></div>
+  <div class="snote">⚠ 禁错：不要把它当「隔离电阻」随手改成 0Ω —— 那会同时废掉匹配与源阻抗。</div>
+</div>
+
+<div class="stage" id="S8">
+  <div class="shead"><span class="sid">S8</span><span class="sname">L1 4.7µH + C2 6.2nF</span><span class="srole">8 阶 LC 第 1 节</span></div>
+  <div class="srow"><div class="skey">信号在此的变化</div><div class="sval">串臂 L1 对高频呈高阻（|Z<sub>L</sub>| = 2πfL），并臂 C2 把漏过 L1 的高频成分泄入 AGND。这一节把转折频率以上的成分开始往下压。带内幅度几乎不变，<b>高频段幅度快速衰减、相位滞后</b>。</div></div>
+  <div class="srow eq"><div class="skey">理论公式与计算过程</div><div class="sval"><ul><li>巴特沃斯原型 g 值（n = 8，从源端数）：g₁…g₈ = 0.3902, 1.1111, 1.6629, 1.9616, 1.9616, 1.6629, 1.1111, 0.3902。</li><li>元件换算（R₀ = 50Ω、f<sub>c</sub> = 660 kHz、ω<sub>c</sub> = 2πf<sub>c</sub> = 4.1469×10⁶ rad/s）：</li><li>串臂电感：L<sub>k</sub> = g<sub>k</sub>·R₀/ω<sub>c</sub>；并臂电容：C<sub>k</sub> = g<sub>k</sub>/(R₀·ω<sub>c</sub>)。</li><li>L1 = 0.3902 × 50 / 4.1469×10⁶ = 4.705 µH ⇒ 取 <b>4.7 µH</b>（偏差 −0.1%）。</li><li>C2 = 1.1111 / (50 × 4.1469×10⁶) = 5.358 nF ⇒ 图纸取 <b>6.2 nF</b>（+15.7%，见 note）。</li></ul></div></div>
+  <div class="srow why"><div class="skey">选型依据</div><div class="sval">L1 选 <b>XRCD54-4R7M</b> 绕线电感：4.7 µH 档、额定电流远大于本电路峰值（见下），屏蔽型（XRCD）减少与相邻电感的互感。C2 用 <b>C0G 0805</b>：容值不随电压/温度漂移，否则滤波器的转折频率会随信号幅度漂移，破坏标定。</div></div>
+  <div class="snote">⚠ C2 = 6.2 nF 是<b>按 17 点标定残差择优</b>出来的值（理想 5.36 nF，在售档位里 6.2 nF 使标定残差最坏值最小）。<b>不要按巴特沃斯标准表核对</b>，这套 LC 值是「在售档位 + 标定残差」双约束下的拟合值，必须靠 ABCD 级联复算背书。</div>
+</div>
+
+<div class="stage" id="S9">
+  <div class="shead"><span class="sid">S9</span><span class="sname">L3 22µH + C4 10nF</span><span class="srole">8 阶 LC 第 2 节</span></div>
+  <div class="srow"><div class="skey">信号在此的变化</div><div class="sval">同上：串臂继续挡高频，并臂继续泄放。累积衰减以约 6 dB/倍频程（每节）递增，在阻带内 8 节合起来是 48 dB/倍频程。</div></div>
+  <div class="srow eq"><div class="skey">理论公式与计算过程</div><div class="sval"><ul><li>L3 = g₃·R₀/ω<sub>c</sub> = 1.6629 × 50 / 4.1469×10⁶ = 20.05 µH ⇒ 取 <b>22 µH</b>（+9.7%）。</li><li>C4 = g₄/(R₀·ω<sub>c</sub>) = 1.9616 / (50 × 4.1469×10⁶) = 9.460 nF ⇒ 取 <b>10 nF</b>（+5.7%）。</li><li>单节转折：f = 1/(2π√(LC)) = 1/(2π√(22µ×10n)) = 1/(2π×4.69×10⁻⁷) = 339 kHz（该节的自谐振点，实际转折由整链共同决定）。</li></ul></div></div>
+  <div class="srow why"><div class="skey">选型依据</div><div class="sval">L3 用 <b>CD54-220M</b>（22 µH 档，与 L5 同料号，统一 BOM）；C4 用 C0G 0805。偏差 +9.7% 是「E24 在售档位 + 整链复算」的折中，不是随手取的。</div></div>
+  <div class="snote">⚠ PCB 硬约束：<b>四个电感必须正交摆放</b>（相邻两两垂直），否则互感会把滤波器的实际响应拉偏，而 DRC 不会报错。</div>
+</div>
+
+<div class="stage" id="S10">
+  <div class="shead"><span class="sid">S10</span><span class="sname">L5 22µH + C6 9.1nF</span><span class="srole">8 阶 LC 第 3 节</span></div>
+  <div class="srow"><div class="skey">信号在此的变化</div><div class="sval">同上。这一节的电容 C6 是整链里<b>偏离理想值最大</b>的一颗（理想 8.02 nF → 实取 9.1 nF），代价是带内约 375 kHz 处出现极浅的凹陷（&lt; 0.15 dB），由 17 点标定吸收。</div></div>
+  <div class="srow eq"><div class="skey">理论公式与计算过程</div><div class="sval"><ul><li>L5 = g₅·R₀/ω<sub>c</sub> = 1.9616 × 50 / 4.1469×10⁶ = 23.65 µH ⇒ 取 <b>22 µH</b>（−7.0%）。</li><li>C6 = g₆/(R₀·ω<sub>c</sub>) = 1.6629 / (50 × 4.1469×10⁶) = 8.019 nF ⇒ 择优取 <b>9.1 nF</b>（+13.5%）。</li><li>择优依据：把 C6 从 10 nF 改到 9.1 nF 后，17 点标定残差的最坏值从 5.22 mV 降到 2.97 mV（判据 5 mV，n = 400 蒙特卡洛）。</li></ul></div></div>
+  <div class="srow why"><div class="skey">选型依据</div><div class="sval">C6 取 9.1 nF（GRM2195C1H912JA01D，C0G 0805）是<b>仿真择优</b>结果：原值 10 nF 时最坏残差已<b>超判据</b>（5.22 mV &gt; 5 mV），必须改。这不是「画错了」，而是「在售档位里能买到的最优解」。</div></div>
+  <div class="snote">⚠ 这一条是「为什么不能按标准表核对」的最佳例证：8.02 nF 在 E24/E96 里都不好买，9.1 nF 是 E24 档位。</div>
+</div>
+
+<div class="stage" id="S11">
+  <div class="shead"><span class="sid">S11</span><span class="sname">L7 12µH + C8 1.8nF</span><span class="srole">8 阶 LC 第 4 节（末节）</span></div>
+  <div class="srow"><div class="skey">信号在此的变化</div><div class="sval">末节并臂 C8 与负载端 R4 一起构成梯形末端。经过 4 节累积，≥1.5 MHz 的成分被压到 −65 dB 量级（相对通带）。</div></div>
+  <div class="srow eq"><div class="skey">理论公式与计算过程</div><div class="sval"><ul><li>L7 = g₇·R₀/ω<sub>c</sub> = 1.1111 × 50 / 4.1469×10⁶ = 13.39 µH ⇒ 取 <b>12 µH</b>（−10.4%）。</li><li>C8 = g₈/(R₀·ω<sub>c</sub>) = 0.3902 / (50 × 4.1469×10⁶) = 1.882 nF ⇒ 取 <b>1.8 nF</b>（−4.4%）。</li><li>整链 ABCD 级联复算（R3 = R4 = 49.9Ω，含 C7 隔直）：</li><li>　|H| @10 kHz = 0.50015（−6.018 dB，双端接固有插损 = 1/2）；</li><li>　|H| @500 kHz = 0.49897（−6.039 dB）⇒ 带内 10k~500k 起伏 <b>0.0025 dB</b>；</li><li>　|H| @1.5 MHz = 0.00054（−65.33 dB）⇒ 归一化阻带 <b>−64.3 dB</b>，判据 ≤ −42.5 dB，<b>余量 21.8 dB</b>。</li></ul></div></div>
+  <div class="srow why"><div class="skey">选型依据</div><div class="sval">L7 用 <b>XRCD54-120M</b>（12 µH）；C8 用 C0G 0805 1.8 nF。末节的值决定了阻带起始的陡度，偏差必须靠整链复算确认。</div></div>
+  <div class="snote">⚠ 「双端接 ×0.5」是<b>梯形固有的插损</b>：50Ω 源 + 50Ω 负载的匹配网络中，只有一半的源电动势落在负载上。这不是缺陷，是 50Ω 系统的定义。</div>
+</div>
+
+<div class="stage" id="S12">
+  <div class="shead"><span class="sid">S12</span><span class="sname">C7 10µF + R4 49.9Ω</span><span class="srole">隔直终接</span></div>
+  <div class="srow"><div class="skey">信号在此的变化</div><div class="sval">R4 是梯形的<b>负载端阻抗</b>（终接），与 R3 配对；C7 串在 R4 入地腿上，对交流几乎透明、对直流断路。于是：滤波器形态不变，但<b>梯形内的直流电流归零</b>。</div></div>
+  <div class="srow eq"><div class="skey">理论公式与计算过程</div><div class="sval"><ul><li>直流：电感在直流上短路 ⇒ 若不隔直，R3 → L1…L7 → R4 是一条纯直流通路，I<sub>DC</sub> = VBIAS/(R3+R4+ΣDCR) ≈ 1.650/(49.9+49.9+小量) ≈ 16.5 mA。</li><li>隔直后：I<sub>DC</sub> = 0；+5V_A 的真实负载从 ~18.5 mA 回落到 <b>≈ 2 mA</b>。</li><li>C7 在 500 kHz 的阻抗：|Z| = 1/(2π×500×10³×10×10⁻⁶) = <b>31.8 mΩ</b> ⇒ 对 49.9Ω 终接的影响 &lt; 0.07%。</li><li>对照（若 C7 误装 10 nF）：|Z| = 1/(2π×500×10³×10×10⁻⁹) = <b>31.8 Ω</b> ⇒ 终接阻抗变成 49.9 + j(−31.8)，相位与幅度都错，<b>滤波器形状被破坏</b>。</li></ul></div></div>
+  <div class="srow why"><div class="skey">选型依据</div><div class="sval">C7 取 10 µF：既要把 16.5 mA 的直流白流掐断（否则电感白发热、占掉 Isat 余量 33%），又要在 500 kHz 处阻抗足够小以不干扰终接。10 µF 同时满足两条（31.8 mΩ ≪ 49.9Ω）。</div></div>
+  <div class="snote">⚠ <b>本图为「图面值异常」项之一</b>：当前图面写 10 nF（实体料号 CC0805KRX7R9BB104 = 100 nF），设计口径是 10 µF —— 详见 §7 核对表。</div>
+</div>
+
+<div class="stage" id="S13">
+  <div class="shead"><span class="sid">S13</span><span class="sname">C9 100nF (C0G) + R5 10kΩ</span><span class="srole">二次隔直</span></div>
+  <div class="srow"><div class="skey">信号在此的变化</div><div class="sval">把滤波器输出的直流点（= VBIAS，因为电感直流短路）<b>再隔一次</b>，只把纯交流分量交给增益级，并重新用 R5 把工作点抬到 VBIAS。频域上形成第二个 159 Hz 高通。</div></div>
+  <div class="srow eq"><div class="skey">理论公式与计算过程</div><div class="sval"><ul><li>第二级高通：f<sub>c</sub> = 1/(2π·R5·C9) = 1/(2π × 10×10³ × 100×10⁻⁹) = 159.15 Hz（与 S4 同值）。</li><li>为什么必须隔两次：C1 挡的是<b>信号源</b>的直流，C9 挡的是<b>滤波器</b>的直流。若不隔第二次，U1B 的直流增益 ×7.975 会把 1.650 V 放大到 1.650 × 7.975 = <b>13.16 V</b>，远超单电源 5 V 轨 ⇒ 输出立即饱和出轨。</li></ul></div></div>
+  <div class="srow why"><div class="skey">选型依据</div><div class="sval">与 C1 同款（100 nF C0G 1206）；R5 与 R2 同值同规格（10 kΩ 1%），保证两级的直流工作点一致、高通拐点一致。</div></div>
+  <div class="snote">⚠ 「隔两次直」不是冗余：位置不同、职责不同。</div>
+</div>
+
+<div class="stage" id="S14">
+  <div class="shead"><span class="sid">S14</span><span class="sname">U1B · OPA2197 半片 + R6 24.9kΩ / R7 3.57kΩ</span><span class="srole">×7.975 增益</span></div>
+  <div class="srow"><div class="skey">信号在此的变化</div><div class="sval">把带内交流分量放大 <b>7.975 倍</b>；<b>直流输出恒等于 VBIAS（1.650 V），与增益无关</b>。闭环 −3 dB 带宽 ≈ 1.25 MHz（通带 500 kHz 的 2.5 倍）。相位：带内近似 0，在 1.25 MHz 附近开始滞后。</div></div>
+  <div class="srow eq"><div class="skey">理论公式与计算过程</div><div class="sval"><ul><li>增益：G = 1 + R6/R7 = 1 + 24.9×10³/3.57×10³ = 1 + 6.975 = <b>7.975</b>。</li><li>直流点的推导（R7 落 VBIAS 而非 GND）：</li><li>　虚短 V₋ = V₊ = V<sub>in</sub>；虚断 ⇒ (V<sub>out</sub> − V₋)/R6 = (V₋ − VBIAS)/R7；</li><li>　⇒ V<sub>out</sub> = V<sub>in</sub>·(1 + R6/R7) − VBIAS·(R6/R7)；</li><li>　⇒ V<sub>out</sub> − VBIAS = (V<sub>in</sub> − VBIAS)·(1 + R6/R7)。</li><li>　当 V<sub>in</sub> = VBIAS（直流工作点）时 V<sub>out</sub> = VBIAS ⇒ <b>直流输出与增益无关</b>。</li><li>反证（若 R7 落 GND）：V<sub>out</sub> = V<sub>in</sub>·(1+R6/R7) = 1.650 × 7.975 = 13.16 V ⇒ 饱和出轨。</li><li>闭环带宽：f<sub>−3dB</sub> = GBW/G = 10×10⁶ / 7.975 = <b>1.254 MHz</b>。</li><li>通带 droop（一阶）：@100 kHz 为 −0.028 dB；@500 kHz 为 −0.642 dB（LTI 常数，17 点标定吸收）。</li></ul></div></div>
+  <div class="srow why"><div class="skey">选型依据</div><div class="sval">R6/R7 都用 <b>0.1%</b>：增益误差是乘性的，虽然能被标定吸收，但 1% 电阻会给 17 点标定表加约 2% 的斜率不确定度、白吃判据余量，0.1% 只贵几分钱。<b>R7 落 VBIAS 是单电源设计的巧点</b>：把直流工作点与增益解耦。</div></div>
+  <div class="snote">⚠ PCB 硬约束：<b>R6/R7 必须紧贴 U1B 的反相端 ≤3 mm</b>。自激风险在<b>高阻的 −in 节点</b>而不是输出：该节点每多 5 pF 寄生电容吃约 6° 相位裕度，而输出端挂 100 pF 只损失 4.5°。</div>
+</div>
+
+<div class="stage" id="S15">
+  <div class="shead"><span class="sid">S15</span><span class="sname">R11 100Ω + C10 470pF (C0G)</span><span class="srole">ADC 反冲隔离</span></div>
+  <div class="srow"><div class="skey">信号在此的变化</div><div class="sval">构成一个 3.39 MHz 一阶低通：对 500 kHz 通带<b>几乎无影响</b>（−0.02 dB），但把 ADC 采样瞬间的电荷尖峰（kickback）就地吸收，不让它打到运放输出上。</div></div>
+  <div class="srow eq"><div class="skey">理论公式与计算过程</div><div class="sval"><ul><li>低通拐点：f<sub>c</sub> = 1/(2π·R11·C10) = 1/(2π × 100 × 470×10⁻¹²) = <b>3.386 MHz</b>。</li><li>时间常数：τ = R11·C10 = 100 × 470×10⁻¹² = <b>47 ns</b>（采样窗 500 ns 的 9.4%）。</li><li>反冲原理：ADC 内部采样电容 C<sub>sh</sub> ≈ 4 pF，采样瞬间从 0 充到 V<sub>in</sub>，需要电荷 Q = C<sub>sh</sub>·V<sub>in</sub> = 4×10⁻¹² × 1.65 = 6.6×10⁻¹² C。</li><li>该电荷由 C10 就近提供：C10 上的瞬时跌落 ΔV = Q/C10 = 6.6×10⁻¹²/470×10⁻¹² = <b>14 mV</b>，并在 τ = 47 ns 内由运放补回。没有 C10 时，这份电荷只能经 R11 从运放取，形成更大的输出尖峰。</li><li>R11 的上限约束（与固件采样时间绑死）：STM32F4 在 SMP = 3 周期下，数据手册要求 R<sub>AIN</sub> ≤ 0.4 kΩ（12 bit）。本设计 R11 = 100Ω，<b>余量 4×</b>。</li><li>采样网络充电：t<sub>s</sub> ≥ (R<sub>AIN</sub> + R<sub>ADC</sub>)·C<sub>ADC</sub>·ln(2<sup>n+2</sup>)；代入 n = 12、C<sub>ADC</sub> = 4 pF，得 t<sub>s</sub> ≥ 3.88×10⁻¹¹ × (R<sub>AIN</sub>+R<sub>ADC</sub>)。</li></ul></div></div>
+  <div class="srow why"><div class="skey">选型依据</div><div class="sval">R11 = 100Ω 与 C10 = 470 pF 是一组<b>绑死的约束</b>：C10 越大抗反冲越好，但 R11 一旦加大到几百 Ω 就会破坏 12 bit 精度（要求 R<sub>AIN</sub> ≤ 0.4 kΩ）；要加大就必须把采样周期从 3 提到 15，而那会把吞吐压到 1.33 MSPS、<b>破坏 fs = 2.0 MHz 这个冻结参数</b>。所以两个值都不能单独动。</div></div>
+  <div class="snote">⚠ <b>本图为「图面值异常」项之一</b>：当前图面写 100Ω（正确），但实体料号是 RT0805BRD0724K9L = 24.9 kΩ，按料号下单会买错件 —— 详见 §7。</div>
+</div>
+
+<div class="stage" id="S16">
+  <div class="shead"><span class="sid">S16</span><span class="sname">JP2 · 0Ω → AFE_ADC_IN → EVK1.4 (PA1)</span><span class="srole">ADC 前断点与跨域</span></div>
+  <div class="srow"><div class="skey">信号在此的变化</div><div class="sval">信号在此<b>跨越模拟域到数字域</b>：从 AFE 页的 AGND 参考，进入核心板 PA1 引脚（参考 GND）。信号本身不变（仍是 1.650 V 直流 + 交流分量），但参考地与回流路径换了。</div></div>
+  <div class="srow eq"><div class="skey">理论公式与计算过程</div><div class="sval"><ul><li>跨域点唯一：全板只有 AFE_ADC_IN 这一条模拟信号跨页网（另有电源/地跨页）。</li><li>PA1 = ADC1_IN1（STM32F407 的 ADC1 通道 1），配置 SMP = 3、TIM8 TRGO 触发、DMA2 Stream0 循环搬运。</li><li>信号幅度核算（最坏情况 u<sub>b</sub> 250 mV<sub>pp</sub> ⊕ u<sub>J</sub> 200 mV<sub>pp</sub>）：</li><li>　源端 → 端接 ×0.5 → LC 双端接 ×0.5 → 增益 ×7.975 ⇒ 净增益 = 0.5 × 0.5 × 7.975 = <b>1.995</b>（固件 BOARD_NET_GAIN = 2U）。</li><li>　ADC 输入摆幅 = ±249.4 mV<sub>pk</sub>，相对 VBIAS 的轨余量 <b>1.40 V</b>（不削顶）。</li><li>　不削顶的最大源端输入 = ±827 mV<sub>pk</sub>（1.654 V<sub>pp</sub>）。</li></ul></div></div>
+  <div class="srow why"><div class="skey">选型依据</div><div class="sval">JP2 是 ADC 前断点：断开后 AFE 与 ADC 解耦，可以单独给 ADC 注入测试信号（验证固件与 ADC 本身）。跨页必须用网络端口（AFE_ADC_IN）——这是原理图的物理限制，详见 §7.2。</div></div>
+  <div class="snote">⚠ TP4 是 JP2 之前的输出节点探针：静态应 ≈1.650 V（不饱和）、噪声底 &lt; 0.5 mV<sub>rms</sub>、扫频与自激观察点。</div>
+</div>
+
+<div class="stage" id="S17">
+  <div class="shead"><span class="sid">S17</span><span class="sname">ADC1 · 12 bit @ fs = 2.0 MHz</span><span class="srole">模数转换</span></div>
+  <div class="srow"><div class="skey">信号在此的变化</div><div class="sval">模拟电压被量化成数字码：<b>幅度连续 → 离散</b>，<b>时间连续 → 2 MSPS 采样</b>。量化台阶（LSB）= 805.66 µV @ADC = 403.84 µV @源端。采样把 ≥1.5 MHz 的成分折叠进 10k~500k 分析带 —— 这正是 S8~S12 必须存在的理由。</div></div>
+  <div class="srow eq"><div class="skey">理论公式与计算过程</div><div class="sval"><ul><li>LSB：1 LSB = VREF/2¹² = 3.3/4096 = <b>805.66 µV</b>（@ADC 引脚）。</li><li>折合到源端：805.66 µV / 1.995 = <b>403.84 µV</b>。</li><li>奈奎斯特：f<sub>N</sub> = fs/2 = 1.0 MHz；折叠带起点 f<sub>fold</sub> = fs − f<sub>max</sub> = 2.0 − 0.5 = <b>1.5 MHz</b>。</li><li>抗混叠判据：100 mV<sub>pk</sub>(u<sub>J</sub>) × 0.5(端接) × |H(1.5M)| × 7.975 ≤ 1.5 mV<sub>pk</sub></li><li>　⇒ |H(1.5M)| ≤ 1.5/(100×0.5×7.975) = 3.76×10⁻³ ⇒ 需要衰减 <b>≥ 48.5 dB</b>。</li><li>　实算：|H(1.5M)| = 5.4×10⁻⁴ ⇒ 衰减 65.3 dB ⇒ ADC 上只有 <b>0.216 mV<sub>pk</sub></b>，<b>余量 6.9×</b>。</li><li>采样窗口：SMP = 3 + 转换 12 = 15 ADCCLK；@36 MHz ⇒ 417 ns ⇒ 上限 2.4 MSPS（取 2.0 MSPS）。</li><li>缓冲深度：N = 4096 点 ⇒ 频率分辨率 Δf = fs/N = 2.0×10⁶/4096 = <b>488.3 Hz</b>。</li></ul></div></div>
+  <div class="srow why"><div class="skey">选型依据</div><div class="sval">fs = 2.0 MHz 与 N = 4096 是<b>冻结参数</b>：它们决定分析带宽（10k~500k）、频率分辨率与抗混叠判据。改任一个都必须重跑整条 DSP 复算。</div></div>
+  <div class="snote">⚠ VREF+ 实测口径 ≈ 3.3 V（由核心板 VDDA 经磁珠 + 47Ω 供给，板载基准不贴），固件 BOARD_ADC_VREF_MV 已按此回填。</div>
+</div>
+<h2 id="sec3">§3 偏置链与电源链</h2>
+<p class="lead">信号能"站在 1.650 V 上"上下摆，靠的是这两条支线。它们不承载信号，但决定了信号的质量。</p>
+
+<div class="stage" id="B1">
+  <div class="shead"><span class="sid">B1</span><span class="sname">R9 10kΩ / R10 10kΩ / C5 10µF</span><span class="srole">VBIAS 生成</span></div>
+  <div class="srow"><div class="skey">信号在此的变化</div><div class="sval">不承载信号，但生成整个模拟域的「地板高度」VBIAS = 1.650 V。信号质量间接全靠它稳：VBIAS 一抖，读数跟着抖。</div></div>
+  <div class="srow eq"><div class="skey">理论公式与计算过程</div><div class="sval"><ul><li>分压：VBIAS = 3V3 × R10/(R9+R10) = 3.3 × 10k/20k = <b>1.650 V</b>（正好是 ADC 量程中点）。</li><li>分压支路电流：I = 3.3/(10k+10k) = <b>165 µA</b>（可忽略）。</li><li>等效源阻抗：R<sub>eq</sub> = R9∥R10 = 10k∥10k = <b>5 kΩ</b>。</li><li>C5 低通（10 µF）：f<sub>c</sub> = 1/(2π·R<sub>eq</sub>·C5) = 1/(2π × 5000 × 10×10⁻⁶) = <b>3.18 Hz</b>（远低于带下限 10 kHz）。</li><li>对照（若 C5 误装 10 nF）：f<sub>c</sub> = 1/(2π × 5000 × 10×10⁻⁹) = <b>3.18 kHz</b>，储能能力差 1000×。</li><li>精度：R9/R10 各 1% ⇒ VBIAS 绝对精度约 ±1.5%（±25 mV）。</li></ul></div></div>
+  <div class="srow why"><div class="skey">选型依据</div><div class="sval">取 10 kΩ 是「电流 vs 噪声」的折中：支路电流 165 µA 可忽略，等效源阻抗 5 kΩ 与 C5 组成的低通把 3V3 轨上的噪声压掉。VBIAS 取 VREF/2（而不是随便 1.65 V）的意义是 <b>ratiometric</b>：VREF 漂 → VBIAS 同比漂 → 幅值测量自动抵消。</div></div>
+  <div class="snote">⚠ R9 的另一端接 <b>+3V3</b> 而不是核心板 REF 针 —— 因为 REF 针官方默认悬空，接上去 VBIAS 会停在 0 V、整条 AFE 不作为（这是 2026-10-02 修掉的 P0）。<b>本图为「图面值异常」项之一</b>：C5 当前图面写 10 nF，设计口径是 10 µF —— 见 §7。</div>
+</div>
+
+<div class="stage" id="B2">
+  <div class="shead"><span class="sid">B2</span><span class="sname">R21 4.7Ω + C11 22µF + C14 100nF</span><span class="srole">+5V_A 模拟轨隔离</span></div>
+  <div class="srow"><div class="skey">信号在此的变化</div><div class="sval">不承载信号，但决定模拟轨的干净度。与 C11 组成一阶低通，把数字轨（屏背光 / FSMC 开关电流）的纹波挡在模拟轨之外。</div></div>
+  <div class="srow eq"><div class="skey">理论公式与计算过程</div><div class="sval"><ul><li>低通拐点：f<sub>c</sub> = 1/(2π·R21·C11) = 1/(2π × 4.7 × 22×10⁻⁶) = <b>1.54 kHz</b>。</li><li>压降：I = 2 mA ⇒ ΔV = I·R21 = 2×10⁻³ × 4.7 = <b>9.4 mV</b>（0.19%，可接受）。</li><li>隔离度（仿真）：改前 R21 = 0Ω 时 1 V 电源抖动 → 14 mV 灌进 ADC（超判据 9 倍）；改后对 500 kHz 纹波隔离 <b>+50 dB</b>。</li><li>高频侧：C14 = 100 nF，在 500 kHz 处 |Z| = 318 mΩ，就近给 U1.8 引脚去耦（钽电容自感大，高频不灵）。</li></ul></div></div>
+  <div class="srow why"><div class="skey">选型依据</div><div class="sval">R21 由 0Ω 改成 4.7Ω（2026-10-03）：0Ω 时数字纹波直通模拟轨，以电源纹波形式混进 ADC 读数。4.7Ω 只掉 9.4 mV，却换来 20 dB 量级的隔离 —— <b>全板性价比最高的一处改动</b>。C11 是它的下臂（缺了下臂低通不成立），C14 补高频。</div></div>
+  <div class="snote">⚠ 上电前必查「R21 是否误贴 0Ω」——它的供应商编号曾指向旧的 0Ω 件，按料号下单会买错。（本次活体回读显示 R21 料号已修为 RC0805FR-074R7L = 4.7Ω，正确。）</div>
+</div>
+
+<div class="stage" id="B3">
+  <div class="shead"><span class="sid">B3</span><span class="sname">C16 22µF（+5V 入口储能）</span><span class="srole">+5V 入口储能</span></div>
+  <div class="srow"><div class="skey">信号在此的变化</div><div class="sval">不承载信号，但 +5V 轨的干净度是全板读数的根基。</div></div>
+  <div class="srow eq"><div class="skey">理论公式与计算过程</div><div class="sval"><ul><li>电源路径（核心板 5V 针 → 排针 → 底板）有寄生电感 L<sub>p</sub>（量级 100 nH）；</li><li>负载电流突变（开屏、FSMC 全总线翻转）时电压瞬塌：ΔV = L<sub>p</sub>·di/dt。</li><li>取 di/dt ≈ 0.5 A/µs、L<sub>p</sub> = 100 nH ⇒ ΔV ≈ 50 mV（若无处储能）。</li><li>C16 = 22 µF 就近补流：在 τ = √(L<sub>p</sub>C16) = √(100n × 22µ) = 47 ns 内顶住。</li></ul></div></div>
+  <div class="srow why"><div class="skey">选型依据</div><div class="sval">入口储能电容：抑制线缆/排针电感引起的瞬态跌落。钽电容（TAJB226K025RNJ）容值大、ESR 低。</div></div>
+  <div class="snote">⚠ 底板已删 DC 座 / PPTC / 防反接二极管（J3/F1/D2），改由核心板 Type-C 供电，入口防护由核心板提供。</div>
+</div>
+<h2 id="sec4">§4 INT 页 · 数字与显示链</h2>
+<p class="lead">本页原理图（活体矢量渲染）：</p>
+<figure><div class="figwrap"><a href="45-讲解配图/INT.svg" target="_blank" title="点击查看原尺寸"><img src="45-讲解配图/INT.svg" alt="INT 页原理图"></a></div><figcaption>图 4-0　INT 页完整原理图（点击查看原尺寸）：核心板 EVK1 + 屏接口 J5 + 21 只 33Ω 串阻阵列。</figcaption></figure>
+
+<div class="stage" id="D1">
+  <div class="shead"><span class="sid">D1</span><span class="sname">EVK1 · 立创天空星 F407VGT6-PRO（核心板）</span><span class="srole">大脑</span></div>
+  <div class="srow"><div class="skey">信号在此的变化</div><div class="sval">把 ADC 送来的 4096 点样本做 DSP（Upp / Urms / 频谱），再用 FSMC 硬件时序生成屏的 8080-16bit 时序。信号在此从「模拟波形」变成「数字码」再变成「显示时序」。</div></div>
+  <div class="srow eq"><div class="skey">理论公式与计算过程</div><div class="sval"><ul><li>ADC：12 bit / 2.0 MSPS / TIM8 TRGO 触发 / DMA2 Stream0 循环搬运 4096 点（双缓冲）。</li><li>DSP：抛物线粗频 → ±Δf/8 三点 |X| → 单点 DFT 精化 → 17 点对数频标定。</li><li>FSMC 写周期：约 104 ns/像素 ⇒ 320×480 = 153 600 像素 ⇒ 16.0 ms/帧 ⇒ <b>62 fps</b>。</li></ul></div></div>
+  <div class="srow why"><div class="skey">选型依据</div><div class="sval">STM32F407 @168 MHz + DSP 指令 + FSMC 硬件时序：题面要求实时测量与显示，FSMC 让 CPU 零参与刷屏。</div></div>
+  <div class="snote">⚠ 全板电源源头：+5V 从核心板 5V 针（EVK1.40/80）出（Type-C 进电），LDO 生成 +3V3（EVK1.38/78）。地：EVK1.37(AGND) 与 EVK1.39/77/79(GND) 在核心板内部经一颗 0Ω 单点汇合 —— <b>这是全板唯一的地回路</b>。</div>
+</div>
+
+<div class="stage" id="D2">
+  <div class="shead"><span class="sid">D2</span><span class="sname">R22 ~ R42 · 21 × 33Ω ±1%</span><span class="srole">FSMC 源端串联阻尼</span></div>
+  <div class="srow"><div class="skey">信号在此的变化</div><div class="sval">不改变逻辑电平（0/3.3 V 不变），但把边沿<b>变缓</b>、把过冲<b>压平</b>：台面飞线场景过冲从 47% 降到 8%，边沿从 9.5 ns 拉到 14.6 ns。这一步直接决定 J5.29 地针上的地弹幅度（地弹 ∝ L<sub>gnd</sub>·N·di/dt）。</div></div>
+  <div class="srow eq"><div class="skey">理论公式与计算过程</div><div class="sval"><ul><li>源端串联端接原理：R<sub>s</sub> + R<sub>drv</sub> ≈ Z<sub>0</sub>（线特征阻抗）⇒ 消除二次反射。</li><li>排线特征阻抗 Z<sub>0</sub> ≈ 100Ω，MCU 输出阻抗 R<sub>drv</sub> ≈ 25Ω ⇒ R<sub>s</sub> = 33Ω（经验配比）。</li><li>过冲对比（仿真，台面飞线）：0Ω 时 3.3 V 冲到 4.84 V（47%）；33Ω 时冲到 3.56 V（8%）。</li><li>谐波落点：边沿 9.5 ns ⇒ 振铃基频 ≈ 1/(2π·t<sub>r</sub>) ≈ 17 MHz，其谐波列覆盖 10k~500k 分析带 ⇒ 必须阻尼。</li><li>复位线（R42）代价：把复位沿拖慢 0.155%（RST 只在初始化翻转一次，非性能必需）。</li></ul></div></div>
+  <div class="srow why"><div class="skey">选型依据</div><div class="sval">33Ω 是源端串联阻尼的标准值：与排线特征阻抗配比。2 层板没有地平面兜底，所以这条从「优化」升级成「<b>必做</b>」。</div></div>
+  <div class="snote">⚠ PCB 硬约束：<b>必须贴 MCU 引脚 3~5 mm</b>。图纸把它们画在 J5 侧是 EDA 工具限制（EVK1 符号几何守卫误判）；<b>贴到连接器侧 = 阻尼加在终点 = 等于没加</b>。</div>
+</div>
+
+<div class="stage" id="D3">
+  <div class="shead"><span class="sid">D3</span><span class="sname">J5 · 2×15P 母座（30 脚）</span><span class="srole">屏接口</span></div>
+  <div class="srow"><div class="skey">信号在此的变化</div><div class="sval">屏侧全部信号的出入口：21 根 LCD 线（经 33Ω）+ I²C 两根 + INT + 背光控制。逻辑电平：3.3 V CMOS，上升/下降沿已被 D2 阻尼。</div></div>
+  <div class="srow eq"><div class="skey">理论公式与计算过程</div><div class="sval"><ul><li>逐脚映射（单一真相源）：J5.1~21 = CS/RS/WR/RD/RST + D0~D15；J5.22/23/25 = NC；J5.24/26 = TP_SCL/SDA；J5.27 = TP_INT；J5.28 = LCD_BL_CTL；J5.29 = GND；J5.30 = +3V3。</li><li>地弹估算：ΔV<sub>gnd</sub> = L<sub>gnd</sub>·N·di/dt；单地针 L<sub>gnd</sub> 必须 ≤ 30 nH（PCB 硬约束）。</li></ul></div></div>
+  <div class="srow why"><div class="skey">选型依据</div><div class="sval">8080-16bit 并口而不是 SPI/RGB：16bit 并口每像素一次写、FSMC 硬件时序直出、CPU 零参与；SPI 刷不动 320×480@60fps；RGB 屏要持续刷（无帧存），CPU 占用高。代价是 20 根线 + 20 只串阻。</div></div>
+  <div class="snote">⚠ <b>J5.29 是全板最弱一环</b>：20 条信号线的回流全压在它上。PCB 上必须短、宽、多过孔。</div>
+</div>
+
+<div class="stage" id="D4">
+  <div class="shead"><span class="sid">D4</span><span class="sname">R15 / R16 · 4.7kΩ（I²C 上拉）</span><span class="srole">触摸总线</span></div>
+  <div class="srow"><div class="skey">信号在此的变化</div><div class="sval">I²C 是开漏总线：器件只能把线拉低，拉高<b>全靠上拉电阻</b>。逻辑电平 3.3 V；上升沿由 R·C 决定。</div></div>
+  <div class="srow eq"><div class="skey">理论公式与计算过程</div><div class="sval"><ul><li>上升时间（标准模式 100 kHz，总线电容 C<sub>b</sub> ≤ 200 pF）：</li><li>　t<sub>r</sub> ≈ 0.8473·R·C<sub>b</sub> = 0.8473 × 4700 × 200×10⁻¹² = <b>796 ns</b> &lt; 1000 ns（I²C 标准模式上限）。</li><li>拉低电流：I = 3.3/4700 = <b>0.70 mA</b>（每次拉低时）。</li><li>若转接板 SDA 侧自带 4.7k：并联成 2.35 kΩ ⇒ t<sub>r</sub> ≈ 398 ns，仍合法（只是功耗略增、边沿略陡）。</li></ul></div></div>
+  <div class="srow why"><div class="skey">选型依据</div><div class="sval">4.7 kΩ 是 100 kHz 标准 I²C 的典型值。R16（SDA）可能是重复的，但删它只省 ¥0.01，却要赌「这批模块一定有 SDA 上拉」—— 判定保留。</div></div>
+  <div class="snote">⚠ TP_INT（J5.27 → PC5）：FT6336 的 INT 是开漏输出，MCU 侧配<b>输入 + 内部上拉（~40 kΩ）</b>，绝不能配成输出（否则对打）。INT 是慢信号，40 kΩ 上拉的边沿足够。</div>
+</div>
+
+<div class="stage" id="D5">
+  <div class="shead"><span class="sid">D5</span><span class="sname">R12 · 1kΩ（背光控制）</span><span class="srole">背光栅极阻尼</span></div>
+  <div class="srow"><div class="skey">信号在此的变化</div><div class="sval">串在 PB0 → LCD_BL_CTL 之间。它是<b>栅极串阻，不是限流电阻</b>：只压制适配板上开关管栅极动作瞬间的振铃。背光电流完全不由底板决定。</div></div>
+  <div class="srow eq"><div class="skey">理论公式与计算过程</div><div class="sval"><ul><li>适配板把 LED-A 直挂 3.3 V、无限流电阻 ⇒ 电流由 LED 的 V<sub>f</sub>-I 曲线决定。</li><li>规格：恒流 60 mA ±10%，V<sub>f</sub>@60mA = 2.9 / 3.1 / 3.6 V（min/typ/max）。</li><li>若实测电流偏大（&gt; 66 mA）：改 +5V 串 33Ω 镇流；<b>从 3V3 串电阻无效</b>（余量 0.2 V &lt; V<sub>f</sub> 离散 0.35 V）。</li></ul></div></div>
+  <div class="srow why"><div class="skey">选型依据</div><div class="sval">1 kΩ 足够压振铃又不拖慢开关；同时是个可测点。铁律：<b>背光恒亮、禁 PWM</b>（PWM 谐波列全落在 10~500 kHz 分析带，是固定频率伪峰源）。</div></div>
+  <div class="snote">⚠ 背光驱动方式与规格不匹配（恒压 vs 恒流）是已知风险：「能亮」≠「合规」，上板先测 54~66 mA。</div>
+</div>
+<h2 id="sec5">§5 公式推导总表</h2>
+<p class="lead">把上文的推导按"信号链顺序"集中列出，便于核对与引用。每条都给出<b>通式 → 代入 → 结果</b>。</p>
+<table><thead><tr><th>#</th><th>物理量</th><th>通式</th><th>代入</th><th>结果</th></tr></thead><tbody>
+<tr><td>1</td><td>端接分压</td><td>V = Es·R1/(Rs+R1)</td><td>50/(50+49.9)</td><td>0.4995·Es</td></tr>
+<tr><td>2</td><td>回波损耗</td><td>RL = −20log|Γ|, Γ=(R1−Z0)/(R1+Z0)</td><td>Γ=(49.9−50)/99.9</td><td>60 dB（1% 最坏 48 dB）</td></tr>
+<tr><td>3</td><td>输入高通</td><td>fc = 1/(2πRC)</td><td>1/(2π·10k·100n)</td><td>159.15 Hz</td></tr>
+<tr><td>4</td><td>高通带内误差</td><td>|H| = ωRC/√(1+(ωRC)²)</td><td>ωRC = 62.83 @10 kHz</td><td>−0.001 dB</td></tr>
+<tr><td>5</td><td>巴特沃斯串臂</td><td>Lk = gk·R0/ωc</td><td>0.3902×50/4.1469e6</td><td>L1 = 4.705 µH</td></tr>
+<tr><td>6</td><td>巴特沃斯并臂</td><td>Ck = gk/(R0·ωc)</td><td>1.1111/(50×4.1469e6)</td><td>C2 = 5.358 nF</td></tr>
+<tr><td>7</td><td>电感容抗</td><td>|ZL| = 2πfL</td><td>2π·500k·4.7µ</td><td>14.8 Ω @500 kHz</td></tr>
+<tr><td>8</td><td>电容容抗</td><td>|ZC| = 1/(2πfC)</td><td>1/(2π·500k·6.2n)</td><td>51.3 Ω @500 kHz</td></tr>
+<tr><td>9</td><td>隔直电容阻抗</td><td>|ZC| = 1/(2πfC)</td><td>1/(2π·500k·10µ)</td><td>31.8 mΩ（10 µF）</td></tr>
+<tr><td>10</td><td>梯形插损</td><td>双端接 ⇒ 1/2</td><td>—</td><td>−6.02 dB</td></tr>
+<tr><td>11</td><td>同相增益</td><td>G = 1 + R6/R7</td><td>1 + 24.9k/3.57k</td><td>7.975</td></tr>
+<tr><td>12</td><td>直流工作点（R7 落 VBIAS）</td><td>Vout − VBIAS = (Vin − VBIAS)·G</td><td>Vin = VBIAS</td><td>Vout = VBIAS = 1.650 V</td></tr>
+<tr><td>13</td><td>闭环带宽</td><td>f−3dB = GBW/G</td><td>10 MHz/7.975</td><td>1.254 MHz</td></tr>
+<tr><td>14</td><td>ADC 反冲 RC</td><td>fc = 1/(2πRC), τ = RC</td><td>1/(2π·100·470p)</td><td>3.386 MHz / 47 ns</td></tr>
+<tr><td>15</td><td>反冲电荷分配</td><td>ΔV = Csh·Vin/C10</td><td>4p×1.65/470p</td><td>14 mV</td></tr>
+<tr><td>16</td><td>采样网络充电</td><td>ts ≥ (RAIN+RADC)·CADC·ln(2^(n+2))</td><td>n=12, CADC=4p</td><td>RAIN ≤ 0.4 kΩ（手册值）</td></tr>
+<tr><td>17</td><td>VBIAS 分压</td><td>V = V3V3·R10/(R9+R10)</td><td>3.3×10k/20k</td><td>1.650 V</td></tr>
+<tr><td>18</td><td>VBIAS 低通</td><td>fc = 1/(2π·(R9∥R10)·C5)</td><td>1/(2π·5k·10µ)</td><td>3.18 Hz</td></tr>
+<tr><td>19</td><td>模拟轨隔离</td><td>fc = 1/(2π·R21·C11)</td><td>1/(2π·4.7·22µ)</td><td>1.54 kHz</td></tr>
+<tr><td>20</td><td>模拟轨压降</td><td>ΔV = I·R21</td><td>2m×4.7</td><td>9.4 mV</td></tr>
+<tr><td>21</td><td>ADC 量化</td><td>LSB = VREF/2^n</td><td>3.3/4096</td><td>805.66 µV</td></tr>
+<tr><td>22</td><td>频率分辨率</td><td>Δf = fs/N</td><td>2.0e6/4096</td><td>488.3 Hz</td></tr>
+<tr><td>23</td><td>抗混叠判据</td><td>UJ·0.5·|H(ffold)|·G ≤ 1.5 mVpk</td><td>100m·0.5·|H|·7.975</td><td>|H| ≤ 3.76e−3 ⇒ ≥48.5 dB</td></tr>
+<tr><td>24</td><td>I²C 上升时间</td><td>tr ≈ 0.8473·R·Cb</td><td>0.8473×4.7k×200p</td><td>796 ns &lt; 1000 ns</td></tr>
+<tr><td>25</td><td>地弹</td><td>ΔVgnd = Lgnd·N·di/dt</td><td>Lgnd ≤ 30 nH（PCB 约束）</td><td>—</td></tr>
+</tbody></table>
+
+<h2 id="sec6">§6 选型依据总表</h2>
+<p class="lead">按"为什么是这个型号"集中列出。位号顺序与信号链一致。</p>
+<table><thead><tr><th>位号</th><th>值</th><th>型号 / 料号</th><th>选它的理由（一句话）</th></tr></thead><tbody>
+<tr><td>J1</td><td>SMA-KE</td><td>SMA-KE 母座</td><td>50Ω 同轴入口；题面 BNC 电缆经转接件接入</td></tr>
+<tr><td>R1/R3/R4</td><td>49.9 Ω 1%</td><td>0805W8F499JT5E</td><td>E96 标准 50Ω 档；双端接梯形的两个端阻抗 + 源端阻抗</td></tr>
+<tr><td>D1</td><td>—</td><td>PESD5V0X1BT（SOT-23-3）</td><td>Cj 仅 pF 级，500 kHz 处对 50Ω 节点透明；普通 TVS 几十 pF 会引入不可控漂移</td></tr>
+<tr><td>C1/C9</td><td>100 nF</td><td>1206CG104J500NT（C0G）</td><td>隔直；C0G 容值不随电压/温度漂，否则拐点附近相移不可标定</td></tr>
+<tr><td>R2/R5/R9/R10</td><td>10 kΩ 1%</td><td>0805W8F1002T5E</td><td>直流回路到 VBIAS；10k 是"不加载源 / 不被 Ib 顶偏"的折中</td></tr>
+<tr><td>U1</td><td>—</td><td>OPA2197ID（SOIC-8）</td><td>GBW 10 MHz（对 500 kHz 有 20× 余量）、单电源、轨到轨、Ib 仅 ±5 pA</td></tr>
+<tr><td>L1/L3/L5/L7</td><td>4.7/22/22/12 µH</td><td>XRCD54-4R7M / CD54-220M ×2 / XRCD54-120M</td><td>绕线、屏蔽型（防互感）；额定电流远大于 1.25 mA pk</td></tr>
+<tr><td>C2/C4/C6/C8</td><td>6.2/10/9.1/1.8 nF</td><td>GRM2195C1H622JA01D 等（C0G 0805）</td><td>并臂泄放；C0G 保证转折频率不随幅度漂；C2/C6 按标定残差择优</td></tr>
+<tr><td>C5</td><td>10 µF</td><td>CL21A106KAYNNNE（设计口径）</td><td>VBIAS 储能/退耦，与 5 kΩ 源阻抗构成 3.18 Hz 低通</td></tr>
+<tr><td>C7</td><td>10 µF</td><td>CL21A106KAYNNNE（设计口径）</td><td>串在 R4 入地腿：掐断 16.5 mA 直流白流，500 kHz 处仅 31.8 mΩ</td></tr>
+<tr><td>R6</td><td>24.9 kΩ 0.1%</td><td>RT0805BRD0724K9L</td><td>增益上臂；0.1% 避免给标定表加 ~2% 斜率不确定度</td></tr>
+<tr><td>R7</td><td>3.57 kΩ 0.1%</td><td>ARG05BTC3571</td><td>增益下臂落 VBIAS：直流输出恒为 1.650 V，与增益无关</td></tr>
+<tr><td>R11</td><td>100 Ω</td><td>0805W8F1000T5E（设计口径）</td><td>与 C10 组成 3.39 MHz 低通；受"RAIN ≤ 0.4 kΩ"硬约束，不能再加大</td></tr>
+<tr><td>C10</td><td>470 pF</td><td>CL10C471JB8NNNC（C0G）</td><td>ADC 采样开关的就近电荷库（100× 于 Csh=4 pF）</td></tr>
+<tr><td>C11</td><td>22 µF</td><td>TAJB226K025RNJ（钽）</td><td>+5V_A 储能下臂，与 R21 组成 1.54 kHz 低通</td></tr>
+<tr><td>C14</td><td>100 nF</td><td>CC0805KRX7R9BB104</td><td>高频去耦（钽电容自感大，高频不灵，需小电容补）</td></tr>
+<tr><td>R21</td><td>4.7 Ω</td><td>RC0805FR-074R7L</td><td>模拟/数字轨隔离；压降仅 9.4 mV，500 kHz 隔离 +50 dB</td></tr>
+<tr><td>C16</td><td>22 µF</td><td>TAJB226K025RNJ</td><td>+5V 入口储能，顶住排针电感的瞬态跌落</td></tr>
+<tr><td>R22~R42</td><td>33 Ω 1%</td><td>0805W8F330JT5E</td><td>FSMC 源端串联阻尼；与排线 ~100Ω 配比，过冲 47%→8%</td></tr>
+<tr><td>C3</td><td>10 µF</td><td>CL21A106KAYNNNE（设计口径）</td><td>屏就近储能（+3V3 的最大负载是背光 54~66 mA）</td></tr>
+<tr><td>C22</td><td>100 nF</td><td>CC0805KRX7R9BB104</td><td>屏就近高频去耦，与 C3 一大一小互补</td></tr>
+<tr><td>R12</td><td>1 kΩ</td><td>0805W8F1001T5E</td><td>背光开关管的栅极串阻（不是限流电阻）</td></tr>
+<tr><td>R15/R16</td><td>4.7 kΩ</td><td>0805W8F4701T5E</td><td>I²C 开漏上拉；100 kHz 下上升时间 796 ns &lt; 1 µs</td></tr>
+<tr><td>J5</td><td>2×15P</td><td>2.54mm 母座</td><td>30-pin 屏适配板唯一接口；21 根 LCD + I²C + INT + 背光 + 电源 + 地</td></tr>
+<tr><td>EVK1</td><td>—</td><td>立创天空星 F407VGT6-PRO</td><td>168 MHz + DSP 指令 + FSMC 硬件时序；全板电源源头</td></tr>
+</tbody></table>
+
+<h2 id="sec7">§7 图纸核查：连续性、网络标签、图面值</h2>
+<h3>7.1 信号链连续性核查（活体证据）</h3>
+<p>本次用 2026-10-04 的活体网表对三页做了机械判据核查，结论是 <b>电气层不存在断点</b>：</p>
+<ul class="checks"><li>单引脚网（只有 1 个器件引脚的网）：<b>0 条</b></li><li>悬空引脚（无网且未打 NC）：<b>0 个</b></li><li>孤桩（未连到任何器件引脚的导线）：<b>0 条</b></li><li>同名异网 / 同网异名：<b>0 条</b></li><li>全工程网数：<b>68 张</b>，跨页网 9 条，全部成对</li><li><code>sch check</code>：AFE 2 / INT 47 / PWR 1，<b>全部 WARN，0 ERROR</b></li></ul>
+<p>⇒ <b>信号流在电气上是连续不中断的</b>，不需要"重新布局并重新接线"。上面图 1-1 的连续链条就是按这条真实拓扑画的。</p>
+<h3>7.2 为什么跨页处必须用网络端口</h3>
+<p>信号链上只有一个地方"看起来断了"：AFE 页的最后一级到 MCU 的 PA1。这不是图纸缺陷，而是原理图的<b>物理限制</b>——一张图纸画不下整个系统，跨图纸的连接只能靠网络名（net port / net flag）来建立。全板共 9 条跨页网：</p>
+<table class="ct"><thead><tr><th>跨页网</th><th>一端的成员</th><th>另一端的成员</th><th>性质</th></tr></thead><tbody><tr><td class="mono">AFE_ADC_IN</td><td>AFE: JP2.2</td><td>INT: EVK1.4 (PA1)</td><td>模拟→数字（唯一的信号跨域点）</td></tr><tr><td class="mono">VBIAS</td><td>AFE: R2/R5/R7/R9/R10/C5/TP5</td><td>INT: EVK1.9 (PC4)</td><td>模拟→数字（只读探针，固件不采）</td></tr><tr><td class="mono">+3V3</td><td>AFE: R9.1</td><td>INT: J5.30/EVK1.38,78/C3/C22 · PWR: R15.1/R16.1</td><td>电源</td></tr><tr><td class="mono">+5V</td><td>PWR: C16.1/R21.1</td><td>INT: EVK1.40/80</td><td>电源</td></tr><tr><td class="mono">+5V_A</td><td>PWR: R21.2</td><td>AFE: U1.8/C11.1/C14.2</td><td>电源</td></tr><tr><td class="mono">AGND</td><td>AFE: 17 个成员</td><td>INT: EVK1.37</td><td>模拟地</td></tr><tr><td class="mono">GND</td><td>PWR: C16.2</td><td>INT: J5.29/EVK1.39,77,79/C3.1/C22.1</td><td>数字地</td></tr><tr><td class="mono">TP_SCL</td><td>INT: J5.24/EVK1.23</td><td>PWR: R15.2</td><td>I²C 时钟</td></tr><tr><td class="mono">TP_SDA</td><td>INT: J5.26/EVK1.24</td><td>PWR: R16.2</td><td>I²C 数据</td></tr></tbody></table>
+<p>其中只有 <code>AFE_ADC_IN</code> 是<b>信号</b>跨页；其余是电源、地与 I²C。本文的处理方式：<b>不在图上靠标签"糊"过去，而是在图 1-1 里把整条链画成连续的一条线</b>，让读者一眼看到"信号从头到尾没有被标签打断"。</p>
+<h3>7.3 图面值 vs 实体料号核对（发现 3 处不一致）</h3>
+<p>原理图的"图面值"（Value 字段）与"实体料号"（LCSC 编号）是两套独立字段。本次逐件核对 64 个位号，发现下面几处需要拍板：</p>
+<table class="vt"><thead><tr><th>位号</th><th>页</th><th>图面值</th><th>实体料号 (LCSC)</th><th>料号隐含值</th><th>一致?</th><th>处置</th></tr></thead><tbody><tr class="ok"><td>C2</td><td>AFE</td><td>6.2 nF</td><td>GRM2195C1H622JA01D</td><td>6.2 nF</td><td>✔</td><td></td></tr><tr class="ok"><td>C6</td><td>AFE</td><td>9.1 nF</td><td>GRM2195C1H912JA01D/BKN</td><td>9.1 nF</td><td>✔</td><td></td></tr><tr class="ok"><td>R6</td><td>AFE</td><td>24.9 kΩ</td><td>RT0805BRD0724K9L</td><td>24.9 kΩ</td><td>✔</td><td></td></tr><tr class="ok"><td>R7</td><td>AFE</td><td>3.57 kΩ</td><td>ARG05BTC3571</td><td>3.57 kΩ</td><td>✔</td><td></td></tr><tr class="ok"><td>R21</td><td>PWR</td><td>4.7 Ω</td><td>RC0805FR-074R7L</td><td>4.7 Ω</td><td>✔</td><td></td></tr><tr class="bad"><td>C5</td><td>AFE</td><td>10 nF</td><td>CC0805KRX7R9BB104</td><td>100 nF</td><td>✘</td><td><div class="badx"><b>设计口径：</b>10 µF（VBIAS 储能，见 B1）<br><b>风险：</b>图面值与设计口径差 1000×；即使按实体料号 100 nF 也差 100×。VBIAS 低通拐点从 3.18 Hz 变到 3.18 kHz，储能能力大幅下降。</div></td></tr><tr class="bad"><td>C7</td><td>AFE</td><td>10 nF</td><td>CC0805KRX7R9BB104</td><td>100 nF</td><td>✘</td><td><div class="badx"><b>设计口径：</b>10 µF（R4 腿隔直终接，见 S12）<br><b>风险：</b>最严重的一处：10 nF 在 500 kHz 的阻抗是 31.8 Ω，与 R4 的 49.9 Ω 同量级 ⇒ 终接阻抗变成 49.9 + j(−31.8)，<b>滤波器形状被破坏</b>。</div></td></tr><tr class="bad"><td>R11</td><td>AFE</td><td>100 Ω</td><td>RT0805BRD0724K9L</td><td>24.9 kΩ</td><td>✘</td><td><div class="badx"><b>设计口径：</b>100 Ω（ADC 反冲隔离，见 S15）<br><b>风险：</b>图面值正确、<b>料号错</b>：按料号下单会买到 24.9 kΩ，ADC 采样网络充电不足 ⇒ 12 bit 精度丢失。</div></td></tr></tbody></table>
+<p class="warn"><b>处置建议</b>：这 3 处<b>不是断点</b>，不影响"信号流连续"的结论，但会直接决定成板能不能用。C7 最严重（会让滤波器失配），R11 按料号下单会买错件，C5 影响偏置轨的储能。<b>建议在投板前把这三处的「图面值」与「实体料号」对齐到设计口径。</b>本文的讲解按<b>设计口径</b>（即有仿真背书的那一版）叙述。</p>
+<h2 id="sec8">§8 诚实边界</h2>
+<ul class="checks">
+<li>所有引脚级连接取自 <b>2026-10-04 19:57 活体回读</b>（三页 64 位号 / 68 网）；数值结论全部可复算
+（<code>_archive/_review4/afe_recheck.py</code>、<code>tools/sim/</code>）。</li>
+<li><b>凡"上板会怎样"一律未验证</b>——装置尚未制造。本文所有"实测"字样均指"设计推算值"。</li>
+<li>LC 滤波器的元件值是"在售档位 + 标定残差"双约束下的<b>拟合值</b>，不是巴特沃斯标准表值；
+按标准表核对会以为画错。</li>
+<li>§7.3 的 3 处图面值/料号不一致是<b>待拍板项</b>，本文未改图；讲解按设计口径（有仿真背书的那一版）叙述。</li>
+<li>背光"54~66 mA"是规格推算值，实测口径见 <code>hardware/36 §M.2</code> 与 <code>hardware/23 §7</code>。</li>
+</ul>
+<footer>生成 2026-10-05 · 图 = easyeda 活体矢量渲染（45-讲解配图/）· 数值 = 独立复算 ·
+口径 = 评审版设计值 · 上板行为一律未验证。</footer>
+
+</main></body></html>

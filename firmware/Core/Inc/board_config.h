@@ -185,18 +185,15 @@
  *    （SPI1 的 PA5/6/7 被板载 W25Q128 占了，用不了）。
  * --------------------------------------------------------------------------*/
 
-/* USB_OTG_FS —— Device Only 模式，PA11(DM) / PA12(DP)。
- * 板上器件：**Type-C 座** —— 同时是 USB DFU 烧录口（按住 SW3/BOOT0 再复位
- * 进 ROM bootloader，见 docs/11 §4）。⚠️ DFU 只能烧录、**看不到日志**。
+/* USB_OTG_FS —— **2026-10-02 S5 已从固件里拔除**（省 ~15KB FLASH；在"512KB 片子只
+ * 剩 ~13KB"的当下最值钱的一刀）。依据：全工程只有 `MX_USB_OTG_FS_PCD_Init()` 一处
+ * 引用，没有任何 USB 功能代码。
  *
- * ✅ `NVIC.OTG_FS_IRQn` 已使能（抢占优先级 5）⇒ `stm32f4xx_it.c` 里有
- *    `OTG_FS_IRQHandler`，`usb_otg.c` 的 MSP 里有 `HAL_NVIC_EnableIRQ`。
- *    （2026-09-22 之前这条是缺的，那时引脚时钟都配了但**枚举不会发生**。）
- * ⚠️ 仍未上板验证：能不能真的枚举成功，要插上 USB 才知道。 */
-#define BOARD_USB_OTG_FS_DM_PORT 0 /* 0 = GPIOA */
-#define BOARD_USB_OTG_FS_DM_PIN 11
-#define BOARD_USB_OTG_FS_DP_PORT 0
-#define BOARD_USB_OTG_FS_DP_PIN 12
+ * ⚠️ **但 Type-C 座与 PA11/PA12 仍然有用**：按住 SW3/BOOT0 再复位进 ROM
+ * bootloader 就能 DFU 烧录（见 docs/11 §4）—— 那是片内固化的，不依赖本工程代码。
+ * ⚠️ 所以 `BOARD_USB_OTG_FS_*` 这四个宏**已删除**（留着就是"孤儿宏"：翻成什么都不会
+ * 发生）。要恢复 USB 功能：`.ioc` 重新勾上 USB_OTG_FS（Device Only）+ 重新生成，
+ * 把 `usb_otg.c/h` 与 `HAL_PCD_MODULE_ENABLED` 一起放回来。 */
 
 /* SDIO —— **板载 TF 卡座 CARD1**，4-bit 模式（不是 SPI）。
  *
@@ -337,9 +334,26 @@
 #define BOARD_ADC_SAMPLING_CYCLES 3U /* 采样周期数：3 ADCCLK（.ioc ADC_SAMPLETIME_3CYCLES 同款） */
 #define BOARD_ADC_CLOCK_DIV 2U       /* ADCCLK = PCLK2 / 2 = 36MHz */
 
-/* 模拟前端增益（docs/01 §1 定稿 ×4）：码值 → 输入端 mV 的折算系数用它
- * （lsb_in_mv = 3300/4096/GAIN，app_engine.c 装配）。前端 PCB 改增益只动这里。 */
-#define BOARD_FRONT_GAIN 4U
+/* ADC 参考（mV）：**≈3.3V，不是 3.0V**（2026-10-02 按官方核心板工程文件核实）。
+ *
+ * 证据链（官方 `.epro` 网表 + 打印版 PDF P.6）：
+ *   · VREF+(U1 pin21) 与 R1.1 / R2.1 / R4.1 / C5 / C6 / TP4 同网；
+ *   · **R4 = 47Ω 贴**：VDDA → VREF+；而 VDDA = +3V3 经 L1（600Ω@100MHz 磁珠）；
+ *   · 板载基准 U3（库名 REF3033AIDBZR / 料号 REF3030AIDBZR）**不贴**；
+ *   · R1 / R2（各 0Ω）**均不贴** ⇒ EXT_CHIP_VERF+ 与 EXT_PIN_VERF+（排针 P1.2）
+ *     两条外部基准通路都是断的。
+ *   ⇒ 出厂 VREF+ ≈ VDDA ≈ 3.3V；**核心板排针 REF 针（EVK1.2）是悬空桩**。
+ *
+ * ⚠️ 旧注释按 REF3030 标称写 3000 —— 错在把"库里有这颗料"当成"装上去了"。
+ * 影响面：幅值口径走**乘性标定表**（op_cal 的 g(k)），标定后自动吸收此常数；
+ *   受影响的只有未标定回退路径、以及模拟前端的直流工作点核算
+ *   （VBIAS = VREF/2 = 1.65V，`BOARD_VBIAS_SENSE_CODE_MID` 的半量程判据不受影响）。 */
+#define BOARD_ADC_VREF_MV 3300U
+/* 模拟前端净增益（源端电动势 → ADC，2026-09-30 改图后口径，证据链 hardware/15）：
+ * 端接 ×0.5 × LC 双端接插损 ×0.5 × U1B 同相 ×8（R6 69.8k / R7 10k ≈ 7.98）≈ 2.0。
+ * 码值 → 输入端 mV：lsb_in_mv = VREF/4096/净增益（app_engine.c 装配）。
+ * 原 BOARD_FRONT_GAIN=4U 只是运放级增益、且漏算两个 ×0.5（14 号文档 D2/D7）——已废。 */
+#define BOARD_NET_GAIN 2U
 
 /* TIM8：fs 的来源。144MHz / (PSC+1) / (ARR+1) = 144e6 / 72 = 2.000MHz
  *
@@ -439,13 +453,15 @@
  * `IP not ready for code generation: FSMC`），后来查明**卡死的原因是 CubeMX 自己
  * 的模板临时文件 `MXTmpFiles/` + `*.ftl` 残留在工程根** —— 清掉之后参数全部被接受。
  * ⇒ 现在 `MX_FSMC_Init()`（Core/Src/fsmc.c）由 CubeMX 完整生成：
- *      16 位 SRAM 模式 / Bank1 / 扩展模式关 / AS=1 HCLK / DS=15 HCLK / AccessMode A
+ *      16 位 SRAM 模式 / Bank1 / 扩展模式关 / AS=1 HCLK / DS=85 HCLK / AccessMode A
  *   **改时序请去 CubeMX 的 FSMC 页改 `.ioc`**，不要在这里加宏 ——
  *   加了也不会生效（没有代码读它），只会变成第二个真相源。
  *
  * ⚠️ 时序取值依据（改之前先看）：单位 = 1 HCLK = 1/144MHz ≈ 6.944ns。
- *    DS=15 ⇒ 每字 16 HCLK = 111ns：写 tWR(≥15ns) 与读 tACC(≈100ns) 都够。
- *    代价是写吞吐约 18MB/s（300KB 整帧 ≈ 17ms）。
+ *    DS=85 ⇒ 每字 86 HCLK ≈ 597ns：写 tWR(≥15ns) 与读 tACC(≈100ns) 仍都满足。
+ *    2026-10-02 从 DS=15（111ns/字，约 18MB/s）降下来：示波器实测 CS(NE1)
+ *    每写一个脉冲 3.202MHz，按"降到 2M 以下"拍板 DS=85 ⇒ CS 率 ≤1.67MHz。
+ *    代价：写吞吐 ≈3.3MB/s（300KB 整帧 ≈90ms）。
  *    要提速就开扩展模式（AccessMode D + 读写时序分开，写能到 27.8ns/字），
  *    但注意 HAL 的约定是 `Timing`→BTR=**读**、`ExtTiming`→BWTR=**写**，极易搞反。 */
 
@@ -471,10 +487,18 @@
  *     模块若没带，必须自己加，否则总线拉不起来（表现为 HAL_I2C 超时）。
  *
  *  ⚠️ **TP_INT（PC5）是 FT6336 的输出脚，不该由我们驱动**：
- *     .ioc 里它现在是 GPIO_Output 初始低 —— 与 IC 的 INT 输出有**对打**风险。
- *     上板前建议在 CubeMX 把 PC5 改成 GPIO_Input（R6：改 .ioc 引脚要人批准）；
- *     代码侧 bsp_touch 不碰这个脚。TP_RST（PC4）保持输出高即可，
- *     例程证明不需要复位时序。 */
+ *     ✅ **2026-10-02 已改（用户 Q2 批准，即 R6 的人批准）**：`.ioc` 与 `MX_GPIO_Init()`
+ *     双双改为 **输入 + 上拉**（`GPIO_PuPd=GPIO_PULLUP` / `Signal=GPIO_Input`，
+ *     照 `SD_CARD_DET(PD3)` 的既有写法）。代码侧 bsp_touch 不碰这个脚。
+ *
+ *  ⚠️ **PC4（前 TP_RST → 后 VBIAS 自检脚）已于 2026-10-05 整体拆除**：图上 `EVK1.9` 打 NC、
+ *     `.ioc` 里 PC4 条目已删（PinsNb 52→51）⇒ 下面的 `BOARD_VBIAS_SENSE_PORT/PIN`
+ *     两个登记宏随之删除。理由：它是一根**死线**——固件从未读它，"模拟轨在线"判据
+ *     实际走 **AFE 输出帧的直流均值**（见下面的 `..._CODE_MID`），人工核对走 `TP5`
+ *     测试点（万用表量 1.650V），这条引脚线两头都没有消费者。
+ *     触摸复位与屏的 `LCD_RST` 共用（适配板上 18K+100nF RC），不受影响。
+ *     ✅ **不配 `ADC1_IN14` 的拍板依然有效**：把 ch14 加进 ADC1 的**常规序列**会改掉
+ *     `TIM8_TRGO + DMA` 采集链（1 通道 @2.0 MSPS，见 `adc.c`）。 */
 #define BOARD_TOUCH_I2C_INSTANCE 2U /* 2 = I2C2 */
 #define BOARD_TOUCH_I2C_ADDR 0x38U   /* 7 位地址（HAL 用时要 <<1），FT5x06 系固定 */
 #define BOARD_TOUCH_I2C_SCL_PORT 1   /* 1 = GPIOB */
@@ -482,12 +506,33 @@
 #define BOARD_TOUCH_I2C_SDA_PORT 1
 #define BOARD_TOUCH_I2C_SDA_PIN 11
 #define BOARD_TOUCH_I2C_AF 4 /* AF4 = I2C1/2/3 */
-#define BOARD_TOUCH_RST_PORT 2 /* 2 = GPIOC */ /* PC4 · 低有效 */
-#define BOARD_TOUCH_RST_PIN 4
+/* ---- "模拟轨在线"判据（2026-10-02 拍板：不占 ADC 通道，用 AFE 输出帧的直流均值判）----
+ * 机理：VBIAS = VREF/2，而 ADC1 的 VREF+ 与它**同源** ⇒ 两者同比缩放 ⇒
+ *       无论核心板给的是 3.0V 还是 3.3V 基准，**半量程恒对应 VBIAS**（≈2048 码）。
+ *       输入侧是 AC 耦合（R1 49.9Ω → C1 100nF）⇒ 即便接着信号源，均值也≈偏置。
+ * 用途：**只作"这条模拟轨有没有电"的粗判**，不是 VBIAS 的绝对测量。
+ * 容差 ±15% 覆盖：运放 Vos×8、R9/R10 容差、少量信号不对称。
+ * 已知会带外（只告警不停机）：① `JP2` 被有意断开（AFE↔ADC 的 0Ω 断点）
+ *                          ② 模拟轨/基准无电  ③ 输入被强直流量顶住。 */
+#define BOARD_VBIAS_SENSE_CODE_MID 2048U /* 12 位半量程 */
+#define BOARD_VBIAS_SENSE_TOL_PCT 15U
 #define BOARD_TOUCH_INT_PORT 2 /* PC5 · **FT6336 的输出**——本工程不该驱动它（见上） */
 #define BOARD_TOUCH_INT_PIN 5
 #define BOARD_TOUCH_WIDTH 320U  /* 触摸有效区（= 屏分辨率，与屏同坐标） */
 #define BOARD_TOUCH_HEIGHT 480U
+
+/* ---- 触摸轴映射（2026-10-02 新增：由"触摸测试"页现场定，定完写回这三个宏）----
+ * 为什么要有它们：屏厂例程给的原始轴序是**面板竖屏**（第一轴=短边）；而本工程显
+ * 示是**横屏 90°**（见 app_lvgl.c 的 lv_display_set_rotation），两者差一个交换。
+ * 之前把这件事写在 bsp_touch_read 的注释里（"改哪两行"）—— 现在改成开关：
+ *   · `BOARD_TOUCH_SWAP_XY=1`：交换两轴（横屏映射一般需要它）
+ *   · `BOARD_TOUCH_INVERT_X/Y=1`：该轴镜像（面板贴合方向不同就需要）
+ * 用法：进 UI 第 5 页"TOUCH"，**点四个角**看十字准星落哪 —— 落点对了就把当时的
+ * 开关组合写回这里（页面上会显示当前组合）。
+ * ⚠️ 这三个宏只影响**坐标映射**，绝不要去动 bsp_lcd / MADCTL 的方向（会是两个来源）。 */
+#define BOARD_TOUCH_SWAP_XY 0
+#define BOARD_TOUCH_INVERT_X 0
+#define BOARD_TOUCH_INVERT_Y 0
 
 /* ------------------------------------------------------- LVGL 内存池（放 CCM）----
  * ★ 需求：**LVGL 的堆放 CCM**（64KB，CPU 独占、不占主 RAM、也不吃 DMA 带宽）。

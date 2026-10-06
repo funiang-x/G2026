@@ -1,0 +1,15 @@
+* G2026 ADC 采样保持反冲 —— 与 tools/sim/studies.py::s3_adc_kickback 同拓扑
+* 场景：500kHz 满摆幅时相邻两采样点差 ΔV=0.498V；Cadc 从上一次采样值起算
+* 判读：看 t=83.3ns 时 ADCIN 相对 1.899V 的残差（目标 <1 LSB = 0.806mV）
+
+VDRV  DRV  0   DC 1.899
+RD    DRV  GOUT 1m
+R8    GOUT ADCP 100
+C10   ADCP AGND 470p
+RSW   ADCP ADCIN 0.001
+CADC  ADCIN AGND 4p IC=1.401
+RAG   AGND 0 1m
+
+.tran 0.02n 333.2n UIC
+.print tran v(ADCIN) v(ADCP)
+.end

@@ -1,0 +1,20 @@
+{
+ "tokens": [
+  {
+   "op": "通用/访谈与文档",
+   "ts": 1791266296.666905,
+   "token": "bc38425142ed",
+   "skills": {
+    "grilling": "5a914f4ce1b7f6e3c09960a8947d66b06be8838794fc69c2451e3000198ae55c",
+    "handoff": "817c3d6c6131ffd6342717640e0117c42ef35eb5db5fe1b54df6d84aaec4951b",
+    "writing-for-agents": "a175766e61eaeb2bc9c73a4e51a40708f842ca560a073c784f19f7c5ceea9be4"
+   }
+  },
+  {
+   "op": "文档/报告",
+   "ts": 1791267792.7715805,
+   "token": "57cfc1b09a32",
+   "skills": {}
+  }
+ ]
+}

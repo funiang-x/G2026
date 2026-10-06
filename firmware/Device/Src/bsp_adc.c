@@ -78,7 +78,13 @@ int bsp_adc_init(void) {
      * 里由 CubeMX 生成物完成 —— 本层只记状态。PA1 引脚事实登记在
      * board_config.h（BOARD_ADC_IN_*，与 .ioc 的 ADC1.Channel-1 一致）。 */
     if (s_frame_sem == NULL) {
-        s_frame_sem = xSemaphoreCreateBinary(); /* 启动前创建内核对象：允许 */
+        /* ⚠️ 建对象内部会进一次 FreeRTOS 临界区（xQueueGenericReset）；调度器启动前
+         *    uxCriticalNesting 是哨兵值，退出时**不**恢复中断 ⇒ BASEPRI 被永久钉在
+         *    configMAX_SYSCALL_INTERRUPT_PRIORITY → HAL 时基中断失效 → uwTick 冻结
+         *    → HAL_Delay() 死循环（2026-10-02 上板实测，卡在 bsp_lcd_init）。
+         *    机理全文见 bsp_log.c 顶部；这里建完必须显式把中断放回来。 */
+        s_frame_sem = xSemaphoreCreateBinary();
+        portENABLE_INTERRUPTS();
     }
     if (s_frame_sem == NULL) {
         LOG_E("[ADC] 帧信号量创建失败 —— 测量任务将无法阻塞等待");
@@ -157,6 +163,7 @@ void bsp_adc_stop(void) {
 
 int bsp_adc_self_check(void) {
     uint32_t t0;
+    uint32_t sum = 0;
     uint16_t lo = 0xFFFFU;
     uint16_t hi = 0;
 
@@ -171,7 +178,12 @@ int bsp_adc_self_check(void) {
     }
 
     /* 64 点 @2MHz = 32µs，给 20ms 余量足够。忙等而不是 HAL_Delay：
-     * 自检可能在任何上下文跑，不想依赖 SysTick。 */
+     * 自检可能在任何上下文跑，不想依赖 SysTick。
+     * ⚠️ **本函数必须在调度器启动后调用**（本工程由 `app_adc_selftest()` 在
+     *    `app_rtos_run()` 里调）：它要真启动一次采集，路上有 `bsp_adc_start()`
+     *    的 `xSemaphoreTake()` 与 DMA 中断里的 `xSemaphoreGiveFromISR()` 两处
+     *    FreeRTOS 原语；调度器启动前跑会被 ISR 入栈校验断言拦成死循环
+     *    （2026-10-02 上板实测，PC 停在 vPortValidateInterruptPriority）。 */
     t0 = HAL_GetTick();
     while (!bsp_adc_poll_done()) {
         if ((HAL_GetTick() - t0) > 20U) {
@@ -185,6 +197,7 @@ int bsp_adc_self_check(void) {
     bsp_adc_stop();
 
     for (uint32_t i = 0; i < 64U; i++) {
+        sum += s_probe_buf[i];
         if (s_probe_buf[i] < lo) {
             lo = s_probe_buf[i];
         }
@@ -192,8 +205,32 @@ int bsp_adc_self_check(void) {
             hi = s_probe_buf[i];
         }
     }
-    /* 判据是"搬回了 64 个点"，**不是**"数值等于某个期望值"：
-     * PA1 此刻可能没接信号源，读数是多少都正常。 */
-    LOG_I("[SELFTEST] ADC ok, 采到 64 点，码值范围 %u ~ %u（12 位满量程 4095）", lo, hi);
+    const uint32_t mean = sum / 64U;
+
+    /* 判据 1（**硬判据**）："搬回了 64 个点" —— 证明 TIM8 真在触发、DMA 真在搬。
+     *   不判"数值必须等于某个期望值"：此刻可能接着信号源，瞬时值是多少都正常。 */
+    LOG_I("[SELFTEST] ADC ok, 采到 64 点，码值范围 %u ~ %u，均值 %lu 码（≈%lu mV）",
+          lo, hi, (unsigned long)mean,
+          (unsigned long)(((uint32_t)mean * (uint32_t)BOARD_ADC_VREF_MV) / 4095U));
+
+    /* 判据 2（**提示级**，2026-10-02 加）：帧**直流均值**应落在半量程带内 ——
+     *   机理与容差见 `board_config.h` 的 `BOARD_VBIAS_SENSE_CODE_MID` 段：
+     *   VBIAS = VREF/2 且 ADC 的 VREF+ 同源 ⇒ 半量程恒对应偏置；输入是 AC 耦合
+     *   ⇒ 即便接着信号源，均值也≈偏置。带外只告警**不停机**（本工程口径：
+     *   任何一项自检失败都不停机），因为 JP2 被人为断开时本判据会"误报"。 */
+    {
+        const uint32_t mid = (uint32_t)BOARD_VBIAS_SENSE_CODE_MID;
+        const uint32_t band = (mid * (uint32_t)BOARD_VBIAS_SENSE_TOL_PCT) / 100U;
+        const uint32_t lo_bound = (mid > band) ? (mid - band) : 0U;
+        if (mean < lo_bound || mean > (mid + band)) {
+            LOG_W("[SELFTEST] 模拟轨可疑：帧均值 %lu 码不在 %lu±%lu 带内"
+                  "（VBIAS=VREF/2，无强直流输入时应在半量程）。依次查："
+                  "① `JP2`(0Ω 断点) 是否被断开；② 模拟轨/基准是否有电"
+                  "（万用表量 `TP5` 的 VBIAS ≈1.5V(REF3030)/1.65V(3V3)）；"
+                  "③ 输入是否被强直流量顶住。"
+                  "【台面上没有 AFE 硬件时（AFE 在底板上）本条属预期，可忽略】",
+                  (unsigned long)mean, (unsigned long)mid, (unsigned long)band);
+        }
+    }
     return 0;
 }

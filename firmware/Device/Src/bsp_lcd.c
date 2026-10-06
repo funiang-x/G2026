@@ -26,6 +26,9 @@
 
 #include "stm32f4xx_hal.h"
 
+#include "FreeRTOS.h"
+#include "semphr.h"
+
 /* 8080 的两个窗口：低 16 位数据总线，按 16 位字访问。
  * ⚠️ 必须 `volatile` —— 否则 -Og/-Os 下连续的赋值会被优化掉，
  *    表现是"只写了最后一个字节"（这类 bug 只在优化开启时出现，很难查）。 */
@@ -40,10 +43,30 @@ static const bsp_gpio_t s_bl = {(bsp_gpio_port_t)BOARD_LCD_BL_PORT, BOARD_LCD_BL
 
 /* FSMC 句柄**不在本文件**：CubeMX 生成的 `Core/Src/fsmc.c` 里有全局
  * `hsram1`，`MX_FSMC_Init()` 已经用它配好了 8080 16 位 SRAM 时序
- * （AS=1 / DS=15 / AccessMode A，见 .ioc 的 FSMC 参数）。
+ * （AS=1 / DS=85 / AccessMode A，见 `Core/Src/fsmc.c` 的 `MX_FSMC_Init()`；
+ *   DS=85 @144MHz = 590ns 写脉宽，对模块侧十几 ns 的要求是 6~9× 余量 ——
+ *   `hardware/22 §5` 的 33Ω 源端阻尼就是给这套"慢而有余量"的时序兜底）
  * ⇒ 本层**不再配第二遍**：重复 HAL_SRAM_Init 没有意义，而且会把
  *    "时序到底在哪定义"这件事变成两个来源。 */
 static int s_ready = 0;
+
+/* LCD 总线闸（2026-10-02）：采样窗静默的落地机制，见 bsp_lcd.h 的说明。
+ * 互斥量 ⇒ 带优先级继承（写屏侧持闸时 engine 来抢，会让写屏侧临时提权把当前块写完）。
+ * NULL = 没建起来 ⇒ take/give 退化为空操作。 */
+static SemaphoreHandle_t s_bus_mtx = NULL;
+
+int bsp_lcd_bus_take(uint32_t timeout_ms) {
+    if (s_bus_mtx == NULL) {
+        return 0; /* 没有闸：不阻塞、不崩（退化为整帧级避让） */
+    }
+    return (xSemaphoreTake(s_bus_mtx, pdMS_TO_TICKS(timeout_ms)) == pdTRUE) ? 1 : 0;
+}
+
+void bsp_lcd_bus_give(void) {
+    if (s_bus_mtx != NULL) {
+        (void)xSemaphoreGive(s_bus_mtx);
+    }
+}
 
 /* 常用 8080 命令（MIPI DCS 标准集，ST7796S / ILI9341 / ST7789 共用） */
 #define LCD_CMD_RDDID 0x04U /* 读显示 ID（4 字节） */
@@ -70,6 +93,17 @@ int bsp_lcd_init(void) {
      *    而那是 bsp_lcd_self_check()（读 ID）负责暴露的事。 */
     bsp_lcd_backlight(0); /* 先关背光：屏还没初始化，此刻是白屏/花屏 */
     lcd_hw_reset();
+
+    /* LCD 总线闸：**必须在调度器启动前建**（本函数由组合根在 boot 早期调用）。
+     * ⚠️ 同 bsp_adc_init()/app_engine_init()：建完把中断放回来 —— 否则 BASEPRI
+     *    被钉住、HAL 时基失效，后面任何 HAL_Delay() 都会死循环（bsp_log.c 记过机理）。 */
+    if (s_bus_mtx == NULL) {
+        s_bus_mtx = xSemaphoreCreateMutex();
+        portENABLE_INTERRUPTS();
+    }
+    if (s_bus_mtx == NULL) {
+        LOG_W("[LCD] 总线闸创建失败 —— 采样窗静默退化为整帧级避让（见 bsp_lcd.h）");
+    }
 
     s_ready = 1;
     return 0;

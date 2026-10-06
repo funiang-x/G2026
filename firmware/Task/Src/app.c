@@ -107,18 +107,19 @@ static void app_self_test(void) {
         LOG_E("[SELFTEST] RTC 读取失败");
     }
 
-    /* ⑤ USB —— 只能报"外设已使能"。枚举成功与否取决于主机侧，
-     *    而本工程**没有实现应用层描述符**（CDC/MSC），所以主机不会认它。 */
-    LOG_I("[SELFTEST] USB_OTG_FS 已使能（仅 PCD 层，无描述符 ⇒ 主机不会枚举）");
+    /* ⑤ USB —— **2026-10-02 起不检了**：`USB_OTG_FS` 已从固件里拔除（省 ~15KB FLASH，
+     *    见 `board_config.h` 的 USB 段）。Type-C 座仍然能用（ROM bootloader 的 DFU），
+     *    但那与本固件无关 ⇒ 这里原来那句"USB_OTG_FS 已使能"**已经是假话**，
+     *    留着会污染自检结论（同 `docs/07` 的"自检即硬件清单"口径）。 */
 
     /* ⑥ SPI Flash 读写往返（会擦最后一个扇区；内部有"非空则跳过"的保护）*/
     app_flash_rw_test();
 
-    /* ⑦ 采样链：TIM8 触发 ADC1 → DMA2 搬 64 个点。
-     * ★ 判据是"**DMA 确实搬回了点**"，不是"数值等于某个期望值" ——
-     *   PA1 此刻可能没接信号源，读数是多少都正常。搬回来就证明
-     *   触发 / 转换 / 搬运三跳全通（这是"编译通过 ≠ 能跑"最容易骗人的一处）。 */
-    (void)bsp_adc_self_check();
+    /* ⑦ 采样链自检 —— **不在这里**，挪到 `app_adc_selftest()`（调度器启动后）。
+     *    理由：它要真启动一次采集，路上有 `xSemaphoreTake` 与 DMA 中断里的
+     *    `xSemaphoreGiveFromISR` 两处 FreeRTOS 原语；调度器启动前跑会被
+     *    FreeRTOS 的 ISR 入栈校验断言拦成死循环（2026-10-02 实测）。
+     *    见 app.h 里 `app_adc_selftest()` 的说明。 */
 
     /* ⑧ 液晶屏：读 0x04 RDDID。
      * ⚠️ 判据同样是"**读得到**"而不是"ID 等于某个值"：能读到 4 个字节就说明
@@ -151,6 +152,15 @@ static void app_self_test(void) {
      *    `udf` ⇒ UsageFault ⇒（未单独使能）升级成 HardFault，必然触发。 */
     __builtin_trap();
 #endif
+}
+
+/* 采样链自检（在调度器启动后跑，见 app.h 里的完整说明）。
+ *
+ * 判据是"**DMA 确实搬回了点**"，不是"数值等于某个期望值" —— PA1 此刻可能没接
+ * 信号源，读数是多少都正常。搬回来就证明触发 / 转换 / 搬运三跳全通
+ * （这是"编译通过 ≠ 能跑"最容易骗人的一处）。 */
+void app_adc_selftest(void) {
+    (void)bsp_adc_self_check();
 }
 
 /* SPI Flash 读写往返测试：擦一个扇区 → 跨页写 → 读回比对。
@@ -297,6 +307,14 @@ void app_init(void) {
     }
 
     /* ---- ⑤ 板载外设自检（上板验证用；任何一项失败都不停机）--------------- */
+    /* ⚠️ 进自检前把中断掩码清掉 —— 本工程的 FreeRTOS 端口在**调度器启动前**
+     *    `vTaskExitCritical()` 走空分支（tasks.c：xSchedulerRunning==pdFALSE 时直接
+     *    `mtCOVERAGE_TEST_MARKER()`），**根本不恢复中断**。⇒ 前面任何一次
+     *    `taskENTER_CRITICAL()`（建内核对象、LVGL 取锁…）都会把 BASEPRI 永久钉在
+     *    configMAX_SYSCALL_INTERRUPT_PRIORITY，优先级 ≥5 的中断全失效。
+     *    机理详见 bsp_log.c 顶部。
+     *    ⚠️ 自检十项里**只有第 ⑦ 项（ADC 忙等）依赖中断**，那一项自己在忙等前清；
+     *       ⑧LCD 走 FSMC 轮询、⑨触摸走 I²C 轮询、⑩DSP 纯计算，都不需要。 */
     app_self_test();
 
     LOG_I("app_init done (tick=%u ms, on/off=%u/%u ms)", (unsigned)APP_TICK_PERIOD_MS,

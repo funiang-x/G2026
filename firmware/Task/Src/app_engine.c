@@ -10,8 +10,12 @@
  *        → xQueueOverwrite(结果 mailbox)     ← 跨任务"双缓冲"：写不覆盖读
  *
  *  ---- 内存落点 ----
- *  s_adc_buf 在 SRAM1（DMA 可达）；s_xw/s_fft 两块 f32 在 CCM 低 32KB
- *  （section .ccmram，链接脚本有越界 ASSERT；CCM 不能被 DMA 摸 —— 它们不碰 DMA）。
+ *  s_adc_buf 在 SRAM1（DMA 可达）；**只有 s_fft(32KB)** 在 CCM 低半区
+ *  （section .ccmram；`s_xw` 与 `s_adc_buf` 一样在 SRAM）；CCM 不能被 DMA 摸 —— 它们不碰 DMA。
+ *  ⚠️ 2026-10-02 核实：**链接脚本里目前没有越界 ASSERT**（原注释说"有"，是错话），
+ *     而 `_eccmram` 恰好停在 0x10008000 = LVGL 内存池基址（`BOARD_LVGL_MEM_ADDR`）
+ *     ⇒ 往 `.ccmram` 里再加变量会**静默压进 LVGL 堆**。补 ASSERT 与 `(NOLOAD)`
+ *     （现 `>CCMRAM AT> FLASH` 会让这 32KB 白占 FLASH 的 LMA）见 hardware/25 §6-S3。
  *
  *  ---- 标定流程（docs/01 §11）----
  *  UI 逐步驱动：cal_begin → 显示频点提示 → 人调信号源 → cal_step（同步测一次）
@@ -46,7 +50,9 @@ static uint16_t s_adc_buf[OP_DSP_N];
  *    它只被 CPU 读（不经 DMA），放 SRAM1 无副作用，只是访问略慢。 */
 static float s_xw[OP_DSP_N];
 
-/* FFT 工作块：**2N floats = 32KB**（CCM 低 32KB，链接脚本 ASSERT 兜底越界）。
+/* FFT 工作块：**2N floats = 32KB**（CCM 低 32KB）。
+ * ⚠️ 越界**没有**编译期兜底：2026-10-02 核实链接脚本里原本没有 ASSERT，现已补
+ *   （`.ccmram` 加 `(NOLOAD)` + 两条越界 ASSERT，见 hardware/25 §6-S3 与 .ld 注释）
  * ⚠️⚠️ 必须是 **2N**！`arm_cfft_f32` 的 p1 是"2*fftLen 个 float 的交织复数缓冲"
  *   （官方 `arm_cfft_f32.c` 文档 + `arm_radix8_butterfly_f32` 索引到
  *   `pSrc[2*(fftLen-1)+1]` = 8191）。**2026-09-28 修正**：原先只给 N=4096，
@@ -103,20 +109,27 @@ static void engine_measure_once(void) {
         return;
     }
 
-    /* 采样窗标记：置起后 UI 任务会**推迟** FSMC 写（O1 干扰源管理）。
-     * 必须在 start **之前**置位 —— 否则 UI 可能在采集开始后才看到。 */
+    /* ---- 采样窗：**先抢 LCD 总线闸，再开采集**（2026-10-02 新增）----
+     * 闸在开采集之前就拿到 ⇒ 写屏已经在块边界停住（拿闸时若 UI 正在写，
+     * 优先级继承让它先把当前块写完）⇒ 整个 2.048ms 采样窗内 FSMC 静态。
+     * 抢不到（闸没建起来/超时）就退回旧的整帧级避让 —— 不比改前差。
+     * 闸本体在 Device 层（bsp_lcd，它是总线的主人），两边都链得到它。 */
+    (void)bsp_lcd_bus_take(APP_LCD_BUS_WAIT_MS);
     s_acquiring = 1;
 
     if (bsp_adc_start(s_adc_buf, OP_DSP_N) != 0) {
         s_acquiring = 0;
+        bsp_lcd_bus_give();
         return; /* start 失败（上一帧没收走 / 参数错）—— 下一拍再试 */
     }
 
-    /* 阻塞等帧就绪（ISR 给信号量）。等待期间**让出 CPU**，UI 任务得以运行
-     * —— 但 UI 看到 s_acquiring 会主动避让，不写 FSMC。 */
+    /* 阻塞等帧就绪（ISR 给信号量）。等待期间**让出 CPU**、UI 任务会跑，但它在
+     * 块边界拿不到闸 ⇒ 不写 FSMC（此前 UI 会把整个 ~9ms 的 flush 写完，
+     * 直接横跨这个 2.048ms 采样窗 —— 那正是 O1 名存实亡的原因）。 */
     const int got = bsp_adc_wait_frame(APP_ADC_FRAME_TIMEOUT_MS);
     s_acquiring = 0; /* 采样窗结束 */
     bsp_adc_stop();
+    bsp_lcd_bus_give();
 
     if (got != 0) {
         LOG_W("[ENG] 采集帧超时（>%u ms）—— 触发链或 DMA 未工作，本帧跳过",
@@ -152,10 +165,10 @@ static void engine_measure_once(void) {
 
 /* ---------------- 对外 ---------------- */
 void app_engine_init(void) {
-    /* 码 → 输入端 mV 的折算系数：3.3V/4096/前端增益（verify_dsp 的 LSB_IN 同式）。
+    /* 码 → 输入端 mV 的折算系数：VREF/4096/净增益（verify_dsp 的 LSB_IN 同式）。
      * fs 由 TIM8 推导：144MHz /((PSC+1)(ARR+1)) = 2.0MHz —— 两头都从
      * board_config 来，改采样率只动 board_config，这里自动跟着。 */
-    const float lsb_in_mv = 3300.0f / 4096.0f / (float)BOARD_FRONT_GAIN;
+    const float lsb_in_mv = (float)BOARD_ADC_VREF_MV / 4096.0f / (float)BOARD_NET_GAIN;
     const float fs_hz =
         (float)BOARD_TARGET_SYSCLK_HZ /
         (float)((BOARD_TIM8_PSC + 1U) * (BOARD_TIM8_ARR + 1U));
@@ -165,10 +178,13 @@ void app_engine_init(void) {
         op_peak_init(&p);
     }
 
-    /* 结果 mailbox：1 深 + 静态存储（不动 FreeRTOS 堆）。启动前创建：允许。 */
+    /* 结果 mailbox：1 深 + 静态存储（不动 FreeRTOS 堆）。启动前创建可以，但
+     * 建完必须把中断放回来 —— 同 bsp_adc_init()：否则 BASEPRI 被钉住、
+     * HAL 时基失效、后面任何 HAL_Delay() 都会死循环。 */
     if (s_result_q == NULL) {
         s_result_q = xQueueCreateStatic(1U, sizeof(meas_result_t), (uint8_t *)s_result_q_store,
                                         &s_result_q_cb);
+        portENABLE_INTERRUPTS();
     }
     if (s_result_q == NULL) {
         LOG_E("[ENG] 结果 mailbox 创建失败 —— UI 将只看到初始空结果");
@@ -241,7 +257,7 @@ int app_engine_selftest(void) {
      * k0=100 在扫描带 [19,1028] 内，对应 fs·k0/N = 48.83kHz。 */
     const uint32_t k0 = 100U;
     const float    amp_mv = 100.0f; /* 输入端 100mV 峰值（远高于门限 1.5mV） */
-    const float    lsb_mv = 3300.0f / 4096.0f / (float)BOARD_FRONT_GAIN;
+    const float    lsb_mv = (float)BOARD_ADC_VREF_MV / 4096.0f / (float)BOARD_NET_GAIN;
     const double   two_pi = 6.28318530717958647692;
 
     if (op_dsp_fs_hz() <= 0.0f) {
@@ -341,14 +357,17 @@ static int cal_measure_current(void) {
     /* 同步测一帧：启动 → **阻塞等帧信号量** → DSP 链。
      * ⚠️ 由 LVGL 回调（UI 任务）调，会阻塞 ~15ms —— 标定是"人点一下测一次"
      *    的交互，可接受；**不再忙等**（旧版 while 自旋白烧 CPU）。 */
+    (void)bsp_lcd_bus_take(APP_LCD_BUS_WAIT_MS); /* 同 engine_measure_once：先抢闸 */
     s_acquiring = 1;
     if (bsp_adc_start(s_adc_buf, OP_DSP_N) != 0) {
         s_acquiring = 0;
+        bsp_lcd_bus_give();
         return -1;
     }
     const int got = bsp_adc_wait_frame(APP_ADC_FRAME_TIMEOUT_MS);
     s_acquiring = 0;
     bsp_adc_stop();
+    bsp_lcd_bus_give();
     if (got != 0) {
         LOG_W("[CAL] 采集超时 —— 触发链或 DMA 未工作");
         return -1;

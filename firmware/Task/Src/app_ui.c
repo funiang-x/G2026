@@ -24,7 +24,9 @@
 
 #include "app_engine.h"
 #include "app_lvgl.h"
+#include "board_config.h" /* BOARD_TOUCH_WIDTH/HEIGHT：触摸测试页的坐标换算 */
 #include "bsp_tick.h" /* 单调毫秒（UI 任务的时间口径，与 LVGL 同源）*/
+#include "bsp_touch.h" /* 触摸测试页：直接读点 + 现场翻轴映射 */
 #include "log.h"
 #include "meas_result.h"
 #include "op_spec.h"
@@ -36,13 +38,20 @@
 
 #include "lvgl.h"
 
+/* ★ 整段业务 UI 只在**非 demo** 模式编译。
+ *   why：`APP_LVGL_USE_DEMO=1` 时 app_ui_init/poll 直接返回（见文件尾），
+ *   下面的静态量与构建函数**整体没有调用点** ⇒ 一堆 -Wunused-function/-variable，
+ *   破坏"零告警"口径（2026-10-02 模拟器接进来时被 ARM 构建点出来）。
+ *   反过来，模拟器（SIM_APP=g2026）把该宏强制成 0，所以 PC 上这段照样编、照样跑。 */
+#if !APP_LVGL_USE_DEMO
+
 /* ---- 布局常量（屏 320×480 竖屏，board_config.h；这些是"画法"不是产品参数）*/
 #define UI_SCR_W 320
 #define UI_SCR_H 480
 #define UI_TOP_H 20
 #define UI_TAB_H 36
 #define UI_PAGE_H (UI_SCR_H - UI_TOP_H - UI_TAB_H) /* 424 */
-#define UI_PAGE_N 4
+#define UI_PAGE_N 5
 #define UI_SPEC_BASE_Y (UI_PAGE_H - 46) /* 谱线页基线（柱从这里向上长） */
 
 /* ---- 色板（方案定稿的深色科技风）---- */
@@ -219,7 +228,7 @@ static void scroll_cb(lv_event_t *e) {
 }
 
 static lv_obj_t *tabbar_create(lv_obj_t *scr) {
-    static const char *const names[UI_PAGE_N] = {"WAVE", "PARAM", "SPEC", "LIST"};
+    static const char *const names[UI_PAGE_N] = {"WAVE", "PARAM", "SPEC", "LIST", "TOUCH"};
     lv_obj_t *bar = lv_obj_create(scr);
     lv_obj_set_pos(bar, 0, (lv_coord_t)(UI_TOP_H + UI_PAGE_H));
     lv_obj_set_size(bar, UI_SCR_W, UI_TAB_H);
@@ -529,7 +538,16 @@ static void splash_create(lv_obj_t *scr) {
         lv_anim_set_path_cb(&a, lv_anim_path_ease_in_out);
         lv_anim_start(&a);
     }
-    (void)lv_timer_create(splash_done_cb, 950, NULL);
+    {
+        /* ⚠️ 必须显式**一次性**（repeat_count = 1）：
+         *   `lv_timer_create()` 建的是**周期**定时器（LVGL 默认无限重复），
+         *   第二次触发时 `s_splash` 已被置 NULL ⇒ `lv_obj_del(NULL)` 直接 SIGSEGV。
+         *   2026-10-02 PC 模拟器（SIM_APP=g2026）第一次跑业务 UI 就抓到：
+         *   栈是 lv_timer_exec → splash_done_cb(app_ui.c:491) → lv_obj_delete(obj=0x0)。
+         *   板上没暴露是因为屏上一直跑的是占位页/官方 demo，这条路径没被跑到。 */
+        lv_timer_t *t = lv_timer_create(splash_done_cb, 950, NULL);
+        lv_timer_set_repeat_count(t, 1);
+    }
 }
 
 /* ================================================================== 刷新 */
@@ -616,8 +634,199 @@ static void refresh_list(const meas_result_t *r) {
     }
 }
 
+/* ======================================================= 第 5 页：触摸测试
+ * 把"触摸通不通 + 轴映射对不对"变成一眼可判的东西（2026-10-02 新增）：
+ *   ① **点四角**：四个角标 TL/TR/BL/BR，看准星落在哪一个 —— 落错角就是 SWAP/INV 的组合不对；
+ *   ② **三个开关**现场翻（直接改驱动映射 ⇒ 整个 UI 的触摸也跟着对），凑对了把组合
+ *      写回 `board_config.h` 的 `BOARD_TOUCH_SWAP_XY/INVERT_X/INVERT_Y`；
+ *   ③ 计数器：按下 / 抬起 / **I2C 错** —— "时好时坏"的触摸就靠它看出来。
+ * 采样 25Hz（40ms）：别让测试页自己把 I²C 压满。 */
+#define TOUCH_TRAIL_N 24
+#define TOUCH_POLL_MS 40U
+#define TOUCH_PAD_W 288
+#define TOUCH_PAD_H 288
+
+static lv_obj_t          *s_touch_pad;
+static lv_obj_t          *s_touch_h;
+static lv_obj_t          *s_touch_v;
+static lv_obj_t          *s_touch_trail;
+static lv_obj_t          *s_touch_info;
+static lv_obj_t          *s_touch_map;
+static lv_obj_t          *s_touch_sw[3];
+static lv_point_precise_t s_trail_pts[TOUCH_TRAIL_N];
+static int                s_trail_n;
+static uint16_t           s_touch_x, s_touch_y;
+static uint32_t           s_touch_down, s_touch_up, s_touch_err;
+static uint32_t           s_touch_ms;
+static int                s_touch_pressed;
+
+static void touch_apply_mapping(void) {
+    const int sw = lv_obj_has_state(s_touch_sw[0], LV_STATE_CHECKED) ? 1 : 0;
+    const int ix = lv_obj_has_state(s_touch_sw[1], LV_STATE_CHECKED) ? 1 : 0;
+    const int iy = lv_obj_has_state(s_touch_sw[2], LV_STATE_CHECKED) ? 1 : 0;
+    bsp_touch_set_mapping(sw, ix, iy);
+    lv_label_set_text_fmt(s_touch_map,
+                          "映射：SWAP=%d INVX=%d INVY=%d   （对上了就写回 board_config.h）",
+                          sw, ix, iy);
+}
+
+static void touch_sw_cb(lv_event_t *e) {
+    LV_UNUSED(e);
+    touch_apply_mapping();
+    s_trail_n = 0; /* 换了映射，旧轨迹没意义了 */
+    lv_line_set_points(s_touch_trail, s_trail_pts, 0);
+}
+
+static void touch_clr_cb(lv_event_t *e) {
+    LV_UNUSED(e);
+    s_touch_down = s_touch_up = s_touch_err = 0;
+    s_trail_n = 0;
+    lv_line_set_points(s_touch_trail, s_trail_pts, 0);
+}
+
+static lv_obj_t *touch_sw_create(lv_obj_t *pg, const char *txt, lv_coord_t x) {
+    lv_obj_t *sw = lv_switch_create(pg);
+    lv_obj_set_size(sw, 44, 22);
+    lv_obj_set_pos(sw, x, UI_PAGE_H - 34);
+    lv_obj_add_event_cb(sw, touch_sw_cb, LV_EVENT_VALUE_CHANGED, NULL);
+    lv_obj_t *l = label_create(pg, txt, UI_C_DIM, &lv_font_montserrat_12, x - 2,
+                               UI_PAGE_H - 56);
+    LV_UNUSED(l);
+    return sw;
+}
+
+static void page_touch_build(lv_obj_t *pg) {
+    label_create(pg, "TOUCH TEST  FT6336 @0x38", UI_C_PRIMARY, &lv_font_montserrat_12, 8, 4);
+
+    s_touch_pad = lv_obj_create(pg);
+    lv_obj_set_pos(s_touch_pad, 16, 24);
+    lv_obj_set_size(s_touch_pad, TOUCH_PAD_W, TOUCH_PAD_H);
+    lv_obj_set_style_bg_color(s_touch_pad, lv_color_hex(UI_C_CARD), LV_PART_MAIN);
+    lv_obj_set_style_border_color(s_touch_pad, lv_color_hex(UI_C_BORDER), LV_PART_MAIN);
+    lv_obj_set_style_border_width(s_touch_pad, 1, LV_PART_MAIN);
+    lv_obj_set_style_radius(s_touch_pad, 6, LV_PART_MAIN);
+    lv_obj_set_style_pad_all(s_touch_pad, 0, LV_PART_MAIN);
+    lv_obj_clear_flag(s_touch_pad, LV_OBJ_FLAG_SCROLLABLE);
+
+    /* 四角标记：点哪一角、准星就该跑到哪一角（不对称标记才能判镜像） */
+    label_create(s_touch_pad, "TL", UI_C_ACCENT, &lv_font_montserrat_12, 2, 2);
+    label_create(s_touch_pad, "TR", UI_C_AMBER, &lv_font_montserrat_12, 250, 2);
+    label_create(s_touch_pad, "BL", UI_C_AMBER, &lv_font_montserrat_12, 2, 264);
+    label_create(s_touch_pad, "BR", UI_C_ACCENT, &lv_font_montserrat_12, 246, 264);
+    label_create(s_touch_pad, "·", UI_C_DIM, &lv_font_montserrat_16, 140, 134); /* 中心参照 */
+
+    /* 轨迹 + 十字准星（准星用两条线，比圆点更能判"落点偏在哪"） */
+    s_touch_trail = lv_line_create(s_touch_pad);
+    lv_obj_set_style_line_width(s_touch_trail, 2, LV_PART_MAIN);
+    lv_obj_set_style_line_color(s_touch_trail, lv_color_hex(UI_C_PRIMARY), LV_PART_MAIN);
+    lv_obj_set_style_line_rounded(s_touch_trail, true, LV_PART_MAIN);
+    lv_line_set_points(s_touch_trail, s_trail_pts, 0);
+
+    static lv_point_precise_t hp[2] = {{0, 0}, {0, 0}};
+    static lv_point_precise_t vp[2] = {{0, 0}, {0, 0}};
+    s_touch_h = lv_line_create(s_touch_pad);
+    s_touch_v = lv_line_create(s_touch_pad);
+    hp[0].x = -12; hp[0].y = 0; hp[1].x = 12; hp[1].y = 0;
+    vp[0].x = 0; vp[0].y = -12; vp[1].x = 0; vp[1].y = 12;
+    lv_line_set_points(s_touch_h, hp, 2);
+    lv_line_set_points(s_touch_v, vp, 2);
+    lv_obj_set_style_line_width(s_touch_h, 2, LV_PART_MAIN);
+    lv_obj_set_style_line_width(s_touch_v, 2, LV_PART_MAIN);
+    lv_obj_set_style_line_color(s_touch_h, lv_color_hex(UI_C_ACCENT), LV_PART_MAIN);
+    lv_obj_set_style_line_color(s_touch_v, lv_color_hex(UI_C_ACCENT), LV_PART_MAIN);
+
+    s_touch_info = label_create(pg, "x=---  y=---\n按下 0  抬起 0\nI2C 错 0", UI_C_TEXT,
+                                &lv_font_montserrat_12, 20, UI_PAGE_H - 130);
+    lv_obj_set_style_text_line_space(s_touch_info, 4, LV_PART_MAIN);
+
+    s_touch_map = label_create(pg, "映射：SWAP=0 INVX=0 INVY=0", UI_C_DIM,
+                               &lv_font_montserrat_12, 20, UI_PAGE_H - 78);
+
+    s_touch_sw[0] = touch_sw_create(pg, "SWAP", 16);
+    s_touch_sw[1] = touch_sw_create(pg, "INVX", 116);
+    s_touch_sw[2] = touch_sw_create(pg, "INVY", 216);
+
+    lv_obj_t *clr = lv_button_create(pg);
+    lv_obj_set_size(clr, 72, 26);
+    lv_obj_set_pos(clr, 232, UI_PAGE_H - 34);
+    lv_obj_add_event_cb(clr, touch_clr_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_t *cl = lv_label_create(clr);
+    lv_label_set_text(cl, "清零");
+    lv_obj_set_style_text_font(cl, &lv_font_montserrat_12, LV_PART_MAIN);
+    lv_obj_center(cl);
+
+    /* 初值：把 board_config.h 的编译期默认显示出来（不覆盖它） */
+    {
+        int sw = 0, ix = 0, iy = 0;
+        bsp_touch_get_mapping(&sw, &ix, &iy);
+        if (sw) { lv_obj_add_state(s_touch_sw[0], LV_STATE_CHECKED); }
+        if (ix) { lv_obj_add_state(s_touch_sw[1], LV_STATE_CHECKED); }
+        if (iy) { lv_obj_add_state(s_touch_sw[2], LV_STATE_CHECKED); }
+        lv_label_set_text_fmt(s_touch_map, "映射：SWAP=%d INVX=%d INVY=%d", sw, ix, iy);
+    }
+}
+
+/* 测试页的 25Hz 刷新（由 app_ui_poll 在翻到该页时调） */
+static void touch_page_poll(uint32_t now_ms) {
+    if (s_touch_pad == NULL || (uint32_t)(now_ms - s_touch_ms) < TOUCH_POLL_MS) {
+        return;
+    }
+    s_touch_ms = now_ms;
+
+    bsp_touch_point_t pt;
+    const int r = bsp_touch_read(&pt);
+    if (r < 0) {
+        s_touch_err++;
+    } else if (r == 0) {
+        if (s_touch_pressed) {
+            s_touch_pressed = 0;
+            s_touch_up++;
+        }
+    } else {
+        s_touch_down++;
+        s_touch_pressed = 1;
+        s_touch_x = pt.x;
+        s_touch_y = pt.y;
+        /* 触控坐标 → 测试板坐标（测试板画的是整个触控面，等比缩放到 PAD 内） */
+        const lv_coord_t px = (lv_coord_t)((uint32_t)pt.x * TOUCH_PAD_W / BOARD_TOUCH_WIDTH);
+        const lv_coord_t py = (lv_coord_t)((uint32_t)pt.y * TOUCH_PAD_H / BOARD_TOUCH_HEIGHT);
+        lv_obj_set_pos(s_touch_h, px - 12, py);
+        lv_obj_set_pos(s_touch_v, px, py - 12);
+        if (s_trail_n < TOUCH_TRAIL_N) {
+            s_trail_pts[s_trail_n].x = px;
+            s_trail_pts[s_trail_n].y = py;
+            s_trail_n++;
+        } else {
+            for (int i = 1; i < TOUCH_TRAIL_N; i++) {
+                s_trail_pts[i - 1] = s_trail_pts[i];
+            }
+            s_trail_pts[TOUCH_TRAIL_N - 1].x = px;
+            s_trail_pts[TOUCH_TRAIL_N - 1].y = py;
+        }
+        lv_line_set_points(s_touch_trail, s_trail_pts, (uint32_t)s_trail_n);
+    }
+
+    /* 帧率一起显示（顶栏也有一份；这里给"满帧耗时"，方便对着 FSMC 时序看余量） */
+    const uint32_t fx = app_lvgl_fps_x10(now_ms);
+    lv_label_set_text_fmt(s_touch_info,
+                          "x=%3u  y=%3u\n按下 %lu  抬起 %lu\nI2C 错 %lu\n"
+                          "等效 %lu.%lu fps · 满帧 %lu ms",
+                          (unsigned)s_touch_x, (unsigned)s_touch_y,
+                          (unsigned long)s_touch_down, (unsigned long)s_touch_up,
+                          (unsigned long)s_touch_err,
+                          (unsigned long)(fx / 10U), (unsigned long)(fx % 10U),
+                          (unsigned long)(fx ? (10000U / fx) : 0U));
+}
+
+#endif /* !APP_LVGL_USE_DEMO —— 业务 UI 段到此为止 */
+
 /* ================================================================== 对外 */
 int app_ui_init(void) {
+#if APP_LVGL_USE_DEMO
+    /* 官方 demo 接管屏幕（开关见 project_config.h）⇒ 业务 UI 整个不建。
+     * ⚠️ 不建 ≠ 不调：本函数仍返回 0，组合根的"降级路径"不会误判成失败。 */
+    return 0;
+#else
     lv_obj_t *scr = lv_screen_active();
     lv_obj_set_style_bg_color(scr, lv_color_hex(UI_C_BG), LV_PART_MAIN);
 
@@ -649,6 +858,7 @@ int app_ui_init(void) {
     page_param_build(s_pages[1]);
     page_spec_build(s_pages[2]);
     page_list_build(s_pages[3]);
+    page_touch_build(s_pages[4]);
     (void)tabbar_create(scr);
     lv_obj_set_style_text_color(s_tab_btns[0], lv_color_hex(UI_C_PRIMARY),
                                 LV_PART_MAIN);
@@ -656,9 +866,14 @@ int app_ui_init(void) {
     cal_panel_create(scr);
     splash_create(scr);
     return 0;
+#endif /* APP_LVGL_USE_DEMO */
 }
 
 void app_ui_poll(uint32_t now_ms) {
+#if APP_LVGL_USE_DEMO
+    (void)now_ms;
+    return; /* demo 模式下业务 UI 不存在，poll 直接空转 */
+#else
     /* splash 期间不刷业务（它有自己的进度动画，别抢带宽） */
     if (s_splash != NULL) {
         return;
@@ -686,6 +901,11 @@ void app_ui_poll(uint32_t now_ms) {
         }
     }
 
+    /* 触摸测试页要**连续**刷新（其余业务页是"seq 变了才刷"），所以走这条独立通道 */
+    if (s_page == (UI_PAGE_N - 1U)) {
+        touch_page_poll(now_ms);
+    }
+
     /* 业务页：seq 变了或翻了页才刷当前页（其余页惰性 —— 测量周期 500ms） */
     static uint32_t s_seen_seq = 0;
     static uint8_t  s_seen_page = 0xFF;
@@ -709,6 +929,7 @@ void app_ui_poll(uint32_t now_ms) {
         refresh_list(r);
         break;
     }
+#endif /* APP_LVGL_USE_DEMO */
 }
 
 /* ============================================================ UI 任务体 ==== */

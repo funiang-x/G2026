@@ -101,7 +101,17 @@ BOOT_FAIL_MARKER = "[AI_FAIL]"
 
 
 def log(msg: str) -> None:
-    print(msg, flush=True)
+    """控制台输出。
+    ⚠️ 2026-10-02 修：中文 GBK 控制台遇到编不出的字符（例如 RTT 日志里的替换字符
+    U+FFFD）会抛 UnicodeEncodeError **把整条命令崩掉** —— 实测 `fw.py rtt` 就死在
+    这一行上（和那次 `cubemx_sync.py` 的 `⊂` 是同一类毛病）。
+    ⚠️ **只降级显示字符，绝不改判定逻辑**：返回值/退出码/标记匹配都还是原文。"""
+    try:
+        print(msg, flush=True)
+    except UnicodeEncodeError:
+        enc = sys.stdout.encoding or "utf-8"
+        print(msg.encode(enc, errors="replace").decode(enc, errors="replace"),
+              flush=True)
 
 
 # ------------------------------------------------------------------ 环境探测

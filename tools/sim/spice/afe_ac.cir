@@ -1,0 +1,74 @@
+* G2026 AFE 端到端 AC —— 与 tools/sim/afe_net.py 同拓扑同参数
+* 用途：独立 SPICE 复核通带 droop / 折叠带衰减。改图后请同步 afe_net.py 再重跑本脚本。
+
+* ---- OPA2197 宏模型（单极点 + 开环输出电阻）----
+* GBW=10MHz  Aol=1000000(120dB)  SR=20V/us  Ro=100ohm
+* 节点: 1=+in 2=-in 3=out 4=V+ 5=V-
+.SUBCKT OPA2197 1 2 3 4 5
+RCM1 1 0 1e12
+RCM2 2 0 1e12
+CDIF 1 2 8p
+CCM1 1 0 4p
+CCM2 2 0 4p
+* 差分跨导 gm1 = 1 mS；主极点由 R1/C1 决定
+G1 0 N1 1 2 0.001
+R1 N1 0 1e+09
+C1 N1 0 15.9155p
+* 输出级：单位增益缓冲 + 开环输出电阻
+E1 N2 0 N1 0 1.0
+RO 3 N2 100
+.ENDS OPA2197
+
+
+* ---- 电源 ----
+V5V   5V    0    DC 5.0 AC 0
+R21   5V    5VA  4.7
+V3V3  3V3   0    DC 3.3 AC 0
+C11   5VA   0    22u
+C14   5VA   0    100n
+
+* ---- ① 输入保护与端接 ----
+VSRC  SRC   0    DC 0 AC 1
+RSRC  SRC   IN   50
+R1    IN    AGND 49.9
+CJ    IN    AGND 1.5p
+C1    IN    BUFIN 100n
+R2    BUFIN VBIAS 10000
+
+* ---- ② 一级缓冲 U1A（G=1）----
+XU1A  BUFIN BUF_OUT 5VA AGND OPA2197
+
+* ---- ④ 8 阶 LC 梯形 ----
+R3    BUF_OUT LCIN 49.9
+L1   LCIN N1   4.7u
+C2   N1   AGND 5.6n
+L3   N1 N2   22u
+C4   N2   AGND 10n
+L5   N2 N3   22u
+C6   N3   AGND 10n
+L7   N3 N4   12u
+C8   N4   AGND 1.8n
+C23   N4    R4T  10u
+R4    R4T   AGND 49.9
+
+* ---- ⑤ 二级增益 U1B（×7.975）----
+C9    N4    GAININ 100n
+R5    GAININ VBIAS 10000
+XU1B  GAININ FB 5VA AGND OPA2197
+R6    GOUT  FB  24900
+R7    FB    VBIAS 3570
+R8    GOUT  ADCP 100
+C10   ADCP  AGND 470p
+
+* ---- ③ 基准与偏置（R9.1 已改接 +3V3）----
+R9    +3V3  VBIAS 10000
+R10   VBIAS AGND  10000
+C13   VBIAS AGND  10u
+
+* ---- 模拟地汇到 0（本网表里 AGND 即参考）----
+RAG   AGND  0    1m
+
+* ---- 分析 ----
+.ac dec 200 1k 3Meg
+.print ac vdb(ADCP) vp(ADCP)
+.end

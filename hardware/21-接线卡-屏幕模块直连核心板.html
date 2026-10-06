@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>G2026 · 屏幕模块 ↔ 天空星核心板 · 详细接线图</title>
+<style>
+:root{--ink:#2c2c2a;--dim:#5f5e5a;--hint:#888780;--line:#d3d1c7;--bg:#faf9f6;
+--data:#0c447c;--data-b:#378add;--ctrl:#633806;--ctrl-b:#ba7517;--touch:#085041;--touch-b:#1d9e75;
+--bl:#3c3489;--bl-b:#7f77dd;--pwr:#791f1f;--pwr-b:#e24b4a;--gnd:#444441;--gnd-b:#888780}
+*{box-sizing:border-box}
+body{margin:0;padding:28px 22px 64px;background:var(--bg);color:var(--ink);
+font:14px/1.65 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+.wrap{max-width:1080px;margin:0 auto}
+h1{font-size:21px;font-weight:500;margin:0 0 4px}
+.sub{color:var(--dim);font-size:13px;margin:0 0 20px}
+h2{font-size:15px;font-weight:500;margin:34px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+h3{font-size:14px;font-weight:500;margin:18px 0 6px}
+p,li{font-size:13.5px}
+table{border-collapse:collapse;width:100%;font-size:13px;margin:8px 0}
+th,td{border:1px solid var(--line);padding:6px 9px;text-align:left;vertical-align:middle}
+th{background:#f1efe8;font-weight:500}
+td.mono,th.mono{font-family:ui-monospace,Consolas,monospace;font-weight:500}
+tr.g-data td.mono{color:var(--data)} tr.g-ctrl td.mono{color:var(--ctrl)}
+tr.g-touch td.mono{color:var(--touch)} tr.g-bl td.mono{color:var(--bl)}
+tr.g-pwr td.mono{color:var(--pwr)} tr.g-gnd td.mono{color:var(--gnd)}
+tr.g-nc{color:var(--hint)} tr.g-nc td.mono{color:var(--hint)}
+.box{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:10px 0}
+.warn{background:#fcebeb;border-color:#f09595}
+.ok{background:#eaf3de;border-color:#c0dd97}
+.tip{background:#e6f1fb;border-color:#85b7eb}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin:8px 0 0;font-size:12.5px;color:var(--dim)}
+.legend span{display:flex;align-items:center}
+.dot{display:inline-block;width:11px;height:11px;border-radius:50%;border:3px solid;margin-right:5px;vertical-align:-1px}
+code{font-family:ui-monospace,Consolas,monospace;background:#f1efe8;padding:1px 5px;border-radius:4px;font-size:12.5px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:10px 0}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin:10px 0}
+@media(max-width:820px){.grid2,.grid3{grid-template-columns:1fr}}
+figure{margin:0;background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px;overflow:hidden}
+figure img{width:100%;display:block;border-radius:6px}
+figcaption{font-size:12.5px;color:var(--dim);padding:7px 2px 2px}
+.photo-full{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px;margin:10px 0;text-align:center}
+.photo-full img{display:inline-block;max-height:680px;max-width:100%;border-radius:6px}
+small{color:var(--hint);font-size:12.5px}
+ol,ul{padding-left:20px}
+.kv{font-family:ui-monospace,Consolas,monospace}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>屏幕模块 ↔ 天空星核心板 · 详细接线图</h1>
+<p class="sub">G2026 台面 bring-up · 26 根杜邦线 · 配模块实物照片 + 核心板实物图 · 2026-10-02</p>
+
+<div class="box tip">
+<strong>三句话看懂怎么接</strong>
+<ol style="margin:6px 0 0">
+<li><b>模块侧</b>：排针 2×15，每列两个孔。丝印<b>上排</b>是 <code>CS WR RST D01 D03 … IQR GND</code>（奇数脚 1,3,5…29），<b>下排</b>是 <code>RS RD D00 D02 … BL 3V3</code>（偶数脚 2,4…30）。</li>
+<li><b>核心板侧</b>：丝印名印在<b>背面</b>，丝印面朝上时 <b>P1 在右、P2 在左</b>；每一行两个孔，<b>名字从左到右 ↔ 孔从左到右</b>。</li>
+<li><b>对上就行</b>：例如模块 <code>CS</code> → 核心板 <code>D07</code>。26 根里 <b>21 根在 P1、5 根在 P2</b>。</li>
+</ol>
+</div>
+
+<h2>1 · 模块实物照片（你拍的这张）</h2>
+<div class="photo-full"><img src="21-接线卡_assets/module_board.jpg" alt="TK035F5501 转接板实物照片，上方是 2×15 排针"></div>
+<p><small>这块是<b>屏 + 30-pin 转接板</b>。上方黑色的是 <b>2×15 排针（30 脚）</b>；左缘橙色排线是屏的 45 脚 FPC；中左那张小表是 <code>Parallel / SPI</code> 位宽选择表；右下角的方块 IC 是触摸控制器。</small></p>
+
+<div class="grid2">
+  <figure><img src="21-接线卡_assets/mod_hdr_left.png" alt="排针左半丝印放大"><figcaption><b>排针左半</b>（放大）—— 上排 <code>CS WR RST D01 D03 D05 D07 D09 D11 D13</code>，下排 <code>RS RD D00 D02 D04 D06 D08 D10 D12</code></figcaption></figure>
+  <figure><img src="21-接线卡_assets/mod_hdr_right.png" alt="排针右半丝印放大"><figcaption><b>排针右半</b>（放大）—— 上排 <code>… D15 T_CS MISO IQR GND</code>，下排 <code>… D14 SCK MOSI BL 3V3</code></figcaption></figure>
+</div>
+
+<h3>顺带确认两件事（都在你照片里）</h3>
+<div class="grid3">
+  <figure><img src="21-接线卡_assets/mod_im.png" alt="Parallel/SPI 位宽选择表"><figcaption><b>位宽选择表</b>：看 <code>16</code> 那一行 → <code>0 1 0</code> = <b>8080-16bit</b>，正是本项目要的档位</figcaption></figure>
+  <figure><img src="21-接线卡_assets/mod_rgb.png" alt="DE/PCLK/VSYNC/HSYNC 焊盘区"><figcaption><b>DE / PCLK / VSYNC / HSYNC</b>：8080 模式下这 4 根要接 GND，照片看这几处元件没焊 → 建议补锡桥接地</figcaption></figure>
+  <figure><img src="21-接线卡_assets/mod_conn.png" alt="底部两个白色 2P 座"><figcaption><b>底部两个白色 2P 座</b>（丝印「背光」）：本次<b>不用</b>，背光电源板内已从 3V3 取</figcaption></figure>
+</div>
+
+<h2>2 · 模块 30 脚 → 核心板（逐脚）</h2>
+<p><small>按你照片的丝印逐列列全。同一个「列」里的两个孔在板上是<b>上下相邻</b>的一对。</small></p>
+<table>
+<tr><th>列</th><th class="mono">丝印上排（奇数脚）</th><th class="mono">接核心板</th><th>排针脚号</th><th class="mono">丝印下排（偶数脚）</th><th class="mono">接核心板</th><th>排针脚号</th></tr>
+<tr class="g-ctrl"><td>1</td><td class="mono">CS</td><td class="mono">D07</td><td>P2-27</td><td class="mono">RS</td><td class="mono">D11</td><td>P1-31</td></tr>
+<tr class="g-ctrl"><td>2</td><td class="mono">WR</td><td class="mono">D05</td><td>P2-29</td><td class="mono">RD</td><td class="mono">D04</td><td>P2-30</td></tr>
+<tr class="g-ctrl"><td>3</td><td class="mono">RST</td><td class="mono">B01</td><td>P1-14</td><td class="mono">D00</td><td class="mono">D14</td><td>P1-36</td></tr>
+<tr class="g-data"><td>4</td><td class="mono">D01</td><td class="mono">D15</td><td>P1-35</td><td class="mono">D02</td><td class="mono">D00</td><td>P2-32</td></tr>
+<tr class="g-data"><td>5</td><td class="mono">D03</td><td class="mono">D01</td><td>P2-31</td><td class="mono">D04</td><td class="mono">E07</td><td>P1-13</td></tr>
+<tr class="g-data"><td>6</td><td class="mono">D05</td><td class="mono">E08</td><td>P1-16</td><td class="mono">D06</td><td class="mono">E09</td><td>P1-15</td></tr>
+<tr class="g-data"><td>7</td><td class="mono">D07</td><td class="mono">E10</td><td>P1-18</td><td class="mono">D08</td><td class="mono">E11</td><td>P1-17</td></tr>
+<tr class="g-data"><td>8</td><td class="mono">D09</td><td class="mono">E12</td><td>P1-20</td><td class="mono">D10</td><td class="mono">E13</td><td>P1-19</td></tr>
+<tr class="g-data"><td>9</td><td class="mono">D11</td><td class="mono">E14</td><td>P1-22</td><td class="mono">D12</td><td class="mono">E15</td><td>P1-21</td></tr>
+<tr class="g-data"><td>10</td><td class="mono">D13</td><td class="mono">D08</td><td>P1-30</td><td class="mono">D14</td><td class="mono">D09</td><td>P1-29</td></tr>
+<tr class="g-data"><td>11</td><td class="mono">D15</td><td class="mono">D10</td><td>P1-32</td><td class="mono">（空位）</td><td>不接</td><td>—</td></tr>
+<tr class="g-nc"><td>12</td><td class="mono">T_CS</td><td>不接</td><td>—</td><td class="mono">SCK</td><td class="mono">B10</td><td>P1-23</td></tr>
+<tr class="g-nc"><td>13</td><td class="mono">MISO</td><td>不接</td><td>—</td><td class="mono">MOSI</td><td class="mono">B11</td><td>P1-24</td></tr>
+<tr class="g-nc"><td>14</td><td class="mono">IQR</td><td>暂不接</td><td>—</td><td class="mono">BL</td><td class="mono">B00</td><td>P1-11</td></tr>
+<tr class="g-pwr"><td>15</td><td class="mono">GND</td><td class="mono">GND</td><td>P1-39</td><td class="mono">3V3</td><td class="mono">3V3</td><td>P1-38</td></tr>
+</table>
+
+<div class="legend">
+<span><i class="dot" style="border-color:var(--data-b)"></i>数据线（16 根）</span>
+<span><i class="dot" style="border-color:var(--ctrl-b)"></i>并口控制（5 根）</span>
+<span><i class="dot" style="border-color:var(--touch-b)"></i>触摸 I²C（2 根）</span>
+<span><i class="dot" style="border-color:var(--bl-b)"></i>背光（1 根）</span>
+<span><i class="dot" style="border-color:var(--pwr-b)"></i>电源（2 根）</span>
+</div>
+
+<p><b>合计 26 根</b>：数据 16 + 并口控制 5（CS/RS/WR/RD/RST）+ 触摸 2（SCK/MOSI）+ 背光 1（BL）+ 电源 2（GND/3V3）。<br>
+<b>不接 4 个</b>：<code>T_CS</code>、<code>MISO</code>（8080 并口用不到）、第 11 列下排的空位（适配板 <code>T_BUSY</code>）、<code>IQR</code>（固件是只读轮询，不用触摸中断；且 <code>PC5</code> 在 <code>.ioc</code> 里还是 Output，接上会与触摸 IC 对打）。</p>
+<p class="warn"><b>⚠️ 2026-10-04 更正（本表已改）</b>：本表原来把<b>下排（偶数脚）整体写高了一列</b>——
+写成第 3 列下排是「空位」、第 4 列下排是 <code>D00</code>。正确读法是
+<b>上排 = 奇数脚、下排 = 偶数脚，两列都自 <code>CS/RS</code> 端起算</b> ⇒
+<b><code>D00</code> 挨着 <code>RST</code></b>、<b>空位（<code>T_BUSY</code>）挨着 <code>D15</code></b>。
+依据：转接板原理图 PDF 文本层（<code>pin1=CS、pin2=RS、pin3=WR、pin4=RD、pin5=RST、pin6=D00、pin7=D01、pin8=D02…pin21=D15、pin22=T_BUSY、pin23=T_CS、pin24=T_CLK、pin25=T_MISO、pin26=T_MOSI、pin27=T_IQR、pin28=BL_CTR、pin29=GND、pin30=3V3</code>）
++ 实物照片 + 装配图焊盘标号（<code>01</code> 落在 CS 端）。原理图 J5 已同步改正（<code>04 §6.18</code>）。</p>
+
+<h2>3 · 核心板实物图（26 个孔已圈出）</h2>
+<p><small>丝印在<b>背面</b>。把板子<b>丝印面朝上</b>（下面这张图的样子）—— <b>P1 在右、P2 在左</b>。圈外字母 = 模块上对应的脚名。</small></p>
+<div class="photo-full"><img src="21-接线卡_assets/core_annotated.png" alt="天空星核心板丝印面，26 个待接的孔已用彩圈标出"></div>
+<div class="grid2">
+  <figure><img src="21-接线卡_assets/core_p2_top.png" alt="P2 上半"><figcaption>P2 上半（板子左列）</figcaption></figure>
+  <figure><img src="21-接线卡_assets/core_p1_top.png" alt="P1 上半"><figcaption>P1 上半（板子右列）</figcaption></figure>
+  <figure><img src="21-接线卡_assets/core_p2_bot.png" alt="P2 下半"><figcaption>P2 下半 —— <b>5 根线全在这</b>（CS/WR/RD/D02/D03）</figcaption></figure>
+  <figure><img src="21-接线卡_assets/core_p1_bot.png" alt="P1 下半"><figcaption>P1 下半 —— 含 RS、D14/D15、D00/D01、3V3、GND</figcaption></figure>
+</div>
+
+<h2>4 · 同一列两个孔怎么分（唯一需要你现场确认的一步）</h2>
+<div class="box warn">
+<p style="margin-top:0"><b>已确定</b>：每列两个孔 = 一对信号（<code>CS/RS</code>、<code>WR/RD</code>、<code>RST/D00</code>…），丝印<b>上排 = 奇数脚</b>、<b>下排 = 偶数脚</b>，两列都自 <code>CS/RS</code> 端起算。这是从转接板原理图（<code>pin1=CS、pin2=RS、pin3=WR、pin4=RD、pin5=RST、pin6=D00、pin7=D01、pin8=D02…pin21=D15、pin22=T_BUSY(空位)、pin29=GND、pin30=3V3</code>）与你的照片双向对出来的。<br>
+<b>⚠️ 2026-10-04 更正</b>：这里原来写的是「<code>D01/D00</code> 一对、<code>pin6=空、pin8=D00</code>」，那是<b>把下排读高了一列</b>；正确是 <b><code>RST</code> 挨着 <code>D00</code></b>、<b><code>D15</code> 挨着空位</b>。</p>
+<p><b>还剩一个我没法从资料里读出来的点</b>：丝印<b>上排</b>那一行名字，贴着的是靠<b>外</b>（离丝印远）还是靠<b>里</b>（离丝印近）的那个孔。转接板只给了 Altium 二进制工程 + 一张镜像机构图，这一层对应读不出来。</p>
+<h3>按最自然的画法先这么接</h3>
+<p>每个丝印名都紧挨着它自己那一排孔印 —— 所以：<b>丝印上排（CS/WR/RST/D01…）= 靠外那一排孔；丝印下排（RS/RD/D00/D02…）= 靠里那一排孔。</b>（靠外 = 离丝印远、靠板边的那排。）</p>
+<h3>上电前用最右一列 30 秒确认（零风险）</h3>
+<ol style="margin:4px 0">
+<li><b>只接一根</b>：核心板 <code>GND</code> → 模块最右列的<b>上排</b>孔（丝印 <code>GND</code> 那个）。<code>3V3</code> 先不接。</li>
+<li>再把核心板 <code>3V3</code> → 同列的<b>下排</b>孔（丝印 <code>3V3</code> 那个）。</li>
+<li><b>关灯看背光</b>：
+  <ul style="margin:4px 0">
+  <li><b>背光亮</b> ⇒ 上排 = GND、下排 = 3V3，读法正确，其余 24 根照 §2 表接。</li>
+  <li><b>背光不亮</b> ⇒ 读法反了：<b>立刻断电</b>，把这两根对调，<b>并且其余所有列也按「上排当偶数脚」接</b>（即 §2 表里左右两栏互换）。</li>
+  </ul>
+</li>
+</ol>
+<p><small>为什么这样试是安全的：<code>3V3</code> 与 <code>GND</code> 只在这一列相邻。若接反，模块内部 3V3 与 GND 之间只有去耦电容，<b>直流不成回路，不会短路</b>；模块只是处于反压状态 —— 所以<b>一看不亮就立刻断电</b>，别停在那儿。想更保险就在 <code>3V3</code> 那根里串一个 <b>1kΩ</b>（电流钳到 3mA，背光会很暗，要关灯看）。</small></p>
+</div>
+
+<h2>5 · 上电顺序</h2>
+<ol>
+<li><b>先断电</b>插完所有杜邦线。GND 建议接两根（<code>P1-39</code> + <code>P2-37</code>）到模块同一 GND 脚，降低回流阻抗。</li>
+<li>核心板经 <b>Type-C</b> 供电。</li>
+<li>上电后先看背光：<b>背光应该亮</b>（栅极被 R7 上拉，见 §7-①）。不亮先查 3V3 / GND 有没有插实。</li>
+<li>烧固件后，屏出现<b>雪花</b>就说明初始化成功（厂家通用说明：MCU 屏初始化完会是雪花状，不用等刷颜色）。</li>
+<li>跑一次 I²C 扫描，扫到 <code>0x38</code> = SCL/SDA 落点全对。扫不到先查 §7-②。</li>
+</ol>
+
+<h2>6 · 接完线 · 逐项检查清单</h2>
+<p><small>四段，从「不烧任何东西」到「看画面」。每项都给了判据 —— 按顺序做，别跳。</small></p>
+
+<div class="box warn">
+<h3 style="margin-top:0">阶段 0 · 断电，万用表（先做这个，不烧任何东西）</h3>
+<p><b>① 电源方向 —— 最高风险，先验这一项</b>（通断/蜂鸣档）</p>
+<table>
+<tr><th>表笔</th><th>应</th><th>含义</th></tr>
+<tr><td>模块 <code>3V3</code> 孔 ↔ 核心板 <code>3V3</code> 孔（P1-38）</td><td><b>响</b></td><td>✓ 3V3 接对了</td></tr>
+<tr><td>模块 <code>3V3</code> 孔 ↔ 核心板 <code>GND</code> 孔（P1-39）</td><td><b>必须不响</b></td><td>响 = <b>接反了，立刻改</b></td></tr>
+<tr><td>模块 <code>GND</code> 孔 ↔ 核心板 <code>GND</code> 孔</td><td><b>响</b></td><td>✓ 共地正常</td></tr>
+</table>
+<p><b>② 上电前测有没有短路</b>（电阻档 20k/200k）—— 黑笔核心板 <code>GND</code>、红笔核心板 <code>3V3</code>：</p>
+<ul style="margin:4px 0">
+<li><b>正常</b>：读数先小、然后<b>往上爬</b>（给模块去耦电容充电），最后几百 kΩ 以上。</li>
+<li><b>危险</b>：稳定在几十 Ω 以内 ⇒ 3V3 与 GND 之间有短路（多半是杜邦线插歪或接反）⇒ <b>别上电</b>。</li>
+</ul>
+<p><b>③ 26 根逐根回对</b>（一支笔固定模块的脚，另一支点核心板对应孔 → 应响；点<b>相邻</b>的孔 → 应不响）。按出错代价从高到低：</p>
+<ol style="margin:4px 0">
+<li>电源 2 根：<code>GND→P1-39</code>、<code>3V3→P1-38</code></li>
+<li>并口控制 5 根：<code>CS→D07</code>、<code>RS→D11</code>、<code>WR→D05</code>、<code>RD→D04</code>、<code>RST→B01</code></li>
+<li>触摸 2 根 + 背光 1 根：<code>SCK→B10</code>、<code>MOSI→B11</code>、<code>BL→B00</code></li>
+<li>数据 16 根：<code>D00→D14</code> <code>D01→D15</code> <code>D02→D00</code> <code>D03→D01</code> <code>D04→E07</code> <code>D05→E08</code> <code>D06→E09</code> <code>D07→E10</code> <code>D08→E11</code> <code>D09→E12</code> <code>D10→E13</code> <code>D11→E14</code> <code>D12→E15</code> <code>D13→D08</code> <code>D14→D09</code> <code>D15→D10</code></li>
+</ol>
+<p><b>④ 相邻信号不能短路</b> —— 测模块上相邻两脚（如 <code>D00</code> ↔ <code>D01</code>）→ 必须不响。杜邦线插歪最容易在这里出事。</p>
+</div>
+
+<div class="box">
+<h3 style="margin-top:0">阶段 1 · 上电，先不烧固件</h3>
+<ul style="margin:4px 0">
+<li><b>只看背光</b>：应该亮（栅极被 R7 上拉）。不亮 → 别怀疑固件，回阶段 0 的 ①②。</li>
+<li>顺手摸核心板 3V3 稳压器：<b>烫手 = 有短路</b>，立刻断电。</li>
+<li><b>通电状态下不要插拔杜邦线</b>（容易瞬间短路）。</li>
+</ul>
+<p style="margin-bottom:0"><small>⚠️ <b>2026-10-02 实测补充</b>：烧了当前这版固件后，<code>bsp_lcd_init()</code> 开头就会把背光关掉
+（等 LVGL 初始化完再开）—— 而该版固件在 LCD 硬复位处<b>卡死</b>（根因见 memory 日志：
+调度器启动前调 <code>xSemaphoreCreateBinary()</code> 把 BASEPRI 钉住，HAL 时基被屏蔽）。
+<b>所以在修掉那个 bug 之前，「上电背光不亮」不能用来判断电源接反</b> —— 电源方向请一律用阶段 0-① 的通断档确认。</small></p>
+</div>
+
+<div class="box ok">
+<h3 style="margin-top:0">阶段 2 · 烧固件，看开机自检（判据最硬的一步）</h3>
+<p>固件开机自动跑 <code>app_self_test()</code>（<code>Task/Src/app.c</code>），其中<b>⑧ LCD</b> 和 <b>⑨ 触摸</b>两项正是给这块屏准备的：</p>
+<pre style="background:#f1efe8;border-radius:6px;padding:10px;font-size:12.5px;overflow:auto">cd firmware
+python Tools/fw.py verify      # 门禁 → 烧录 → 抓 RTT → 判标记（一条命令到底）
+# 或分开：python Tools/fw.py flash   然后   python Tools/fw.py rtt</pre>
+<p>要盯的两行（<b>2026-10-02 实测通过的真实值</b>）：</p>
+<table>
+<tr><th>日志</th><th>通过判据</th><th>它证明了什么</th></tr>
+<tr><td class="mono">[SELFTEST] LCD ok, RDDID=00 FF FF FF</td><td><b>读到 4 字节</b>（不要求等于某个值）</td><td>RS 地址译码 + 读写时序 + 16 位数据总线 <b>通了</b></td></tr>
+<tr><td class="mono">[SELFTEST] ADC ok, 采到 64 点，码值范围 872 ~ 1052</td><td><b>搬回了 64 个点</b></td><td>TIM8 触发 / ADC 转换 / DMA 搬运 三跳全通</td></tr>
+<tr><td class="mono">[AI_READY] boot ok, uptime=3009 ms</td><td><b>出现该行</b>（3 秒后）</td><td>整条启动链走完、调度器起来了</td></tr>
+</table>
+<p>读不到时的定位：</p>
+<table>
+<tr><th>日志</th><th>先查</th></tr>
+<tr><td class="mono">LCD 读不到 ID（RD 没接 / 时序太紧 / 屏没供电）</td><td>屏 <code>3V3</code>/<code>GND</code>；<code>RD</code>(D04)；<code>CS</code>(D07) / <code>RS</code>(D11)；IM 档位</td></tr>
+<tr><td class="mono">FT6336 读不到 TD_STATUS（I2C2 不通 / 地址不对 / 没上拉）</td><td><code>SCK</code>(B10) / <code>MOSI</code>(B11)；SCL 侧补 <b>4.7k</b> 上拉；两根对调再试</td></tr>
+</table>
+<p><b>⚠️ 自检只判「读得到」，不判「每一根数据线都对」</b> —— 某根数据线接错时 ID 照样能读到（只是值不对）。所以必须做阶段 3。</p>
+</div>
+
+<div class="box">
+<h3 style="margin-top:0">阶段 3 · 看画面（数据线在这一步才暴露）</h3>
+<p>固件默认界面（<code>Task/Src/app_lvgl.c</code>）内容是确定的，逐项核对：</p>
+<ul style="margin:4px 0">
+<li>整屏底色 = <b>深藏青</b>（<code>0x101820</code>）</li>
+<li>顶部一行<b>青色</b>字：<code>G2026  LVGL 9.5 ok</code></li>
+<li>中间三行<b>浅灰</b>字：<code>ST7796 / 8080-FSMC</code> / <code>320x480</code> / <code>点一下屏幕试试</code></li>
+</ul>
+<table>
+<tr><th>现象</th><th>指向</th></tr>
+<tr><td>全黑、无任何图像（但背光亮）</td><td><code>CS</code>/<code>RS</code>/<code>WR</code> 三根之一插错行；IM 档位不是 010</td></tr>
+<tr><td>花屏 / 规律性条纹</td><td>某根数据线虚接或接错行 → 回阶段 0-③ 逐根对</td></tr>
+<tr><td>红蓝互换 / 整体偏色</td><td>数据线成对交换（R 段与 B 段错位）</td></tr>
+<tr><td>图像整体偏移、错位</td><td><code>RS</code>(D11) 或 FSMC 时序</td></tr>
+<tr><td>底色不是深藏青而是纯黑/纯白</td><td>数据线有大片错误</td></tr>
+</table>
+</div>
+
+<div class="box">
+<h3 style="margin-top:0">阶段 4 · 触摸</h3>
+<p><b>2026-10-02 实测现状：这一项没过。</b>日志里是</p>
+<pre style="background:#f1efe8;border-radius:6px;padding:10px;font-size:12.5px;overflow:auto">[W] [TOUCH] FT6336 应答失败（I2C 不通？地址不是 0x38？SDA/SCL 没上拉？）
+[W] [LVGL] 触摸未就绪，本次只做显示
+[W] [SELFTEST] FT6336 读不到 TD_STATUS（I2C2 不通 / 地址不对 / 没上拉）</pre>
+<p>这正是 §7-② 预警过的那条。按代价从低到高试：</p>
+<ol style="margin:4px 0">
+<li><code>B10</code>(SCL) 与 3V3 之间补一颗 <b>4.7k</b> 上拉，再跑一次 —— 最可能就是这个。</li>
+<li>把 <code>SCK</code>(B10) 与 <code>MOSI</code>(B11) 两根对调再试（I²C 接反很常见）。</li>
+<li>仍不行 → 回到 §4 的「同列两孔怎么分」复核第 12/13 列是否插错行。</li>
+</ol>
+<ul style="margin:4px 0">
+<li>通了之后：点屏幕看有没有反应；落点与手指位置是否一致。</li>
+<li>方向反了（左右/上下镜像）→ 改 <code>bsp_touch_read()</code> 里标注的那两行映射。</li>
+</ul>
+<p><b>把阶段 2 的三行日志原样抄进</b> <code>hardware/04-pinout连接表.md</code> <b>或当天的 memory 日志</b> —— 这是这块屏第一次上板验证的证据（三态口径要求「未验证」要有转正凭据）。</p>
+</div>
+
+<h2>7 · 三个注意项</h2>
+
+<div class="box ok">
+<h3 style="margin-top:0">① BL 脚 = 控制脚（已从转接板原理图定案，不用测）</h3>
+<p>转接板原理图（<code>docs/TK035F5687_9629_整理资料…/05_硬件转接板资料/通用亮度转接板原理图及PCB/TK035F5501_转接板.pdf</code>）里：30-pin 的 <code>BL</code> 脚网络名就叫 <b><code>BL_CTR</code></b>（CTR = control）；板上 <code>Q1</code> = <b>SI2302</b>（N 沟道 MOS），栅极接 <code>BL_CTR</code>、漏极接 <code>LED-</code>（屏背光 38~43 脚 K1~K6）、源极接 GND；栅极经 <code>R7</code> = 10K 上拉到 3.3V；屏 44 脚 <code>A</code>（背光阳极）在板内<b>直接接 3.3V</b>。</p>
+<p>⇒ <b>BL 就是一根栅极信号线，接 <code>B00</code> 安全</b>；背光电源不用外部供（这就是 §1 里那两个「背光」白座本次不用的原因）。与固件注释「PB0 高 = 背光亮」一致。</p>
+<p>⇒ 上电到固件跑起来之前，<b>背光本来就是亮的</b>（PB0 复位后浮空，栅极被上拉），不是故障。</p>
+</div>
+
+<div class="box ok">
+<h3 style="margin-top:0">② 触摸：<b>不是漏接线，是台面缺一颗上拉电阻</b>（2026-10-02 已定论）</h3>
+<p>固件里的 I²C 全总线扫描（0x08~0x77 共 112 个地址）实测<b>一个器件都不应答</b> —— 这排除了"IC 型号不对"。根因查到了厂家例程（<code>02_STM32例程/TK035F9629_ST7796版/STM32_16位并口_标准库_电容触摸/project/bsp/touch/touch_CTP.c</code>）：</p>
+<table>
+<tr><th>线</th><th>厂家例程的配置</th><th>例程注释原话</th></tr>
+<tr><td><b>SCL</b>（PB13）</td><td><code>GPIO_Mode_Out_PP</code> <b>推挽</b></td><td>"由于只工作在主机模式……所以 <b>SCK 直是输出模式，不用串电阻</b>"</td></tr>
+<tr><td><b>SDA</b>（PB15）</td><td><code>GPIO_Mode_Out_OD</code> <b>开漏</b></td><td>"硬件电路中一般<b>在 SDA 信号线上接一个电阻后再接 VCC</b>"</td></tr>
+</table>
+<p>⇒ 厂家例程用<b>软件模拟 I²C</b>，SCL 推挽驱动（能主动拉高）所以不需要上拉；只有开漏的 SDA 要上拉 ⇒ <b>模块/转接板也只给 SDA 放了上拉</b>（与 2026-09-29 实测吻合：<code>MOSI</code> 有上拉、<code>SCK</code> 只读到 2V）。</p>
+<p><b>而本工程走 STM32 硬件 I²C2 —— SCL/SDA 都是开漏（AF4），两路都必须外部上拉。</b>SCL 拉不起来 ⇒ 时钟线不起 ⇒ 总线不通。</p>
+<p><b>修法</b>：模块 <code>SCK</code> 脚（或核心板 <code>PB10</code>）↔ 3V3 补一颗 <b>4.7k</b>。SDA 侧模块自带；再补一颗也无妨（并联 ≈2.35k，仍在 I²C 合规区 2.2k~10k）。</p>
+<h3>先做这一步：<b>别用电阻档测</b>（2026-10-02 已踩坑）</h3>
+<p><b>⚠️ "断电量 <code>SCK</code>→3V3 的电阻"这个测法不成立。</b>实测：红黑表笔互换得 <b>8.4k / 14k</b> 两个不同的值 —— <b>两个方向读数不同就说明路径里有半导体结</b>（ESD 保护二极管），不是电阻，读数没有意义。</p>
+<p><b>正确测法 = 上拉的"定义"：把线拉低 → 松开 → 看它能不能自己回到高。</b>（有上拉 ⇒ 回 1；没上拉 ⇒ 停在 0。只有"松手后能自己回高"才证明有源在拉它 —— 光看稳态电压会被悬空脚骗。）</p>
+<p><b>固件已经替你做了这个测试</b>（<code>bsp_touch.c</code> 的 <code>line_has_pullup()</code>），实测结果：</p>
+<pre style="background:#eaf3de;border-radius:6px;padding:10px;font-size:12.5px;overflow:auto">[I] [TOUCH] 两条线都有上拉（拉低后能自己回高）</pre>
+<p>⇒ <b>上拉不是问题，这条排除。</b></p>
+<h3>那问题在哪：看失败模式</h3>
+<pre style="background:#f1efe8;border-radius:6px;padding:10px;font-size:12.5px;overflow:auto">[W] [TOUCH] 首次读取失败：State=0x20(READY) ErrorCode=0x00000020(TIMEOUT)</pre>
+<table>
+<tr><th>失败模式</th><th>含义</th></tr>
+<tr><td><b>NACK</b>（AF=0x04）</td><td>总线时序合法、<b>器件不应答</b> ⇒ 没供电 / 被 RST 按住 / 地址不对</td></tr>
+<tr><td><b>TIMEOUT</b>（0x20）← <b>实测是这个</b></td><td><b>主机自己的波形都没走完</b> ⇒ 线序 / 引脚复用 / 从机拉死时钟</td></tr>
+</table>
+<p>已知：接线映射对（24=SCL、26=SDA）、型号地址对（0x38）、上拉有、两线没被拉死 —— 却 TIMEOUT。<b>按这个顺序查：</b></p>
+<ol style="margin:4px 0">
+<li><b>把 <code>SCK</code>(模块第 24 脚) 与 <code>MOSI</code>(第 26 脚) 两根对调，重跑</b>（10 秒，最可能）</li>
+<li>触摸 FPC 是否插到位；触摸 IC 是否供电（FPC 第 1 脚 <code>VCC</code> 对 GND 应有 3.3V）</li>
+<li>触摸 <code>RST</code>（FPC 第 2 脚）是否被拉低</li>
+</ol>
+<h3>对调之后：<b>换回去</b></h3>
+<p>对调 <code>SCK</code>/<code>MOSI</code> 后，错误码从 <code>0x20</code>(TIMEOUT) 变成 <b><code>0x200</code></b>。查源码 <code>Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_i2c.h:172</code>：<code>#define HAL_I2C_WRONG_START 0x00000200U</code>（"错误的起始位"）。</p>
+<p><b>WRONG_START 正是 SCL/SDA 接反的典型特征</b> ⇒ <b>先把线换回原样</b>（<code>SCK</code> → <code>B00</code>、<code>MOSI</code> → <code>B11</code>）。换回后如果错误码变成 <code>AF</code>(0x04 NACK) ⇒ 说明总线时序已经通了，问题就纯在器件侧（FPC 插到位 / <code>VCC</code> / <code>RST</code>）。</p>
+<h3>顺带：界面诊断已加（见 §6 阶段 3）</h3>
+<p>屏左上角会显示 <code>fps</code> 与 <code>touch x,y</code>，手指按下时屏上还有个红点跟着。用它一眼看出"屏在刷 / 触摸落点在哪。</p>
+</div>
+
+<div class="box">
+<h3 style="margin-top:0">③ 适配板 IM 档位 + 四根 RGB 同步脚</h3>
+<ul style="margin:4px 0">
+<li><b>IM 必须 = 010（8080-16bit）</b>，照片里位宽表 <code>16</code> 那一行就是 <code>0 1 0</code> ✓。断电复核：一支表笔固定 30-pin 的 <code>3V3</code> 脚，另一支依次点 <code>Parallel/SPI</code> 表旁那 3 组焊盘，<b>只响 1 次</b>即正确。</li>
+<li><code>DE / PCLK / VSYNC / HSYNC</code> 四根<b>不能悬空</b>，规格要求接 IOVCC1 或 GND（DE 必须为低）。照片看这几处元件未焊 → <b>建议补锡桥接地</b>。悬空的 CMOS 输入对 mV 级 AFE 是白送的噪声源。</li>
+</ul>
+</div>
+
+<h2>8 · 台面 vs 底板（会造成现象差异）</h2>
+<ul>
+<li>底板的 <b>33Ω FSMC 串阻（R22~R39）</b> 台面没有 → 杜邦线务必短，否则 111ns/字的 16 位并口容易振铃。</li>
+<li>底板的 <b>4.7k I²C 上拉（R15/R16）</b> 台面没有 → 见 §7-②。</li>
+<li>底板的 <b>1k 背光串阻（R12）</b> 台面没有 → 直连 PB0（栅极无电流，无风险）。</li>
+<li>AFE / 电源 / 基准部分<b>本次完全不接</b>；ADC 相关脚（<code>A01</code>、<code>C04</code>）保持悬空。</li>
+</ul>
+
+<h2>9 · 常见现象对照</h2>
+<table>
+<tr><th>现象</th><th>先查什么</th></tr>
+<tr><td>屏全黑、背光也不亮</td><td>3V3 / GND 是否接反或虚接（见 §4）；适配板 IM 档位</td></tr>
+<tr><td>背光亮、无雪花无图像</td><td>IM 档位是否 010；<code>CS</code>(D07) / <code>RS</code>(D11) / <code>WR</code>(D05) 三根是否插错行</td></tr>
+<tr><td>雪花后刷色乱、花屏</td><td>数据线 <code>D00~D15</code> 有一根接错或虚接 —— 按 §2 表逐根回对</td></tr>
+<tr><td>屏正常、触摸没反应</td><td>I²C 上拉（§7-②）；扫描是否见 <code>0x38</code>；SCL/SDA 是否对调</td></tr>
+<tr><td>偶发花屏 / 随机噪点</td><td>杜邦线太长，并口振铃 —— 把线收到最短、GND 多接一根</td></tr>
+</table>
+
+<p style="margin-top:30px"><small>事实来源：<code>hardware/04-pinout连接表.md</code>（§6 屏 30-pin 丝印实读、§6.11 BL 定案、§6.12 核心板排针物理方位定案）· <code>hardware/13-底板定稿决策.md</code> §4（J5 逐脚映射）· <code>firmware/Core/Inc/board_config.h</code>（引脚唯一真相源）· 转接板原理图 PDF + 用户实物照片 · 天空星官方《引脚分配图》与 EDA 工程（PCB 焊盘网络名逐脚复核）。三态口径：装置尚未制造，本卡为<b>未验证</b>台面方案。</small></p>
+
+</div>
+</body>
+</html>

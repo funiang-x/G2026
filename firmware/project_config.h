@@ -47,6 +47,39 @@
  *    放 SRAM1 就没有这个隐患，代价只是访问慢一点点。 */
 #define APP_LVGL_DRAW_BUF_LINES 48U
 
+/* ★ LCD 写屏的"可打断粒度"（像素）：采样窗静默（硬件方案 02 §6 O1）靠它落地。
+ *
+ * 为什么需要：LVGL 的 flush 是**同步**的，一个 draw buffer = 320×48 px ≈ **9ms**
+ * 的 FSMC 连续写；而 engine 的采样窗只有 2.048ms。若写屏不能在块边界被打断，
+ * 采样窗内总线照 toggle ⇒ 板内最大干扰源直接灌进 AFE（2 层板没有地平面兜底）。
+ *
+ * 机制（Task 层"LCD 总线闸"，实现在 app_engine.c）：
+ *   · engine **开采集之前**先抢闸、采完放闸；
+ *   · 写屏侧每写 `APP_LCD_CHUNK_PX` 像素抢一次闸。
+ * ⇒ 采样窗内一次写屏都不会发生；代价是 engine 起采最多晚 1 块、flush 被推迟 ≤2ms。
+ * ⚠️ 调大 = 信号量开销少但 engine 等得久；调小 = 打断更细但调用更频繁。
+ *    1024 px @DS=85/144MHz ≈ 0.6ms。 */
+#define APP_LCD_CHUNK_PX 1024U
+
+/* 抢 LCD 总线闸的等待上限（ms）：正常只需等"当前块"写完（≈0.6ms）。
+ * 给到 20ms 是**防御性**的：万一写屏侧漏了 give，engine 也不能被永久堵死
+ * ——超时后照常开采集（退化成旧的整帧级避让，不比改前差）。 */
+#define APP_LCD_BUS_WAIT_MS 20U
+
+/* ★ 界面选择：**0 = 业务 UI（app_ui 的四页）；1 = LVGL 官方 widgets demo**。
+ *
+ *   1 的用途：**上板验证** —— demo 里有按钮 / 滑块 / 开关 / 下拉 / 滚轮 / 图表 /
+ *   键盘 / 消息框等一整套控件，一次就能把"显示 + 触摸"都试到；配合左上角的诊断
+ *   浮层（`fps` + `touch x,y` + 红点），一眼看出屏在不在刷、触摸落点准不准。
+ *
+ *   ⚠️ 代价：demo 会占掉不少 LVGL 堆（本工程 LV_MEM_SIZE = 32KB @ CCM，够跑，
+ *      但没有余量做别的事）。**验证完请改回 0** —— 那才是装置的正式界面。
+ *
+ *   相关的两处开关：
+ *     · `Middlewares/LVGL/lv_conf.h` 的 `LV_USE_DEMO_WIDGETS`（必须为 1）
+ *     · `CMakeLists.txt` 里把 LVGL demos/widgets 的 C 文件收进 lvgl target */
+#define APP_LVGL_USE_DEMO 0U
+
 /* ------------------------------------------------------------ FreeRTOS 参数 ----
  * ⚠️ 任务**不要用 CubeMX 的图形界面建** —— CubeMX 里只勾 FreeRTOS 内核（docs/01 规矩 4）。
  *
@@ -132,6 +165,25 @@
  * 屏上数据 ≤0.6s 旧 —— 判据的 1/3。切页/换 1T-3T 会立即重测一次（app_ui）。
  * ⚠️ 别改成 <100ms：DSP 一拍 40ms，周期太短会把节拍全部吃满（LVGL 饿死）。 */
 #define APP_MEAS_PERIOD_MS 500U
+
+/* ------------------------------------------------------ 模拟轨建立等待 ----
+ * 上电后**等模拟轨稳了再跑采样自检**（`app_rtos_run()` 里 `osDelay` 一次）。
+ *
+ * 机理（硬件事实，推导在 `board_config.h` 的 VBIAS 段与 `hardware/29`）：
+ *   `VBIAS` 节点看到的戴维南电阻 = `R9//R10//R2//R5//R7 = 10k/5 = 2.0 kΩ`，
+ *   去耦 `C13 = 10 µF` ⇒ **τ = 20 ms**，到 0.1% 要 **138 ms**。
+ *   在此之前采样，帧直流均值会偏出半量程带（`BOARD_VBIAS_SENSE_CODE_MID ± 15%`）
+ *   ⇒ 报一行**假的**「模拟轨可疑」，把人往"查地/查 JP2"的错方向带。
+ *
+ * ⚠️ **改前是"侥幸成立"**：`bsp_lcd_init()` 里那两处 `HAL_Delay(20)`+`HAL_Delay(120)`
+ *    恰好盖住了这 138 ms。但那两条延时是**屏的初始化需求**，不是 AFE 的时序依赖
+ *    —— 谁哪天把它们去掉，这个假告警就冒出来。⇒ 显式等。
+ *
+ * 取值 150 ms：> 138 ms（0.1% 建立点），相对题面"每项 ≤2 s"可忽略。
+ * 为什么放这里而不是 `board_config.h`：`app_rtos.c` 的分层约定只 include
+ * `Operation/Inc` 与 `Common/Inc`，看不到 `Core/Inc`；这是**应用时序策略**，
+ * 数值的硬件推导写在注释里。 */
+#define APP_AFE_SETTLE_MS 150U
 
 /* 波形页重建曲线的列数。320 = 屏宽 1:1（每像素一列，无插值观感）。
  * op_wave/op_meas 的重建在 UI 刷新时跑：320×3 分量 sinf ≈ 1ms 级，无压力。 */

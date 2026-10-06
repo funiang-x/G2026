@@ -1,8 +1,15 @@
 # AGENTS.md — STM32F407VGT6 四层工程模板（AI 工作手册 · 骨架）
 
-> **[MUST] 开工前置（所有 agent 通用）**：动手前先读 `../../../rules/01_任务路由协议.md` ——
-> 判任务类型 → 装载对应 skill → **先输出一行 `[ROUTE]` 声明**（用了哪些 skill、参考了哪些 products 文档）再开工。
-> 未声明就干活 = 违反工作台协议。
+<!-- my_skills:project-door -->
+[MUST] 开工前置：先读 skill 库的 `C:/Users/funiang/.ai-skills/ROUTE.md`，按其 §1 走四步
+（拿证 → 判类 → 装 skill → 读参考），**先输出 `[ROUTE]` 声明**再干活。
+拿证命令：`python C:/Users/funiang/.ai-skills/tools/preflight.py <任务类型>`。
+
+## 本工程的状态落点
+
+当前进度与门禁基线只认工程根的 `PROJECT.md`（字段定义见
+`C:/Users/funiang/.ai-skills/framework/阶段状态.md`）。**只在跨阶段或改基线时写它。**
+<!-- /my_skills:project-door -->
 
 > 给 AI 助手的**骨架**：只放"动手前必须知道"的硬事实与硬规则，超 3 行的展开一律在
 > `docs/` 下。人读 `README.md`，机器读这里；**冲突时以本文件为准**。

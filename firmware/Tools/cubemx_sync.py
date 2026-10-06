@@ -342,7 +342,20 @@ def check(root: Path) -> Result:
     return res
 
 
+def _soften_console() -> None:
+    """Windows 中文控制台是 GBK：报告里出现 `⊂` 这类符号会让 print 抛
+    UnicodeEncodeError，脚本以退出码 1 死掉 ⇒ `fw.py lint` 整条门禁不可用
+    （2026-10-02 实测）。保留控制台原编码（中文仍可读），只把编不出的字符
+    降级成 `?`。不改变任何判定逻辑。"""
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(errors="replace")
+        except (AttributeError, ValueError, OSError):
+            pass
+
+
 def main() -> int:
+    _soften_console()
     ap = argparse.ArgumentParser(description=".ioc 与 board_config.h 的配置对账")
     ap.add_argument("--strict", action="store_true",
                     help="有确定性矛盾则退出码 1（fw.py lint 用这个）")

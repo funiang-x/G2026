@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>G2026 底板 · PCB 布局示范与电路分区 · 2026-10-05</title>
+<style>
+:root{--ink:#1c2733;--mut:#5b6b7b;--line:#d9e1e8;--blue:#1d6fd6;--red:#c9184a;--green:#0b6e4f;--bg:#fffcf8}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.72 "Segoe UI",system-ui,"Microsoft YaHei",sans-serif}
+main{max-width:1180px;margin:0 auto;padding:18px 22px 90px}
+h1{font-size:24px;margin:16px 0 4px} h1 small{display:block;font-weight:400;color:var(--mut);font-size:13.5px;margin-top:4px}
+h2{font-size:19px;margin:34px 0 10px;padding:7px 13px;background:#eef3f8;border-left:4px solid var(--blue)}
+h3{font-size:16px;margin:20px 0 6px;color:#1450a0}
+p{margin:8px 0} .lead{color:#33414f}
+figure{margin:12px 0 18px} .figbox{border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px;overflow-x:auto}
+.figbox svg{display:block;min-width:680px}
+figcaption{font-size:12.5px;color:var(--mut);margin-top:6px}
+.warn{border:2px solid var(--blue);background:#f4f8fd;border-radius:10px;padding:11px 15px;margin:12px 0 18px}
+.warn p{margin:3px 0;font-size:13.5px}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;margin:8px 0 0;color:#33414f}
+.legend i{display:inline-block;width:14px;height:10px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.card{border:1px solid var(--line);border-radius:10px;margin:13px 0;overflow:hidden;background:#fff}
+.chd{display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f3f7fb;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.zid{font-weight:700;color:#fff;background:var(--blue);border-radius:5px;padding:1px 8px;font-size:12.5px}
+.ct{font-weight:700;font-size:15px}
+.cparts{color:var(--mut);font-size:12.5px;border:1px solid var(--line);border-radius:20px;padding:0 9px}
+.crow{display:flex;gap:12px;padding:8px 12px;border-top:1px dashed #e7eef5}
+.crow:first-of-type{border-top:none}
+.ck{flex:0 0 104px;font-size:12.5px;font-weight:700;color:#1450a0;padding-top:2px}
+.cv{flex:1;min-width:0;font-size:14px}
+.cv ul{margin:2px 0;padding-left:18px} .cv li{margin:3px 0;font-size:13.5px}
+.crow.rule{background:#fffaf3} .crow.rule .ck{color:#b35806}
+table{border-collapse:collapse;width:100%;margin:10px 0;font-size:12.5px}
+th,td{border:1px solid var(--line);padding:5px 8px;text-align:left}
+th{background:#eef3f8;font-weight:700}
+td.r{font-family:Consolas,monospace;font-size:12px;white-space:nowrap}
+ol,ul{font-size:13.5px} code{background:#f1f5f9;border-radius:3px;padding:0 3px;font-family:Consolas,monospace;font-size:12.5px}
+footer{color:var(--mut);font-size:12px;margin-top:38px;border-top:1px solid var(--line);padding-top:10px}
+@media print{body{font-size:12px}.card{break-inside:avoid}}
+</style></head><body><main>
+
+<h1>G2026 底板 · PCB 布局示范与电路分区 <small>用真实封装几何画一份「该怎么摆」的示范 —— 每个功能块标在图上</small></h1>
+<p class="sub" style="color:#5b6b7b;font-size:13.5px">2026-10-05 · 封装与焊盘几何<b>来自 PCB 实数据</b>
+（<code>easyeda pcb dump</code>，64 封装 / 244 焊盘，单位已由 mil 换算为 mm）</p>
+
+<div class="warn">
+<p><b>这是布局示范，不是你的 PCB 设计。</b>我只用了你板子里的<b>封装几何</b>（外形 + 焊盘尺寸，那是真实的），
+<b>位置是我排的示范</b>，用来讲"为什么这么摆"。<b>不动你的板子、不改你的布局。</b></p>
+<p>板框按 <b>132 × 118 mm</b> 假设；坐标以<b>左上角为原点、y 向下</b>。
+橙色块 = 真实焊盘，灰线框 = 真实外形，红框 = 三个连接器。</p>
+</div>
+
+<h2>§1 先想清楚五件事，再动手摆</h2>
+<table>
+<tr><th>#</th><th>原则</th><th>为什么</th><th>在本板上落到哪</th></tr>
+<tr><td class="r">1</td><td><b>先分区，再摆件</b></td><td>PCB 不是"把件塞进去"，是"把电路分成互不打扰的几块"</td><td>电源区 / 核心板↔屏接口区 / AFE 模拟区（见 §2）</td></tr>
+<tr><td class="r">2</td><td><b>按信号流摆成一条线</b></td><td>信号从哪进、经过谁、从哪出，器件就按这个顺序排</td><td>AFE 区从左到右：J1 → … → JP2 → PA1</td></tr>
+<tr><td class="r">3</td><td><b>模拟与数字隔开</b></td><td>mV 级模拟最怕数字回流借道，而 2 层板没有地平面兜底</td><td>AFE 区与总线区隔 <b>≥10mm</b>，AGND 独立成岛</td></tr>
+<tr><td class="r">4</td><td><b>该近的必须近</b></td><td>「就近」分两种，方向刚好相反（见 §5）</td><td>去耦贴<b>负载</b>；阻尼贴<b>源端</b></td></tr>
+<tr><td class="r">5</td><td><b>先想回流，再画线</b></td><td>电流总要回去。2 层板上"回流连续"是唯一可靠的"地"</td><td>FSMC 走成一束 ≤40mm；J5 地针短宽多过孔</td></tr>
+</table>
+
+<h2>§2 整板布局示范（真实封装）</h2>
+<figure><div class="figbox"><svg viewBox="0 0 726 653" xmlns="http://www.w3.org/2000/svg" width="100%">
+<rect x="20" y="20" width="686" height="614" rx="10" fill="#fbfaf7" stroke="#8a8880" stroke-width="1.4"/>
+<rect x="35.6" y="35.6" width="192.4" height="254.8" rx="7" fill="#faeeda" stroke="#b8873a" stroke-width="1"/>
+<text x="43.6" y="30.6" font-size="13.5" font-weight="700" fill="#412402" stroke="#fbfaf7" stroke-width="3.2" paint-order="stroke">A · 电源区</text>
+<rect x="248.8" y="35.6" width="442.0" height="317.2" rx="7" fill="#e6f1fb" stroke="#4a86c0" stroke-width="1"/>
+<text x="256.8" y="30.6" font-size="13.5" font-weight="700" fill="#042c53" stroke="#fbfaf7" stroke-width="3.2" paint-order="stroke">B · 核心板 ↔ 屏 接口区</text>
+<rect x="35.6" y="404.8" width="655.2" height="213.2" rx="7" fill="#e1f5ee" stroke="#3f9e82" stroke-width="1"/>
+<text x="43.6" y="399.8" font-size="13.5" font-weight="700" fill="#04342c" stroke="#fbfaf7" stroke-width="3.2" paint-order="stroke">C · 模拟前端 AFE 区（AGND 独立岛）</text>
+<line x1="35.6" y1="378.8" x2="690.8" y2="378.8" stroke="#c0392b" stroke-width="1.4" stroke-dasharray="9 6"/>
+<text x="332.0" y="369.4" font-size="11.4" fill="#c0392b">← ≥10 mm 模拟 / 数字隔离带 →</text>
+<rect x="193.5" y="471.5" width="27.5" height="12.2" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="211.6" y="473.1" width="7.7" height="9.0" fill="#c47f2a" opacity="0.92"/>
+<rect x="195.1" y="473.1" width="7.7" height="9.0" fill="#c47f2a" opacity="0.92"/>
+<text x="207.2" y="469.3" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">C1</text>
+<rect x="438.5" y="452.4" width="15.8" height="8.7" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="448.0" y="454.5" width="4.2" height="4.7" fill="#c47f2a" opacity="0.92"/>
+<rect x="440.7" y="454.5" width="4.2" height="4.7" fill="#c47f2a" opacity="0.92"/>
+<text x="446.4" y="450.2" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">C10</text>
+<rect x="287.2" y="422.7" width="27.1" height="16.2" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="287.2" y="424.6" width="8.4" height="12.3" fill="#c47f2a" opacity="0.92"/>
+<rect x="306.0" y="424.6" width="8.4" height="12.3" fill="#c47f2a" opacity="0.92"/>
+<text x="300.8" y="420.5" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">C11</text>
+<rect x="326.6" y="425.7" width="21.2" height="10.2" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="338.7" y="427.3" width="7.3" height="7.0" fill="#c47f2a" opacity="0.92"/>
+<rect x="328.3" y="427.3" width="7.3" height="7.0" fill="#c47f2a" opacity="0.92"/>
+<text x="337.2" y="423.5" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">C14</text>
+<rect x="79.2" y="74.3" width="27.1" height="16.2" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="98.0" y="76.2" width="8.4" height="12.3" fill="#c47f2a" opacity="0.92"/>
+<rect x="79.2" y="76.2" width="8.4" height="12.3" fill="#c47f2a" opacity="0.92"/>
+<text x="92.8" y="72.1" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">C16</text>
+<rect x="358.1" y="529.4" width="10.2" height="21.2" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="359.7" y="541.5" width="7.0" height="7.3" fill="#c47f2a" opacity="0.92"/>
+<rect x="359.7" y="531.1" width="7.0" height="7.3" fill="#c47f2a" opacity="0.92"/>
+<text x="363.2" y="527.2" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">C2</text>
+<rect x="612.6" y="72.1" width="21.2" height="10.2" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="614.3" y="73.7" width="7.3" height="7.0" fill="#c47f2a" opacity="0.92"/>
+<rect x="624.7" y="73.7" width="7.3" height="7.0" fill="#c47f2a" opacity="0.92"/>
+<text x="623.2" y="69.9" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">C22</text>
+<rect x="612.6" y="98.1" width="21.2" height="10.2" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="614.3" y="99.7" width="7.3" height="7.0" fill="#c47f2a" opacity="0.92"/>
+<rect x="624.7" y="99.7" width="7.3" height="7.0" fill="#c47f2a" opacity="0.92"/>
+<text x="623.2" y="95.9" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">C3</text>
+<rect x="441.3" y="529.4" width="10.2" height="21.2" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="442.9" y="541.5" width="7.0" height="7.3" fill="#c47f2a" opacity="0.92"/>
+<rect x="442.9" y="531.1" width="7.0" height="7.3" fill="#c47f2a" opacity="0.92"/>
+<text x="446.4" y="527.2" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">C4</text>
+<rect x="87.4" y="581.7" width="21.2" height="10.2" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="99.5" y="583.3" width="7.3" height="7.0" fill="#c47f2a" opacity="0.92"/>
+<rect x="89.1" y="583.3" width="7.3" height="7.0" fill="#c47f2a" opacity="0.92"/>
+<text x="98.0" y="579.5" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">C5</text>
+<rect x="524.5" y="529.4" width="10.2" height="21.2" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="526.1" y="541.5" width="7.0" height="7.3" fill="#c47f2a" opacity="0.92"/>
+<rect x="526.1" y="531.1" width="7.0" height="7.3" fill="#c47f2a" opacity="0.92"/>
+<text x="529.6" y="527.2" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">C6</text>
+<rect x="566.1" y="576.2" width="10.2" height="21.2" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="567.7" y="577.9" width="7.0" height="7.3" fill="#c47f2a" opacity="0.92"/>
+<rect x="567.7" y="588.3" width="7.0" height="7.3" fill="#c47f2a" opacity="0.92"/>
+<text x="571.2" y="574.0" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">C7</text>
+<rect x="607.7" y="529.4" width="10.2" height="21.2" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="609.3" y="541.5" width="7.0" height="7.3" fill="#c47f2a" opacity="0.92"/>
+<rect x="609.3" y="531.1" width="7.0" height="7.3" fill="#c47f2a" opacity="0.92"/>
+<text x="612.8" y="527.2" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">C8</text>
+<rect x="463.9" y="580.7" width="27.5" height="12.2" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="482.0" y="582.3" width="7.7" height="9.0" fill="#c47f2a" opacity="0.92"/>
+<rect x="465.5" y="582.3" width="7.7" height="9.0" fill="#c47f2a" opacity="0.92"/>
+<text x="477.6" y="578.5" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">C9</text>
+<rect x="168.2" y="469.3" width="16.4" height="16.7" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="178.6" y="471.0" width="5.2" height="3.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="178.6" y="480.8" width="5.2" height="3.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="168.2" y="475.9" width="5.2" height="3.4" fill="#c47f2a" opacity="0.92"/>
+<text x="176.4" y="467.1" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">D1</text>
+<rect x="243.0" y="63.4" width="365.2" height="235.4" fill="#fff8f8" stroke="#a32d2d" stroke-width="1.3"/>
+<rect x="288.8" y="77.5" width="8.2" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="288.2" y="90.7" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="301.4" y="77.5" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="301.4" y="90.7" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="314.6" y="77.5" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="314.6" y="90.7" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="327.8" y="77.5" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="327.8" y="90.7" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="341.0" y="77.5" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="341.0" y="90.7" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="354.2" y="77.5" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="354.2" y="90.7" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="367.4" y="77.5" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="367.4" y="90.7" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="380.6" y="77.5" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="380.6" y="90.7" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="393.8" y="77.5" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="393.8" y="90.7" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="407.0" y="77.5" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="407.0" y="90.7" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="420.3" y="77.5" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="420.3" y="90.7" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="433.5" y="77.5" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="433.5" y="90.7" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="446.7" y="77.5" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="446.7" y="90.7" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="459.9" y="77.5" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="459.9" y="90.7" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="473.1" y="77.5" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="473.1" y="90.7" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="486.3" y="77.5" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="486.3" y="90.7" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="499.5" y="77.5" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="499.5" y="90.7" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="512.7" y="77.5" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="512.7" y="90.7" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="525.9" y="77.5" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="525.9" y="90.7" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="539.1" y="77.5" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="539.1" y="90.7" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="288.8" y="262.4" width="8.2" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="288.2" y="275.6" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="301.4" y="262.4" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="301.4" y="275.6" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="314.6" y="262.4" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="314.6" y="275.6" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="327.8" y="262.4" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="327.8" y="275.6" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="341.0" y="262.4" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="341.0" y="275.6" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="354.2" y="262.4" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="354.2" y="275.6" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="367.4" y="262.4" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="367.4" y="275.6" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="380.6" y="262.4" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="380.6" y="275.6" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="393.8" y="262.4" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="393.8" y="275.6" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="407.0" y="262.4" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="407.0" y="275.6" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="420.3" y="262.4" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="420.3" y="275.6" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="433.5" y="262.4" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="433.5" y="275.6" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="446.7" y="262.4" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="446.7" y="275.6" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="459.9" y="262.4" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="459.9" y="275.6" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="473.1" y="262.4" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="473.1" y="275.6" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="486.3" y="262.4" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="486.3" y="275.6" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="499.5" y="262.4" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="499.5" y="275.6" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="512.7" y="262.4" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="512.7" y="275.6" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="525.9" y="262.4" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="525.9" y="275.6" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="539.1" y="262.4" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="539.1" y="275.6" width="9.4" height="9.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="565.0" y="255.8" width="37.4" height="37.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="565.0" y="69.1" width="37.4" height="37.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="248.8" y="255.8" width="37.4" height="37.4" fill="#c47f2a" opacity="0.92"/>
+<rect x="248.8" y="69.1" width="37.4" height="37.4" fill="#c47f2a" opacity="0.92"/>
+<text x="425.6" y="185.6" font-size="13.5" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">EVK1</text>
+<rect x="38.8" y="459.8" width="76.1" height="35.7" fill="#fff8f8" stroke="#a32d2d" stroke-width="1.3"/>
+<rect x="91.5" y="488.0" width="23.4" height="5.2" fill="#c47f2a" opacity="0.92"/>
+<rect x="91.5" y="462.0" width="23.4" height="5.2" fill="#c47f2a" opacity="0.92"/>
+<rect x="91.5" y="488.0" width="23.4" height="5.2" fill="#c47f2a" opacity="0.92"/>
+<rect x="91.5" y="462.0" width="23.4" height="5.2" fill="#c47f2a" opacity="0.92"/>
+<rect x="91.5" y="474.5" width="23.4" height="6.2" fill="#c47f2a" opacity="0.92"/>
+<text x="76.9" y="482.1" font-size="13.5" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">J1</text>
+<rect x="656.3" y="72.9" width="27.8" height="201.0" fill="#fff8f8" stroke="#a32d2d" stroke-width="1.3"/>
+<rect x="672.5" y="76.0" width="8.2" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="658.5" y="76.0" width="9.9" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="671.7" y="89.2" width="9.9" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="658.5" y="89.2" width="9.9" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="671.7" y="102.4" width="9.9" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="658.5" y="102.4" width="9.9" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="671.7" y="115.6" width="9.9" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="658.5" y="115.6" width="9.9" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="671.7" y="128.8" width="9.9" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="658.5" y="128.8" width="9.9" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="671.7" y="142.0" width="9.9" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="658.5" y="142.0" width="9.9" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="671.7" y="155.3" width="9.9" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="658.5" y="155.3" width="9.9" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="671.7" y="168.5" width="9.9" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="658.5" y="168.5" width="9.9" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="671.7" y="181.7" width="9.9" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="658.5" y="181.7" width="9.9" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="671.7" y="194.9" width="9.9" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="658.5" y="194.9" width="9.9" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="671.7" y="208.1" width="9.9" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="658.5" y="208.1" width="9.9" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="671.7" y="221.3" width="9.9" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="658.5" y="221.3" width="9.9" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="671.7" y="234.5" width="9.9" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="658.5" y="234.5" width="9.9" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="671.7" y="247.7" width="9.9" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="658.5" y="247.7" width="9.9" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="671.7" y="260.9" width="9.9" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="658.5" y="260.9" width="9.9" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<text x="670.3" y="177.9" font-size="13.5" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">J5</text>
+<rect x="228.8" y="472.4" width="19.1" height="10.3" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="240.7" y="474.0" width="5.9" height="7.2" fill="#c47f2a" opacity="0.92"/>
+<rect x="230.3" y="474.0" width="5.9" height="7.2" fill="#c47f2a" opacity="0.92"/>
+<text x="238.4" y="470.2" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">JP1</text>
+<rect x="478.4" y="451.6" width="19.1" height="10.3" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="490.3" y="453.2" width="5.9" height="7.2" fill="#c47f2a" opacity="0.92"/>
+<rect x="479.8" y="453.2" width="5.9" height="7.2" fill="#c47f2a" opacity="0.92"/>
+<text x="488.0" y="449.4" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">JP2</text>
+<rect x="304.7" y="525.2" width="33.8" height="29.6" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="304.7" y="525.7" width="13.0" height="28.6" fill="#c47f2a" opacity="0.92"/>
+<rect x="325.5" y="525.7" width="13.0" height="28.6" fill="#c47f2a" opacity="0.92"/>
+<text x="321.6" y="523.0" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">L1</text>
+<rect x="384.9" y="524.4" width="39.8" height="31.2" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="384.9" y="525.7" width="15.6" height="28.6" fill="#c47f2a" opacity="0.92"/>
+<rect x="409.1" y="525.7" width="15.6" height="28.6" fill="#c47f2a" opacity="0.92"/>
+<text x="404.8" y="522.2" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">L3</text>
+<rect x="468.1" y="524.4" width="39.8" height="31.2" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="468.1" y="525.7" width="15.6" height="28.6" fill="#c47f2a" opacity="0.92"/>
+<rect x="492.3" y="525.7" width="15.6" height="28.6" fill="#c47f2a" opacity="0.92"/>
+<text x="488.0" y="522.2" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">L5</text>
+<rect x="551.3" y="524.4" width="39.8" height="31.2" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="551.3" y="525.7" width="15.6" height="28.6" fill="#c47f2a" opacity="0.92"/>
+<rect x="575.5" y="525.7" width="15.6" height="28.6" fill="#c47f2a" opacity="0.92"/>
+<text x="571.2" y="522.2" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">L7</text>
+<rect x="139.6" y="468.0" width="10.3" height="19.1" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="141.2" y="469.5" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="141.2" y="479.9" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<text x="144.8" y="465.8" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">R1</text>
+<rect x="46.8" y="581.6" width="19.1" height="10.3" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="58.7" y="583.2" width="5.9" height="7.2" fill="#c47f2a" opacity="0.92"/>
+<rect x="48.3" y="583.2" width="5.9" height="7.2" fill="#c47f2a" opacity="0.92"/>
+<text x="56.4" y="579.4" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">R10</text>
+<rect x="395.2" y="451.6" width="19.1" height="10.3" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="407.1" y="453.2" width="5.9" height="7.2" fill="#c47f2a" opacity="0.92"/>
+<rect x="396.7" y="453.2" width="5.9" height="7.2" fill="#c47f2a" opacity="0.92"/>
+<text x="404.8" y="449.4" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">R11</text>
+<rect x="613.6" y="280.0" width="19.1" height="10.3" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="615.1" y="281.6" width="5.9" height="7.2" fill="#c47f2a" opacity="0.92"/>
+<rect x="625.5" y="281.6" width="5.9" height="7.2" fill="#c47f2a" opacity="0.92"/>
+<text x="623.2" y="277.8" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">R12</text>
+<rect x="613.6" y="170.8" width="19.1" height="10.3" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="625.5" y="172.4" width="5.9" height="7.2" fill="#c47f2a" opacity="0.92"/>
+<rect x="615.1" y="172.4" width="5.9" height="7.2" fill="#c47f2a" opacity="0.92"/>
+<text x="623.2" y="168.6" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">R15</text>
+<rect x="613.6" y="191.6" width="19.1" height="10.3" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="625.5" y="193.2" width="5.9" height="7.2" fill="#c47f2a" opacity="0.92"/>
+<rect x="615.1" y="193.2" width="5.9" height="7.2" fill="#c47f2a" opacity="0.92"/>
+<text x="623.2" y="189.4" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">R16</text>
+<rect x="260.0" y="472.4" width="19.1" height="10.3" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="271.9" y="474.0" width="5.9" height="7.2" fill="#c47f2a" opacity="0.92"/>
+<rect x="261.5" y="474.0" width="5.9" height="7.2" fill="#c47f2a" opacity="0.92"/>
+<text x="269.6" y="470.2" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">R2</text>
+<rect x="87.6" y="239.2" width="10.3" height="19.1" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="89.2" y="240.7" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="89.2" y="251.1" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<text x="92.8" y="237.0" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">R21</text>
+<rect x="512.4" y="29.2" width="10.3" height="19.1" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="514.0" y="41.0" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="514.0" y="30.6" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="512.4" y="50.0" width="10.3" height="19.1" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="514.0" y="61.8" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="514.0" y="51.4" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="486.0" y="303.7" width="10.3" height="19.1" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="487.5" y="315.5" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="487.5" y="305.1" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="486.0" y="324.5" width="10.3" height="19.1" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="487.5" y="336.3" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="487.5" y="325.9" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="367.1" y="50.0" width="10.3" height="19.1" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="368.7" y="61.8" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="368.7" y="51.4" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="380.3" y="29.2" width="10.3" height="19.1" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="381.9" y="41.0" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="381.9" y="30.6" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="380.3" y="50.0" width="10.3" height="19.1" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="381.9" y="61.8" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="381.9" y="51.4" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="393.5" y="29.2" width="10.3" height="19.1" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="395.1" y="41.0" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="395.1" y="30.6" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="270.4" y="534.8" width="19.1" height="10.3" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="282.3" y="536.4" width="5.9" height="7.2" fill="#c47f2a" opacity="0.92"/>
+<rect x="271.9" y="536.4" width="5.9" height="7.2" fill="#c47f2a" opacity="0.92"/>
+<text x="280.0" y="532.6" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">R3</text>
+<rect x="393.5" y="50.0" width="10.3" height="19.1" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="395.1" y="61.8" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="395.1" y="51.4" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="406.7" y="29.2" width="10.3" height="19.1" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="408.3" y="41.0" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="408.3" y="30.6" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="406.7" y="50.0" width="10.3" height="19.1" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="408.3" y="61.8" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="408.3" y="51.4" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="419.9" y="29.2" width="10.3" height="19.1" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="421.5" y="41.0" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="421.5" y="30.6" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="419.9" y="50.0" width="10.3" height="19.1" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="421.5" y="61.8" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="421.5" y="51.4" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="472.7" y="29.2" width="10.3" height="19.1" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="474.3" y="41.0" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="474.3" y="30.6" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="472.7" y="50.0" width="10.3" height="19.1" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="474.3" y="61.8" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="474.3" y="51.4" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="486.0" y="29.2" width="10.3" height="19.1" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="487.5" y="41.0" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="487.5" y="30.6" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="459.5" y="324.5" width="10.3" height="19.1" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="461.1" y="336.3" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="461.1" y="325.9" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="486.0" y="50.0" width="10.3" height="19.1" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="487.5" y="61.8" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="487.5" y="51.4" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="603.2" y="581.6" width="19.1" height="10.3" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="604.7" y="583.2" width="5.9" height="7.2" fill="#c47f2a" opacity="0.92"/>
+<rect x="615.1" y="583.2" width="5.9" height="7.2" fill="#c47f2a" opacity="0.92"/>
+<text x="612.8" y="579.4" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">R4</text>
+<rect x="472.7" y="324.5" width="10.3" height="19.1" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="474.3" y="336.3" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="474.3" y="325.9" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="472.7" y="303.7" width="10.3" height="19.1" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="474.3" y="315.5" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="474.3" y="305.1" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="367.1" y="29.2" width="10.3" height="19.1" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="368.7" y="41.0" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="368.7" y="30.6" width="7.2" height="5.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="426.4" y="581.6" width="19.1" height="10.3" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="438.2" y="583.2" width="5.9" height="7.2" fill="#c47f2a" opacity="0.92"/>
+<rect x="427.9" y="583.2" width="5.9" height="7.2" fill="#c47f2a" opacity="0.92"/>
+<text x="436.0" y="579.4" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">R5</text>
+<rect x="358.8" y="451.6" width="19.1" height="10.3" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="370.7" y="453.2" width="5.9" height="7.2" fill="#c47f2a" opacity="0.92"/>
+<rect x="360.2" y="453.2" width="5.9" height="7.2" fill="#c47f2a" opacity="0.92"/>
+<text x="368.4" y="449.4" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">R6</text>
+<rect x="358.8" y="493.2" width="19.1" height="10.3" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="370.7" y="494.8" width="5.9" height="7.2" fill="#c47f2a" opacity="0.92"/>
+<rect x="360.3" y="494.8" width="5.9" height="7.2" fill="#c47f2a" opacity="0.92"/>
+<text x="368.4" y="491.0" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">R7</text>
+<rect x="46.8" y="545.2" width="19.1" height="10.3" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="58.7" y="546.8" width="5.9" height="7.2" fill="#c47f2a" opacity="0.92"/>
+<rect x="48.2" y="546.8" width="5.9" height="7.2" fill="#c47f2a" opacity="0.92"/>
+<text x="56.4" y="543.0" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">R9</text>
+<rect x="115.0" y="440.0" width="18.0" height="18.0" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="117.0" y="442.0" width="14.0" height="14.0" fill="#c47f2a" opacity="0.92"/>
+<text x="124.0" y="437.8" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">TP1</text>
+<rect x="650.6" y="531.0" width="18.0" height="18.0" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="652.6" y="533.0" width="14.0" height="14.0" fill="#c47f2a" opacity="0.92"/>
+<text x="659.6" y="528.8" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">TP3</text>
+<rect x="479.0" y="416.6" width="18.0" height="18.0" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="481.0" y="418.6" width="14.0" height="14.0" fill="#c47f2a" opacity="0.92"/>
+<text x="488.0" y="414.4" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">TP4</text>
+<rect x="89.0" y="541.4" width="18.0" height="18.0" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="91.0" y="543.4" width="14.0" height="14.0" fill="#c47f2a" opacity="0.92"/>
+<text x="98.0" y="539.2" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">TP5</text>
+<rect x="302.4" y="464.1" width="37.4" height="27.1" fill="none" stroke="#8a8880" stroke-width="0.6"/>
+<rect x="330.4" y="466.2" width="9.4" height="3.1" fill="#c47f2a" opacity="0.92"/>
+<rect x="330.4" y="472.8" width="9.4" height="3.1" fill="#c47f2a" opacity="0.92"/>
+<rect x="330.4" y="479.4" width="9.4" height="3.1" fill="#c47f2a" opacity="0.92"/>
+<rect x="330.4" y="486.0" width="9.4" height="3.1" fill="#c47f2a" opacity="0.92"/>
+<rect x="303.4" y="466.2" width="9.4" height="3.1" fill="#c47f2a" opacity="0.92"/>
+<rect x="303.4" y="472.8" width="9.4" height="3.1" fill="#c47f2a" opacity="0.92"/>
+<rect x="303.4" y="479.4" width="9.4" height="3.1" fill="#c47f2a" opacity="0.92"/>
+<rect x="303.4" y="486.0" width="9.4" height="3.1" fill="#c47f2a" opacity="0.92"/>
+<text x="321.1" y="461.9" font-size="9.9" fill="#1f1f1f" text-anchor="middle" stroke="#fbfaf7" stroke-width="2.6" paint-order="stroke">U1</text>
+<text x="425.6" y="349.7" font-size="12.0" font-weight="700" fill="#a33f0b" text-anchor="middle" stroke="#fbfaf7" stroke-width="3" paint-order="stroke">↑ R22~R42 = 21 × 33Ω 源端阻尼（贴 MCU 引脚 3~5mm）</text>
+</svg></div>
+<figcaption>图 2-1　三个大区 + 真实封装。灰线框 = 真实外形，橙块 = 真实焊盘，红框 = 连接器。
+<b>中间那条红色虚线是 ≥10mm 的模拟/数字隔离带</b>。</figcaption></figure>
+<div class="legend">
+<i style="background:#faeeda;border:1px solid #b8873a"></i>A 电源区
+<i style="background:#e6f1fb;border:1px solid #4a86c0"></i>B 核心板 ↔ 屏 接口区
+<i style="background:#e1f5ee;border:1px solid #3f9e82"></i>C 模拟前端 AFE 区
+<i style="background:#c47f2a"></i>真实焊盘
+</div>
+
+<h2>§3 AFE 区放大：八个电路块</h2>
+<p class="lead">AFE 是这张板上最需要"按信号流摆"的一段。把它放大，按信号顺序分成八个功能块：</p>
+<figure><div class="figbox"><svg viewBox="0 0 1408 522" xmlns="http://www.w3.org/2000/svg" width="100%">
+<rect x="0" y="0" width="1408" height="522" fill="#f4fbf8" stroke="#3f9e82" stroke-width="1.6"/>
+<line x1="110.0" y1="275.0" x2="352.0" y2="275.0" stroke="#0f6e56" stroke-width="1.6"/>
+<text x="231.0" y="271.5" font-size="15.9" font-weight="700" fill="#0b5c47" text-anchor="middle">① 输入保护与端接</text>
+<line x1="352.0" y1="275.0" x2="528.0" y2="275.0" stroke="#0f6e56" stroke-width="1.6"/>
+<text x="440.0" y="271.5" font-size="15.9" font-weight="700" fill="#0b5c47" text-anchor="middle">② 隔直与偏置注入</text>
+<line x1="484.0" y1="38.5" x2="748.0" y2="38.5" stroke="#0f6e56" stroke-width="1.6"/>
+<text x="616.0" y="35.0" font-size="15.9" font-weight="700" fill="#0b5c47" text-anchor="middle">③⑥ 双运放 OPA2197（A=缓冲 / B=增益）</text>
+<line x1="781.0" y1="38.5" x2="1023.0" y2="38.5" stroke="#0f6e56" stroke-width="1.6"/>
+<text x="902.0" y="35.0" font-size="15.9" font-weight="700" fill="#0b5c47" text-anchor="middle">⑦ ADC 驱动与反冲隔离</text>
+<line x1="495.0" y1="390.5" x2="1353.0" y2="390.5" stroke="#0f6e56" stroke-width="1.6"/>
+<text x="924.0" y="387.0" font-size="15.9" font-weight="700" fill="#0b5c47" text-anchor="middle">④ 8 阶抗混叠 LC 梯形（去程）</text>
+<line x1="814.0" y1="478.5" x2="1276.0" y2="478.5" stroke="#0f6e56" stroke-width="1.6"/>
+<text x="1045.0" y="475.0" font-size="15.9" font-weight="700" fill="#0b5c47" text-anchor="middle">⑤ 隔直终接与回程</text>
+<line x1="0.0" y1="489.5" x2="198.0" y2="489.5" stroke="#0f6e56" stroke-width="1.6"/>
+<text x="99.0" y="486.0" font-size="15.9" font-weight="700" fill="#0b5c47" text-anchor="middle">⑧ 基准与偏置</text>
+<rect x="345.0" y="185.1" width="58.1" height="25.7" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="383.3" y="188.5" width="16.3" height="19.0" fill="#c47f2a" opacity="0.92"/>
+<rect x="348.3" y="188.5" width="16.3" height="19.0" fill="#c47f2a" opacity="0.92"/>
+<text x="374.0" y="182.6" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">C1</text>
+<rect x="863.3" y="144.8" width="33.4" height="18.4" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="883.3" y="149.0" width="8.8" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<rect x="867.9" y="149.0" width="8.8" height="9.9" fill="#c47f2a" opacity="0.92"/>
+<text x="880.0" y="142.3" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">C10</text>
+<rect x="543.3" y="81.9" width="57.4" height="34.2" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="543.3" y="85.9" width="17.7" height="26.1" fill="#c47f2a" opacity="0.92"/>
+<rect x="583.0" y="85.9" width="17.7" height="26.1" fill="#c47f2a" opacity="0.92"/>
+<text x="572.0" y="79.4" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">C11</text>
+<rect x="626.6" y="88.2" width="44.9" height="21.6" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="652.3" y="91.6" width="15.5" height="14.8" fill="#c47f2a" opacity="0.92"/>
+<rect x="630.2" y="91.6" width="15.5" height="14.8" fill="#c47f2a" opacity="0.92"/>
+<text x="649.0" y="85.7" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">C14</text>
+<rect x="693.2" y="307.6" width="21.6" height="44.9" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="696.6" y="333.2" width="14.8" height="15.5" fill="#c47f2a" opacity="0.92"/>
+<rect x="696.6" y="311.3" width="14.8" height="15.5" fill="#c47f2a" opacity="0.92"/>
+<text x="704.0" y="305.1" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">C2</text>
+<rect x="869.2" y="307.6" width="21.6" height="44.9" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="872.6" y="333.2" width="14.8" height="15.5" fill="#c47f2a" opacity="0.92"/>
+<rect x="872.6" y="311.3" width="14.8" height="15.5" fill="#c47f2a" opacity="0.92"/>
+<text x="880.0" y="305.1" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">C4</text>
+<rect x="120.6" y="418.2" width="44.9" height="21.6" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="146.3" y="421.6" width="15.5" height="14.8" fill="#c47f2a" opacity="0.92"/>
+<rect x="124.2" y="421.6" width="15.5" height="14.8" fill="#c47f2a" opacity="0.92"/>
+<text x="143.0" y="415.7" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">C5</text>
+<rect x="1045.2" y="307.6" width="21.6" height="44.9" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="1048.6" y="333.2" width="14.8" height="15.5" fill="#c47f2a" opacity="0.92"/>
+<rect x="1048.6" y="311.3" width="14.8" height="15.5" fill="#c47f2a" opacity="0.92"/>
+<text x="1056.0" y="305.1" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">C6</text>
+<rect x="1133.2" y="406.6" width="21.6" height="44.9" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="1136.6" y="410.2" width="14.8" height="15.5" fill="#c47f2a" opacity="0.92"/>
+<rect x="1136.6" y="432.3" width="14.8" height="15.5" fill="#c47f2a" opacity="0.92"/>
+<text x="1144.0" y="404.1" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">C7</text>
+<rect x="1221.2" y="307.6" width="21.6" height="44.9" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="1224.6" y="333.2" width="14.8" height="15.5" fill="#c47f2a" opacity="0.92"/>
+<rect x="1224.6" y="311.3" width="14.8" height="15.5" fill="#c47f2a" opacity="0.92"/>
+<text x="1232.0" y="305.1" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">C8</text>
+<rect x="917.0" y="416.1" width="58.1" height="25.7" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="955.3" y="419.5" width="16.3" height="19.0" fill="#c47f2a" opacity="0.92"/>
+<rect x="920.3" y="419.5" width="16.3" height="19.0" fill="#c47f2a" opacity="0.92"/>
+<text x="946.0" y="413.6" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">C9</text>
+<rect x="291.5" y="180.4" width="34.8" height="35.3" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="313.5" y="184.0" width="11.0" height="7.2" fill="#c47f2a" opacity="0.92"/>
+<rect x="313.5" y="204.9" width="11.0" height="7.2" fill="#c47f2a" opacity="0.92"/>
+<rect x="291.5" y="194.4" width="11.0" height="7.2" fill="#c47f2a" opacity="0.92"/>
+<text x="308.9" y="177.9" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">D1</text>
+<rect x="17.9" y="160.3" width="160.9" height="75.4" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="129.2" y="220.0" width="49.5" height="11.0" fill="#c47f2a" opacity="0.92"/>
+<rect x="129.2" y="165.0" width="49.5" height="11.0" fill="#c47f2a" opacity="0.92"/>
+<rect x="129.2" y="220.0" width="49.5" height="11.0" fill="#c47f2a" opacity="0.92"/>
+<rect x="129.2" y="165.0" width="49.5" height="11.0" fill="#c47f2a" opacity="0.92"/>
+<rect x="129.2" y="191.4" width="49.5" height="13.2" fill="#c47f2a" opacity="0.92"/>
+<text x="98.3" y="157.8" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">J1</text>
+<rect x="419.8" y="187.1" width="40.4" height="21.9" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="444.8" y="190.4" width="12.5" height="15.1" fill="#c47f2a" opacity="0.92"/>
+<rect x="422.8" y="190.4" width="12.5" height="15.1" fill="#c47f2a" opacity="0.92"/>
+<text x="440.0" y="184.6" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">JP1</text>
+<rect x="947.8" y="143.1" width="40.4" height="21.9" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="972.8" y="146.4" width="12.5" height="15.1" fill="#c47f2a" opacity="0.92"/>
+<rect x="950.8" y="146.4" width="12.5" height="15.1" fill="#c47f2a" opacity="0.92"/>
+<text x="968.0" y="140.6" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">JP2</text>
+<rect x="580.3" y="298.6" width="71.5" height="62.7" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="580.2" y="299.8" width="27.5" height="60.5" fill="#c47f2a" opacity="0.92"/>
+<rect x="624.3" y="299.8" width="27.5" height="60.5" fill="#c47f2a" opacity="0.92"/>
+<text x="616.0" y="296.1" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">L1</text>
+<rect x="749.9" y="297.0" width="84.2" height="65.9" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="749.9" y="299.8" width="33.0" height="60.5" fill="#c47f2a" opacity="0.92"/>
+<rect x="801.1" y="299.8" width="33.0" height="60.5" fill="#c47f2a" opacity="0.92"/>
+<text x="792.0" y="294.5" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">L3</text>
+<rect x="925.9" y="297.0" width="84.2" height="65.9" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="925.9" y="299.8" width="33.0" height="60.5" fill="#c47f2a" opacity="0.92"/>
+<rect x="977.1" y="299.8" width="33.0" height="60.5" fill="#c47f2a" opacity="0.92"/>
+<text x="968.0" y="294.5" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">L5</text>
+<rect x="1101.9" y="297.0" width="84.2" height="65.9" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="1101.9" y="299.8" width="33.0" height="60.5" fill="#c47f2a" opacity="0.92"/>
+<rect x="1153.1" y="299.8" width="33.0" height="60.5" fill="#c47f2a" opacity="0.92"/>
+<text x="1144.0" y="294.5" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">L7</text>
+<rect x="231.1" y="177.8" width="21.9" height="40.4" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="234.4" y="180.8" width="15.1" height="12.5" fill="#c47f2a" opacity="0.92"/>
+<rect x="234.4" y="202.8" width="15.1" height="12.5" fill="#c47f2a" opacity="0.92"/>
+<text x="242.0" y="175.3" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">R1</text>
+<rect x="34.8" y="418.1" width="40.4" height="21.9" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="59.8" y="421.4" width="12.5" height="15.1" fill="#c47f2a" opacity="0.92"/>
+<rect x="37.8" y="421.4" width="12.5" height="15.1" fill="#c47f2a" opacity="0.92"/>
+<text x="55.0" y="415.6" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">R10</text>
+<rect x="771.8" y="143.1" width="40.4" height="21.9" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="796.8" y="146.4" width="12.5" height="15.1" fill="#c47f2a" opacity="0.92"/>
+<rect x="774.8" y="146.4" width="12.5" height="15.1" fill="#c47f2a" opacity="0.92"/>
+<text x="792.0" y="140.6" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">R11</text>
+<rect x="485.8" y="187.1" width="40.4" height="21.9" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="510.8" y="190.4" width="12.5" height="15.1" fill="#c47f2a" opacity="0.92"/>
+<rect x="488.8" y="190.4" width="12.5" height="15.1" fill="#c47f2a" opacity="0.92"/>
+<text x="506.0" y="184.6" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">R2</text>
+<rect x="507.8" y="319.1" width="40.4" height="21.9" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="532.8" y="322.4" width="12.5" height="15.1" fill="#c47f2a" opacity="0.92"/>
+<rect x="510.8" y="322.4" width="12.5" height="15.1" fill="#c47f2a" opacity="0.92"/>
+<text x="528.0" y="316.6" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">R3</text>
+<rect x="1211.8" y="418.1" width="40.4" height="21.9" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="1214.8" y="421.4" width="12.5" height="15.1" fill="#c47f2a" opacity="0.92"/>
+<rect x="1236.8" y="421.4" width="12.5" height="15.1" fill="#c47f2a" opacity="0.92"/>
+<text x="1232.0" y="415.6" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">R4</text>
+<rect x="837.8" y="418.1" width="40.4" height="21.9" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="862.8" y="421.4" width="12.5" height="15.1" fill="#c47f2a" opacity="0.92"/>
+<rect x="840.8" y="421.4" width="12.5" height="15.1" fill="#c47f2a" opacity="0.92"/>
+<text x="858.0" y="415.6" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">R5</text>
+<rect x="694.8" y="143.1" width="40.4" height="21.9" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="719.8" y="146.4" width="12.5" height="15.1" fill="#c47f2a" opacity="0.92"/>
+<rect x="697.8" y="146.4" width="12.5" height="15.1" fill="#c47f2a" opacity="0.92"/>
+<text x="715.0" y="140.6" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">R6</text>
+<rect x="694.8" y="231.1" width="40.4" height="21.9" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="719.8" y="234.4" width="12.5" height="15.1" fill="#c47f2a" opacity="0.92"/>
+<rect x="697.8" y="234.4" width="12.5" height="15.1" fill="#c47f2a" opacity="0.92"/>
+<text x="715.0" y="228.6" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">R7</text>
+<rect x="34.8" y="341.1" width="40.4" height="21.9" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="59.8" y="344.4" width="12.5" height="15.1" fill="#c47f2a" opacity="0.92"/>
+<rect x="37.8" y="344.4" width="12.5" height="15.1" fill="#c47f2a" opacity="0.92"/>
+<text x="55.0" y="338.6" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">R9</text>
+<rect x="179.0" y="118.5" width="38.0" height="38.0" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="183.1" y="122.6" width="29.7" height="29.7" fill="#c47f2a" opacity="0.92"/>
+<text x="198.0" y="116.0" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">TP1</text>
+<rect x="1312.0" y="311.0" width="38.0" height="38.0" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="1316.1" y="315.1" width="29.7" height="29.7" fill="#c47f2a" opacity="0.92"/>
+<text x="1331.0" y="308.5" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">TP3</text>
+<rect x="949.0" y="69.0" width="38.0" height="38.0" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="953.2" y="73.1" width="29.7" height="29.7" fill="#c47f2a" opacity="0.92"/>
+<text x="968.0" y="66.5" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">TP4</text>
+<rect x="124.0" y="333.0" width="38.0" height="38.0" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="128.1" y="337.2" width="29.7" height="29.7" fill="#c47f2a" opacity="0.92"/>
+<text x="143.0" y="330.5" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">TP5</text>
+<rect x="575.3" y="169.4" width="79.2" height="57.2" fill="#ffffff" stroke="#4a6b5e" stroke-width="0.9"/>
+<rect x="634.7" y="173.8" width="19.8" height="6.5" fill="#c47f2a" opacity="0.92"/>
+<rect x="634.7" y="187.8" width="19.8" height="6.5" fill="#c47f2a" opacity="0.92"/>
+<rect x="634.7" y="201.8" width="19.8" height="6.5" fill="#c47f2a" opacity="0.92"/>
+<rect x="634.7" y="215.7" width="19.8" height="6.5" fill="#c47f2a" opacity="0.92"/>
+<rect x="577.5" y="173.8" width="19.8" height="6.5" fill="#c47f2a" opacity="0.92"/>
+<rect x="577.5" y="187.8" width="19.8" height="6.5" fill="#c47f2a" opacity="0.92"/>
+<rect x="577.5" y="201.8" width="19.8" height="6.5" fill="#c47f2a" opacity="0.92"/>
+<rect x="577.5" y="215.7" width="19.8" height="6.5" fill="#c47f2a" opacity="0.92"/>
+<text x="614.9" y="166.9" font-size="16.5" fill="#123" text-anchor="middle" stroke="#f4fbf8" stroke-width="2.4" paint-order="stroke">U1</text>
+</svg></div>
+<figcaption>图 3-1　AFE 区放大（真实封装）。<b>绿色下划线 + 编号 = 功能块</b>，每个器件的位号标在封装上方。</figcaption></figure>
+<p class="lead">信号在这张图里是<b>从左往右</b>走的：① 进门 → ② 隔直抬偏置 → ③ 缓冲 → ④ 滤波 → ⑤ 终接 → ⑥ 放大 → ⑦ 整形 → 出板去 PA1。
+⑧ 偏置是给 ②⑥ 供水的水塔，不在信号主路上。</p>
+
+<h2>§4 逐个功能块讲解</h2>
+<div class="card"><div class="chd"><span class="zid">A</span><span class="ct">⑩ 电源入口与模拟轨隔离</span><span class="cparts">C16、R21</span></div><div class="crow"><div class="ck">这是什么电路</div><div class="cv">把核心板送来的 +5V 收进来，分出干净的 +5V_A 给运放。</div></div><div class="crow"><div class="ck">布局要点</div><div class="cv"><ul><li>C16（22µF 钽）是 +5V 的入口储能：电源路径（核心板 5V 针→排针）有电感，开屏 / FSMC 全总线翻转时电压会瞬塌，它就近补上。</li><li>R21（4.7Ω）是 +5V 与 +5V_A 之间<b>唯一的阻件</b>：与 C11 组成 1.54 kHz 低通，把数字轨的纹波挡在模拟轨外。</li><li>R21 压降 = 2mA × 4.7Ω = <b>9.4 mV</b>（0.19%），代价极小、收益是 500 kHz 处 <b>+50 dB</b> 隔离。</li></ul></div></div><div class="crow rule"><div class="ck">必须守住</div><div class="cv"><ul><li>C16 尽量靠近 <b>核心板 5V 引脚（EVK1.40/80）</b>——它的作用是顶住这段路径的电感。</li><li>R21 与 C11 必须成对且靠近，中间不要走别的线。</li><li>上电前必查：R21 是否误贴 0Ω（贴错 = 隔离全丢）。</li></ul></div></div></div>
+<div class="card"><div class="chd"><span class="zid">A</span><span class="ct">⑨ 模拟电源去耦（就近 U1）</span><span class="cparts">C11、C14</span></div><div class="crow"><div class="ck">这是什么电路</div><div class="cv">给运放的电源引脚就近供瞬态电流。</div></div><div class="crow"><div class="ck">布局要点</div><div class="cv"><ul><li>C11（22µF 钽）管低频、C14（100nF）管高频——<b>一大一小并联才是完整去耦</b>，不是重复件（钽电容自感大，高频不灵）。</li><li>两个都<b>紧贴 U1 的 V+ 引脚（SOIC-8 的 pin8）</b>：去耦是给负载就近供瞬态电流，环路越小越好。</li></ul></div></div><div class="crow rule"><div class="ck">必须守住</div><div class="cv"><ul><li>必须贴在 U1 电源脚 ≤5mm，且地端回 AGND。</li><li>不要和 C16 混在一起放——C16 管 +5V 入口，C11/C14 管运放本地。</li></ul></div></div></div>
+<div class="card"><div class="chd"><span class="zid">B</span><span class="ct">⑪ 核心板座 EVK1</span><span class="cparts">EVK1</span></div><div class="crow"><div class="ck">这是什么电路</div><div class="cv">整板的大脑与电源源头，70.2 × 45.3 mm 的 2×20 双排针 ×2 组。</div></div><div class="crow"><div class="ck">布局要点</div><div class="cv"><ul><li>EVK1 是<b>最大的一个封装</b>（84 个焊盘），它一放，板子的骨架就定了：左侧留给模拟区、右侧留给屏接口。</li><li><b>P1 组与 P2 组相距 35.6 mm</b>，脚距 2.54 mm；奇/偶两排<b>共用同一个 x</b>——这一条直接决定了 33Ω 串阻怎么摆（见 ⑫）。</li><li>5V 从 EVK1.40/80 出、3V3 从 EVK1.38/78 出、AGND 在 EVK1.37、GND 在 EVK1.39/77/79。</li></ul></div></div><div class="crow rule"><div class="ck">必须守住</div><div class="cv"><ul><li>座子要<b>摆正、贴齐</b>，它是整板定位基准。</li><li>AFE 的 AGND 岛最终只汇到 <b>EVK1.37</b> 这一个点。</li></ul></div></div></div>
+<div class="card"><div class="chd"><span class="zid">B</span><span class="ct">⑫ FSMC 串阻阵列 R22~R42（21 × 33Ω）</span><span class="cparts">R22~R42</span></div><div class="crow"><div class="ck">这是什么电路</div><div class="cv">21 条屏信号线的源端串联阻尼，压住边沿振铃。</div></div><div class="crow"><div class="ck">布局要点</div><div class="cv"><ul><li>FSMC 走的是「排针 + 排线 + 转接板」路径，边沿振铃的谐波<b>整列落进 10k~500kHz 的分析带</b>——这是全板最大的板内干扰源。</li><li>33Ω 与排线特征阻抗（~100Ω）配比：台面场景过冲 <b>47% → 8%</b>，边沿 9.5 → 14.6 ns。</li><li>它们要<b>贴 EVK1 排针的外侧</b>：P1 组 16 只、P2 组 5 只，分两列错开。</li></ul></div></div><div class="crow rule"><div class="ck">必须守住</div><div class="cv"><ul><li><b>必须贴 MCU 引脚 3~5mm</b>——贴到连接器侧 = 阻尼加在终点 = <b>等于没加</b>（只剩 1/3~1/2 效果）。</li><li>0805 转 90° 后宽 1.99mm，按 2.54mm 脚距塞得下；但奇/偶两排必须上下错开 3.67mm，而两组排针只隔 2.6mm ⇒ <b>内排实际会落到 6~7mm</b>（已知取舍）。</li><li>备选：换 0603（0.95mm 宽）或放底层打过孔，能把距离压回 3mm 内。</li></ul></div></div></div>
+<div class="card"><div class="chd"><span class="zid">B</span><span class="ct">⑬ 屏接口 J5 + 触摸 / 背光</span><span class="cparts">J5、C3、C22、R15、R16、R12</span></div><div class="crow"><div class="ck">这是什么电路</div><div class="cv">30 脚屏适配板的唯一接口：21 根 LCD 线 + I²C 触摸 + 背光 + 电源 + 地。</div></div><div class="crow"><div class="ck">布局要点</div><div class="cv"><ul><li><b>C3（10µF）+ C22（100nF）紧贴 J5.30（+3V3）</b>：屏刷新时电流是<b>阶跃</b>的，这个电流要从电容来，走的是一个<b>环路</b>。放负载端（≤5mm）环路电感 ≈10nH，放源头（离 J5 约 50mm）≈100nH——<b>差 10 倍</b>。</li><li>R15/R16（4.7k）是 I²C 开漏上拉，放 J5 侧即可（慢信号）。</li><li>R12（1k）是背光开关管的<b>栅极串阻</b>，不是限流电阻。</li></ul></div></div><div class="crow rule"><div class="ck">必须守住</div><div class="cv"><ul><li><b>J5.29 是全板最弱一环</b>：20 条信号线的回流全压在它上——必须短、宽、多过孔，目标 L_gnd ≤30nH。</li><li>C3/C22 顺序：先 100nF 后 10µF，紧贴 J5.30 ≤5mm。</li><li>背光回路（60mA）与总线不平行（≥10mm）或用地面隔开；背光 3V3 与其回流都走宽线。</li></ul></div></div></div>
+<div class="card"><div class="chd"><span class="zid">C</span><span class="ct">① 输入保护与端接</span><span class="cparts">J1、R1、D1、TP1</span></div><div class="crow"><div class="ck">这是什么电路</div><div class="cv">被测信号的入口：50Ω 端接 + ESD 钳位 + 标定探针。</div></div><div class="crow"><div class="ck">布局要点</div><div class="cv"><ul><li><b>J1 靠板边</b>（SMA 座），<b>R1（49.9Ω）紧贴 J1 中心针 2~3mm</b>——端接必须发生在电缆口，中间那段走线本身就是电感，会把 50Ω 匹配搞烂。</li><li>D1 是 ESD 钳位（Cj 仅 pF 级），紧贴 R1 之后即可。</li><li>TP1 是扫频标定的第一探点，放在端接节点上、探针可达的位置。</li></ul></div></div><div class="crow rule"><div class="ck">必须守住</div><div class="cv"><ul><li><b>R1 ≤ J1 中心针 2~3mm</b>（硬约束）。</li><li>SMA 座要<b>焊盘加宽 + 多打过孔</b>：贴片座的插拔力矩全压在焊盘上，否则会剥离。</li><li>这一块整体<b>远离数字区</b>，它的地是 AGND。</li></ul></div></div></div>
+<div class="card"><div class="chd"><span class="zid">C</span><span class="ct">② 隔直与偏置注入</span><span class="cparts">C1、JP1、R2</span></div><div class="crow"><div class="ck">这是什么电路</div><div class="cv">把信号源的直流挡住，并把工作点抬到 VBIAS（1.650V）。</div></div><div class="crow"><div class="ck">布局要点</div><div class="cv"><ul><li>C1（100nF C0G）串在信号路上隔直；R2（10k）给运放同相端一条到 VBIAS 的直流回路。</li><li>JP1（0Ω）是<b>可拆断点</b>：断开后能单独给后半段注信号。放在 AFE 区边缘、方便操作的位置。</li><li>这一行是「信号从左往右走」的入口段，按信号流排成一条直线。</li></ul></div></div><div class="crow rule"><div class="ck">必须守住</div><div class="cv"><ul><li>C1 用 C0G（不是 X7R）：容值随电压/温度漂会在拐点附近引入不可标定的相移。</li><li>R2 的直流回路是必须的——没有它运放会漂到轨。</li></ul></div></div></div>
+<div class="card"><div class="chd"><span class="zid">C</span><span class="ct">③⑥ 双运放 OPA2197（U1）</span><span class="cparts">U1、R6、R7</span></div><div class="crow"><div class="ck">这是什么电路</div><div class="cv">一个 SOIC-8 里装了两个运放：A 半片做缓冲，B 半片做 ×7.975 增益。</div></div><div class="crow"><div class="ck">布局要点</div><div class="cv"><ul><li><b>U1 必须摆在链的中央</b>：OUT A 在 pin1（左）、+IN B 在 pin5（右）⇒ 两半片天生分居两侧，<b>8 阶 LC 梯形只能绕它一圈</b>（去程在下方、回程更下方）。</li><li><b>R6/R7 必须紧贴 U1 的 −IN B 引脚 ≤3mm</b>：自激风险在<b>高阻的 −in 节点</b>而不在输出——该节点每多 5pF 寄生电容吃约 6° 相位裕度，而输出端挂 100pF 只损失 4.5°。</li><li>R7 的下端回 <b>VBIAS</b>（不是 AGND）：回 AGND 会被放大 ×7.975 ⇒ 13.2V，开电即饱和。</li></ul></div></div><div class="crow rule"><div class="ck">必须守住</div><div class="cv"><ul><li>U1 居中，两侧给 LC 留出折返空间。</li><li>R6/R7 ≤3mm 贴 −in 脚（硬约束）。</li><li>C11/C14 贴 V+ 脚（见 ⑨）。</li></ul></div></div></div>
+<div class="card"><div class="chd"><span class="zid">C</span><span class="ct">④ 8 阶抗混叠 LC 梯形</span><span class="cparts">R3、L1、L3、L5、L7、C2、C4、C6、C8、TP3</span></div><div class="crow"><div class="ck">这是什么电路</div><div class="cv">全板的技术核心：4 个电感 + 4 个电容，把 ≥1.5MHz 的干扰压掉 65 dB。</div></div><div class="crow"><div class="ck">布局要点</div><div class="cv"><ul><li><b>R3（源端 49.9Ω）→ L1 → C2↓ → L3 → C4↓ → L5 → C6↓ → L7 → C8↓ → 输出</b>：串臂挡高频、并臂泄入 AGND。</li><li>四个电感 <b>必须正交摆放</b>（相邻两两垂直）、间距 ≥2mm、下方不走高速线：L3/L5 同为 22µH，互感会把实际频响拉偏，而 <b>DRC 不会报错</b>。</li><li>四个电容的地要<b>收拢、不要散</b>：它们是高频电流的泄洪口，泄放电流全走 AGND。</li><li>这一排按信号流排成一条直线，是最容易看懂的一段。</li></ul></div></div><div class="crow rule"><div class="ck">必须守住</div><div class="cv"><ul><li>电感正交 + 间距 ≥2mm（硬约束）。</li><li>并臂电容的地收拢到 AGND 岛内，不要各自打散。</li><li>整条梯形只汇 <b>EVK1.37</b> 一个点，不得与 GND 铜皮相连。</li></ul></div></div></div>
+<div class="card"><div class="chd"><span class="zid">C</span><span class="ct">⑤ 隔直终接（C7 + R4）</span><span class="cparts">C7、R4</span></div><div class="crow"><div class="ck">这是什么电路</div><div class="cv">梯形的负载端终接，同时掐断梯形内的直流白流。</div></div><div class="crow"><div class="ck">布局要点</div><div class="cv"><ul><li>R4（49.9Ω）是<b>双端接梯形的负载端阻抗</b>，与 R3 配对——<b>改它 = 改滤波器</b>，不是「隔离电阻」。</li><li>C7（10µF）串在 R4 入地的腿上：电感在直流上是短路，若不隔直，R3→L→R4 会白流 1.65V/99.8Ω = <b>16.5 mA</b>。</li><li>C7 在 500 kHz 的阻抗只有 <b>31.8 mΩ</b>，对 49.9Ω 终接毫无影响。</li></ul></div></div><div class="crow rule"><div class="ck">必须守住</div><div class="cv"><ul><li>C7 的值必须是 <b>10µF</b>：若误装 10nF，阻抗变成 31.8 Ω，与 R4 同量级 ⇒ <b>终接失配、滤波器形状被破坏</b>。</li><li>C7 的地端与 R4 一起回 AGND。</li></ul></div></div></div>
+<div class="card"><div class="chd"><span class="zid">C</span><span class="ct">⑦ ADC 驱动与反冲隔离</span><span class="cparts">R11、C10、JP2、TP4</span></div><div class="crow"><div class="ck">这是什么电路</div><div class="cv">在进 MCU 之前把信号整好形：限制反冲尖峰 + 留一个断点。</div></div><div class="crow"><div class="ck">布局要点</div><div class="cv"><ul><li>R11（100Ω）+ C10（470pF）组成 3.39 MHz 一阶低通：对 500kHz 通带几乎无影响，但把 ADC 采样瞬间的电荷尖峰就地吸收。</li><li>C10 是 ADC 内部采样电容（≈4pF）的<b>就近电荷库</b>（100×）：采样瞬间 C10 只跌 14mV，并在 τ=47ns 内由运放补回。</li><li>JP2（0Ω）是 <b>ADC 前断点</b>：断开后可以单独给 ADC 注测试信号；TP4 是输出探针。</li></ul></div></div><div class="crow rule"><div class="ck">必须守住</div><div class="cv"><ul><li><b>R11 ≤ 0.4kΩ</b>（STM32F4 在 SMP=3 周期下的手册要求）⇒ 100Ω 有 4× 余量，<b>不能再加大</b>。</li><li>C10 紧贴 R11 与 MCU 的 PA1 之间，就近越好。</li><li>这一段的信号要跨到数字区，是 AFE 区与核心板之间<b>唯一</b>的模拟跨域点，尽量短。</li></ul></div></div></div>
+<div class="card"><div class="chd"><span class="zid">C</span><span class="ct">⑧ 基准与偏置（VBIAS）</span><span class="cparts">R9、R10、C5、TP5</span></div><div class="crow"><div class="ck">这是什么电路</div><div class="cv">生成整个模拟域的「地板高度」VBIAS = 1.650V。</div></div><div class="crow"><div class="ck">布局要点</div><div class="cv"><ul><li>R9/R10（各 10k）把 +3V3 劈一半：3.3 × 10k/20k = <b>1.650 V</b>，正好是 ADC 量程中点。</li><li>C5（10µF）是 VBIAS 的储能：R2/R5/R7 三处偏置会从它抽瞬态电流；与分压源阻抗（10k∥10k = 5k）组成 <b>3.18 Hz</b> 低通。</li><li>TP5 是上电第一测点（应量得 1.650 V）。</li></ul></div></div><div class="crow rule"><div class="ck">必须守住</div><div class="cv"><ul><li>C5 的值必须是 <b>10µF</b>：若误装 10nF，低通拐点变 3.18 kHz、储能差 1000×。</li><li>C5 的地端接 <b>AGND</b>（不是 GND）——它是 AFE 页唯一曾落错地的点。</li><li>这一块靠 AFE 区左缘，与数字区保持 ≥10mm 隔离带。</li></ul></div></div></div>
+
+<h2>§5 关键「就近关系」——两条方向刚好相反</h2>
+<table>
+<tr><th></th><th>贴哪</th><th>它在干什么</th><th>为什么必须在那儿</th></tr>
+<tr><td class="r"><b>C3 / C22</b></td><td><b>负载端</b> J5.30 ≤5mm</td><td>给屏<b>就近供瞬态电流</b></td>
+<td>屏刷新时电流是<b>阶跃</b>的，要从电容来，走的是一个<b>环路</b>：电容→屏→回来。
+环路电感 ≈ 2 × 走线长度 × ~1nH/mm，屏上的跌落 ≈ <b>L_loop × di/dt</b>。<br>
+放负载端（≤5mm）L≈10nH；放源头（离 J5 约 50mm）L≈100nH —— <b>差 10 倍</b>。
+<b>去耦电容不是稳压器，是就近的瞬态电流源。</b></td></tr>
+<tr><td class="r"><b>R22~R42</b></td><td><b>源端</b> MCU 引脚 3~5mm</td><td>阻尼信号<b>出发时</b>的过冲/振铃</td>
+<td>阻尼必须加在<b>驱动端</b>：信号一出 MCU 就被 33Ω 限住，沿线反射被压住。<br>
+放连接器侧，信号已经振了一路，只剩 <b>1/3~1/2</b> 的降幅（台面 22.5% vs 37.6%）。</td></tr>
+<tr><td class="r"><b>R1</b></td><td><b>J1 中心针</b> ≤2~3mm</td><td>50Ω 端接</td>
+<td>端接必须在<b>电缆口</b>；中间那段走线本身就是电感，会把 50Ω 匹配搞烂。</td></tr>
+<tr><td class="r"><b>R6 / R7</b></td><td><b>U1 的 −IN B</b> ≤3mm</td><td>增益反馈网络</td>
+<td>自激风险在<b>高阻的 −in 节点</b>：每多 5pF 寄生吃约 6° 相位裕度；而输出端挂 100pF 只损失 4.5°。</td></tr>
+<tr><td class="r"><b>C11 / C14</b></td><td><b>U1 的 V+</b> ≤5mm</td><td>运放本地去耦</td>
+<td>去耦要贴<b>用电器</b>，不是贴电源。</td></tr>
+<tr><td class="r"><b>四个电感</b></td><td><b>彼此正交</b>、间距 ≥2mm</td><td>抗混叠滤波</td>
+<td>L3/L5 同为 22µH，互感最大；互感会把实际频响拉偏，而 <b>DRC 不会报错</b>。</td></tr>
+</table>
+
+<h2>§6 逐位号坐标表（示范位置）</h2>
+<p class="lead">下面是图 2-1 里每个器件的示范坐标（mm，左上角原点、y 向下）与真实封装外形尺寸，方便你对着摆。</p>
+<table><thead><tr><th>位号</th><th>器件</th><th>外形 mm</th><th>X mm</th><th>Y mm</th><th>焊盘数</th></tr></thead>
+<tbody><tr><td class="r">C1</td><td>1206CG104J500NT</td><td class="r">5.3×2.3</td><td class="r">36.0</td><td class="r">88.0</td><td class="r">2</td></tr>
+<tr><td class="r">C10</td><td>CL10C471JB8NNNC</td><td class="r">3.0×1.7</td><td class="r">82.0</td><td class="r">84.0</td><td class="r">2</td></tr>
+<tr><td class="r">C11</td><td>TAJB226K025RNJ</td><td class="r">5.2×3.1</td><td class="r">54.0</td><td class="r">79.0</td><td class="r">2</td></tr>
+<tr><td class="r">C14</td><td>CC0805KRX7R9BB104</td><td class="r">4.1×2.0</td><td class="r">61.0</td><td class="r">79.0</td><td class="r">2</td></tr>
+<tr><td class="r">C16</td><td>TAJB226K025RNJ</td><td class="r">5.2×3.1</td><td class="r">14.0</td><td class="r">12.0</td><td class="r">2</td></tr>
+<tr><td class="r">C2</td><td>GRM2195C1H622JA01D</td><td class="r">2.0×4.1</td><td class="r">66.0</td><td class="r">100.0</td><td class="r">2</td></tr>
+<tr><td class="r">C22</td><td>CC0805KRX7R9BB104</td><td class="r">4.1×2.0</td><td class="r">116.0</td><td class="r">11.0</td><td class="r">2</td></tr>
+<tr><td class="r">C3</td><td>CC0805KRX7R9BB104</td><td class="r">4.1×2.0</td><td class="r">116.0</td><td class="r">16.0</td><td class="r">2</td></tr>
+<tr><td class="r">C4</td><td>0805CG103J500NT</td><td class="r">2.0×4.1</td><td class="r">82.0</td><td class="r">100.0</td><td class="r">2</td></tr>
+<tr><td class="r">C5</td><td>CC0805KRX7R9BB104</td><td class="r">4.1×2.0</td><td class="r">15.0</td><td class="r">109.0</td><td class="r">2</td></tr>
+<tr><td class="r">C6</td><td>GRM2195C1H912JA01D/BKN</td><td class="r">2.0×4.1</td><td class="r">98.0</td><td class="r">100.0</td><td class="r">2</td></tr>
+<tr><td class="r">C7</td><td>CC0805KRX7R9BB104</td><td class="r">2.0×4.1</td><td class="r">106.0</td><td class="r">109.0</td><td class="r">2</td></tr>
+<tr><td class="r">C8</td><td>0805CG182J500NT</td><td class="r">2.0×4.1</td><td class="r">114.0</td><td class="r">100.0</td><td class="r">2</td></tr>
+<tr><td class="r">C9</td><td>1206CG104J500NT</td><td class="r">5.3×2.3</td><td class="r">88.0</td><td class="r">109.0</td><td class="r">2</td></tr>
+<tr><td class="r">D1</td><td>PESD5V0X1BT,215</td><td class="r">3.2×3.2</td><td class="r">30.0</td><td class="r">88.0</td><td class="r">3</td></tr>
+<tr><td class="r">EVK1</td><td>LCKFB-LSPI-SkyStar-STM32F407VGT6-PRO</td><td class="r">70.2×45.3</td><td class="r">78.0</td><td class="r">31.0</td><td class="r">84</td></tr>
+<tr><td class="r">J1</td><td>SMA-KE</td><td class="r">14.6×6.9</td><td class="r">16.0</td><td class="r">88.0</td><td class="r">5</td></tr>
+<tr><td class="r">J5</td><td>2.54-2*15P母</td><td class="r">5.4×38.7</td><td class="r">125.0</td><td class="r">29.5</td><td class="r">30</td></tr>
+<tr><td class="r">JP1</td><td>0805W8F0000T5E</td><td class="r">3.7×2.0</td><td class="r">42.0</td><td class="r">88.0</td><td class="r">2</td></tr>
+<tr><td class="r">JP2</td><td>0805W8F0000T5E</td><td class="r">3.7×2.0</td><td class="r">90.0</td><td class="r">84.0</td><td class="r">2</td></tr>
+<tr><td class="r">L1</td><td>XRCD54-4R7M</td><td class="r">6.5×5.7</td><td class="r">58.0</td><td class="r">100.0</td><td class="r">2</td></tr>
+<tr><td class="r">L3</td><td>CD54-220M</td><td class="r">7.7×6.0</td><td class="r">74.0</td><td class="r">100.0</td><td class="r">2</td></tr>
+<tr><td class="r">L5</td><td>CD54-220M</td><td class="r">7.7×6.0</td><td class="r">90.0</td><td class="r">100.0</td><td class="r">2</td></tr>
+<tr><td class="r">L7</td><td>XRCD54-120M</td><td class="r">7.7×6.0</td><td class="r">106.0</td><td class="r">100.0</td><td class="r">2</td></tr>
+<tr><td class="r">R1</td><td>0805W8F499JT5E</td><td class="r">2.0×3.7</td><td class="r">24.0</td><td class="r">88.0</td><td class="r">2</td></tr>
+<tr><td class="r">R10</td><td>0805W8F1002T5E</td><td class="r">3.7×2.0</td><td class="r">7.0</td><td class="r">109.0</td><td class="r">2</td></tr>
+<tr><td class="r">R11</td><td>RT0805BRD0724K9L</td><td class="r">3.7×2.0</td><td class="r">74.0</td><td class="r">84.0</td><td class="r">2</td></tr>
+<tr><td class="r">R12</td><td>0805W8F1001T5E</td><td class="r">3.7×2.0</td><td class="r">116.0</td><td class="r">51.0</td><td class="r">2</td></tr>
+<tr><td class="r">R15</td><td>0805W8F4701T5E</td><td class="r">3.7×2.0</td><td class="r">116.0</td><td class="r">30.0</td><td class="r">2</td></tr>
+<tr><td class="r">R16</td><td>0805W8F4701T5E</td><td class="r">3.7×2.0</td><td class="r">116.0</td><td class="r">34.0</td><td class="r">2</td></tr>
+<tr><td class="r">R2</td><td>0805W8F1002T5E</td><td class="r">3.7×2.0</td><td class="r">48.0</td><td class="r">88.0</td><td class="r">2</td></tr>
+<tr><td class="r">R21</td><td>RC0805FR-074R7L</td><td class="r">2.0×3.7</td><td class="r">14.0</td><td class="r">44.0</td><td class="r">2</td></tr>
+<tr><td class="r">R22</td><td>0805W8F330JT5E</td><td class="r">2.0×3.7</td><td class="r">95.7</td><td class="r">3.6</td><td class="r">2</td></tr>
+<tr><td class="r">R23</td><td>0805W8F330JT5E</td><td class="r">2.0×3.7</td><td class="r">95.7</td><td class="r">7.6</td><td class="r">2</td></tr>
+<tr><td class="r">R24</td><td>0805W8F330JT5E</td><td class="r">2.0×3.7</td><td class="r">90.6</td><td class="r">56.4</td><td class="r">2</td></tr>
+<tr><td class="r">R25</td><td>0805W8F330JT5E</td><td class="r">2.0×3.7</td><td class="r">90.6</td><td class="r">60.4</td><td class="r">2</td></tr>
+<tr><td class="r">R26</td><td>0805W8F330JT5E</td><td class="r">2.0×3.7</td><td class="r">67.7</td><td class="r">7.6</td><td class="r">2</td></tr>
+<tr><td class="r">R27</td><td>0805W8F330JT5E</td><td class="r">2.0×3.7</td><td class="r">70.3</td><td class="r">3.6</td><td class="r">2</td></tr>
+<tr><td class="r">R28</td><td>0805W8F330JT5E</td><td class="r">2.0×3.7</td><td class="r">70.3</td><td class="r">7.6</td><td class="r">2</td></tr>
+<tr><td class="r">R29</td><td>0805W8F330JT5E</td><td class="r">2.0×3.7</td><td class="r">72.8</td><td class="r">3.6</td><td class="r">2</td></tr>
+<tr><td class="r">R3</td><td>0805W8F499JT5E</td><td class="r">3.7×2.0</td><td class="r">50.0</td><td class="r">100.0</td><td class="r">2</td></tr>
+<tr><td class="r">R30</td><td>0805W8F330JT5E</td><td class="r">2.0×3.7</td><td class="r">72.8</td><td class="r">7.6</td><td class="r">2</td></tr>
+<tr><td class="r">R31</td><td>0805W8F330JT5E</td><td class="r">2.0×3.7</td><td class="r">75.4</td><td class="r">3.6</td><td class="r">2</td></tr>
+<tr><td class="r">R32</td><td>0805W8F330JT5E</td><td class="r">2.0×3.7</td><td class="r">75.4</td><td class="r">7.6</td><td class="r">2</td></tr>
+<tr><td class="r">R33</td><td>0805W8F330JT5E</td><td class="r">2.0×3.7</td><td class="r">77.9</td><td class="r">3.6</td><td class="r">2</td></tr>
+<tr><td class="r">R34</td><td>0805W8F330JT5E</td><td class="r">2.0×3.7</td><td class="r">77.9</td><td class="r">7.6</td><td class="r">2</td></tr>
+<tr><td class="r">R35</td><td>0805W8F330JT5E</td><td class="r">2.0×3.7</td><td class="r">88.1</td><td class="r">3.6</td><td class="r">2</td></tr>
+<tr><td class="r">R36</td><td>0805W8F330JT5E</td><td class="r">2.0×3.7</td><td class="r">88.1</td><td class="r">7.6</td><td class="r">2</td></tr>
+<tr><td class="r">R37</td><td>0805W8F330JT5E</td><td class="r">2.0×3.7</td><td class="r">90.6</td><td class="r">3.6</td><td class="r">2</td></tr>
+<tr><td class="r">R38</td><td>0805W8F330JT5E</td><td class="r">2.0×3.7</td><td class="r">85.5</td><td class="r">60.4</td><td class="r">2</td></tr>
+<tr><td class="r">R39</td><td>0805W8F330JT5E</td><td class="r">2.0×3.7</td><td class="r">90.6</td><td class="r">7.6</td><td class="r">2</td></tr>
+<tr><td class="r">R4</td><td>0805W8F499JT5E</td><td class="r">3.7×2.0</td><td class="r">114.0</td><td class="r">109.0</td><td class="r">2</td></tr>
+<tr><td class="r">R40</td><td>0805W8F330JT5E</td><td class="r">2.0×3.7</td><td class="r">88.1</td><td class="r">60.4</td><td class="r">2</td></tr>
+<tr><td class="r">R41</td><td>0805W8F330JT5E</td><td class="r">2.0×3.7</td><td class="r">88.1</td><td class="r">56.4</td><td class="r">2</td></tr>
+<tr><td class="r">R42</td><td>0805W8F330JT5E</td><td class="r">2.0×3.7</td><td class="r">67.7</td><td class="r">3.6</td><td class="r">2</td></tr>
+<tr><td class="r">R5</td><td>0805W8F1002T5E</td><td class="r">3.7×2.0</td><td class="r">80.0</td><td class="r">109.0</td><td class="r">2</td></tr>
+<tr><td class="r">R6</td><td>RT0805BRD0724K9L</td><td class="r">3.7×2.0</td><td class="r">67.0</td><td class="r">84.0</td><td class="r">2</td></tr>
+<tr><td class="r">R7</td><td>ARG05BTC3571</td><td class="r">3.7×2.0</td><td class="r">67.0</td><td class="r">92.0</td><td class="r">2</td></tr>
+<tr><td class="r">R9</td><td>0805W8F1002T5E</td><td class="r">3.7×2.0</td><td class="r">7.0</td><td class="r">102.0</td><td class="r">2</td></tr>
+<tr><td class="r">TP1</td><td>TP-黄色测试点</td><td class="r">3.5×3.5</td><td class="r">20.0</td><td class="r">82.5</td><td class="r">1</td></tr>
+<tr><td class="r">TP3</td><td>TP-黄色测试点</td><td class="r">3.5×3.5</td><td class="r">123.0</td><td class="r">100.0</td><td class="r">1</td></tr>
+<tr><td class="r">TP4</td><td>TP-黄色测试点</td><td class="r">3.5×3.5</td><td class="r">90.0</td><td class="r">78.0</td><td class="r">1</td></tr>
+<tr><td class="r">TP5</td><td>TP-黄色测试点</td><td class="r">3.5×3.5</td><td class="r">15.0</td><td class="r">102.0</td><td class="r">1</td></tr>
+<tr><td class="r">U1</td><td>OPA2197ID</td><td class="r">7.2×5.2</td><td class="r">58.0</td><td class="r">88.0</td><td class="r">8</td></tr></tbody></table>
+
+<h2>§7 投板前必守的 12 条</h2>
+<ol>
+<li>底板上 <b>AGND 与 GND 两张铜皮不得相连</b>（不许重叠、不许 0Ω/跳线/过孔桥接）。</li>
+<li>AFE 区 18 个模拟地成员<b>只汇 EVK1.37 一个点</b>。</li>
+<li>AFE 区与数字/总线区隔 <b>≥10mm</b>；数字回流不得跨过 AGND 岛。</li>
+<li><b>R1 紧贴 SMA 中心针 ≤2~3mm</b>。</li>
+<li>SMA 座靠板边 + <b>焊盘加宽 + 多打过孔</b>（贴片座机械补偿）。</li>
+<li><b>四个电感正交摆放</b>、间距 ≥2mm、下方不走高速线。</li>
+<li><b>R22~R42 贴 MCU 引脚 3~5mm 以内</b>。</li>
+<li>FSMC 总线走成一束、<b>≤40mm（硬上限 60mm）</b>、不跨分割。</li>
+<li><b>J5 的 GND(29) 短、宽、多过孔、周围铺铜</b>（目标 L_gnd ≤30nH）。</li>
+<li><b>C3/C22 紧贴 J5.30（≤5mm）</b>，先 100nF 后 10µF。</li>
+<li>背光回路与总线<b>不平行（≥10mm）</b>或用地面隔开；背光 3V3 与其回流都走宽线。</li>
+<li><b>层数升级判据</b>：地平面被切成 ≥2 块 / 总线必须跨分割或穿越 AFE 区 / 总线 &gt;60mm ⇒ <b>改 4 层</b>。</li>
+</ol>
+
+<h2>§8 诚实边界</h2>
+<ol>
+<li><b>位置是"示范"，不是"布得通"的结果</b> —— 走线可行性、DFM、丝印避让都没验。</li>
+<li>板框是<b>我假设的 132×118 mm</b>；你的真实板框不同，整张表要重排。</li>
+<li><b>封装尺寸与焊盘是真实的</b>（来自 PCB 实数据）；<b>只借了几何，没动你的板子</b>。</li>
+<li>AFE 链的<b>折返拓扑</b>（梯形绕 U1）只给了示意位置；具体怎么绕最短、哪段走底层，由你定。</li>
+<li>R22~R42 的"贴 MCU 3~5mm"在 2 层板顶层<b>做不到全部</b>：奇/偶两排需错开 3.67mm 而排针只隔 2.6mm
+⇒ 内排实际会落到 6~7mm（已知取舍，见 §4 的 ⑫）。</li>
+</ol>
+
+<footer>生成 2026-10-05 · 封装几何 = easyeda pcb dump（真实）· 位置 = 示范提案 · 未改动 PCB。</footer>
+</main></body></html>

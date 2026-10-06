@@ -37,6 +37,19 @@ void app_init(void);
  *   将来调整任务划分时不用搬家，而且它本身是"这一拍要做什么"的清单。 */
 void app_poll(void);
 
+/* 采样链自检：**必须在调度器启动后跑**，由 `app_rtos.c` 建完任务后调一次。
+ *
+ * ★ 为什么它不像其它自检那样待在 `app_init()` 的 `app_self_test()` 里
+ *   （2026-10-02 上板实测，卡死在这里）：
+ *   本项要**真的启动一次采集**，而那条路上有两处 FreeRTOS 原语 ——
+ *     · `bsp_adc_start()` 里的 `xSemaphoreTake()`（清陈旧计数）
+ *     · DMA2_Stream0 中断里的 `xSemaphoreGiveFromISR()`
+ *   调度器启动前跑：ISR 入栈校验 `vPortValidateInterruptPriority()` 会在
+ *   还没被 `xPortStartScheduler()` 赋值的 `ucMaxSysCallPriority` 上失败 →
+ *   `configASSERT` 展开成 `taskDISABLE_INTERRUPTS(); for(;;);` → **死循环**。
+ *   ⇒ 这正是本文件顶部那条"`app_init()` 里不许取任何 FreeRTOS 原语"的兑现。 */
+void app_adc_selftest(void);
+
 /* 致命错误路径：**出声 + 停机**，不返回。
  *
  * 调用点（只有一处）：`Core/Src/main.c` 的 `Error_Handler()`。

@@ -1,63 +1,49 @@
-# G2026 — 状态与恢复说明（2026-09-28）
+# G2026 — 周期信号测量分析装置（电赛 G 题）
 
-> 本项目在迁移到 products 时遭并发进程清空一次，已按下方说明恢复。**后面再搞之前先读这条。**
+> 3.5″ 屏 8080 并口 + AFE 模拟前端 + STM32F407VGT6 核心板 + 自研底板的完整产品工程。
+> **三态口径**：凡涉及"上板"的结论一律**未验证**（装置尚未制造），验证过的会注明实测日期与证据链接。
 
-## 方案文档（干活前先读）
+**进门先读**：[`AGENTS.md`](AGENTS.md)（AI 工作规则）→ [`docs/INDEX.md`](docs/INDEX.md)（全部文档的单一索引）→ [`PROJECT.md`](PROJECT.md)（阶段/待办/门禁基线）。
 
-- **[docs/01_软件架构与DSP方案.md](docs/01_软件架构与DSP方案.md)** — 定稿：fs=2.0MHz/N=4096/BH4/单点DFT读数口径/8阶BW fc=800k/17点标定；模块清单、任务时序、误差预算、风险表。
-- `tools/verify_dsp.py` → `tools/report_dsp_verify.md` — 上述每个数字的数值复算；**改任何采样/滤波参数前先重跑它**。
+## 目录导览
 
-## 现状
+| 位置 | 内容 | 规则 |
+|---|---|---|
+| `docs/` | 产品级方案与全链路索引（`INDEX.md` 是唯一入口） | 编号文档 + INDEX 登记 |
+| `hardware/` | 硬件编号文档 01~50（需求→原理图→PCB→复核）+ BOM 真相源 `bom_final.csv` | 白名单制，见 AGENTS.md |
+| `firmware/` | STM32 四层工程（CubeMX + CMake + FreeRTOS + LVGL），门禁 `firmware/Tools/fw.py` | 规范手册见 `firmware/docs/00~13` |
+| `tools/` | 跨域工具（`tidy_workspace.py` 工作区归位、`verify_dsp.py` 数值复算、`sim/` 仿真环境） | 可复用工具的家 |
+| `_work/` | AI 会话临时产物唯一落点（git 忽略） | 每周一 09:00 自动清扫 |
+| `_archive/` | 历史证据冻结区（EDA 整包快照、早期评审脚本，文档引用已指向此处） | 只读 |
 
-- **固件**：`firmware/` = 2026-09-26 23:41 的自洽态（从门禁自检临时副本恢复）。
-  已验证：`build --clean-first` 成功、doccheck 435 条引用与基线一致、PC 单测全绿。
-- **`firmware/_recovered_0927_morning/`**：09-27 上午版的 43 个文件存档
-  （新任务结构 `app_tasks.c/h`、09-27 的 `G2026.ioc` 等）。**不要删**——补增量时要用。
+## 门禁（改完必跑）
 
-## 待补的 09-27 下午增量 —— ✅ 2026-09-28 已全部补齐（ZCode 会话）
+- **固件**：`python firmware/Tools/fw.py verify`（env → lint → doccheck → test → sizecheck 一条龙；CubeMX 重生成后先读 `firmware/docs/11 §11`）。
+- **EDA**：`easyeda sch check / sch nets / sch drc`（三页）+ `pcb drc`；基线数字记录在 `PROJECT.md`。
+- **工作区**：`python tools/tidy_workspace.py`（默认 dry-run）。
 
-1. ~~`lv_conf.h`：打开 `LV_FONT_MONTSERRAT_28/16` 字体、注册 `lv_log_register_print_cb`~~ ✅
-   另开了 `LV_USE_LOG 1`（不开它 register_print_cb 编不过，lv_log.c 整个被 `#if LV_USE_LOG`
-   包裹）；回调移植自 `_recovered_0927_morning` 版 app_lvgl.c。
-2. ~~`bsp_lcd`：写像素接口改成 `app_lvgl.c` 调用的 `bsp_lcd_write_pixels` 签名~~ ✅
-   核实：当前 app_lvgl.c 的 generic-mipi `send_color` 已在调它，**无需再改**。
-3. ~~`bsp_touch`：触摸 IC 是 **FT6336（FT5x06 系，7 位地址 0x38）**，不是 GT911~~ ✅
-   已重写 bsp_touch.c/h + board_config.h；寄存器事实取自屏厂例程
-   `02_STM32例程/TK035F9629_ST7796版/STM32_16位并口_标准库_电容触摸` 的
-   `touch_CTP.c`（`FT6206_ADDR=0x70 // 地址为0x38要移一位`）。
+## 文档规范（模板口径，[MUST]）
 
-**门禁（2026-09-28）**：`build --clean-first` 零告警（FLASH 294KB/1MB · RAM 54KB/128KB）、
-`test` 全绿、`lint` 通过、`doccheck` 435 条无死链。
+1. **编号**：新文档接续所在目录的最大编号（硬件 `hardware/51-…`，两位数字，永不复用）。
+2. **文件名**：`NN-主题-YYYYMMDD.md`（日期=定稿日；可复用工具/长期维护的表可无日期，如 `04-pinout连接表.md`）。
+3. **H1**：`# NN · 标题（YYYY-MM-DD）`；开头三行内写清**性质**（决策/审计/讲解/事故/拍板）与**状态**（已执行/待审/未验证）。
+4. **登记**：写完必到 `docs/INDEX.md` 加一行（文档 | 内容 | 何时读）——没登记=不存在。
+5. **引用即合同**：文档里引用的每个本地路径必须真实存在；引证据前先把它放进白名单或 `_archive/`。
 
-## .ioc 的 FSMC/I2C2 治愈记录（2026-09-28，ZCode 会话）
+## 如何派生新项目
 
-**症状**：CubeMX 每次生成弹 `[FSMC, I2C2] not configured or wrong parameter values`；
-后来 FSMC 页整个锁死（Memory type 下拉不可改、字段红框、报"not fully configured"）。
+> **模板母体 = `projects/templet`**（全项目模板：软件+硬件+文档+治理；本工程是它的派生实例）。
 
-**根因**：09-26 脚本把 FSMC 参数写成了**两套上下文族并存**
-（`-Lcd1` 全套 13 键 + `-NorPsramChipSelect1_1` 全套 13 键），模型认为同时选中了
-多个内存类型变体 → 状态不自洽；且按 db 定义（`db/mcu/IP/FSMC-f4_nornandmux_fsmc7_v4_0_Modes.xml`
-与 `I2C-i2c1_v1_5_Cube_Modes.xml`）还缺 9 个 FSMC 参数、3 个 I2C2 参数。
+**一条命令**（默认 dry-run 先看方案，`--go` 执行）：
 
-**修法**（全部已验证）：
-1. 删除 `-Lcd1` 参数族（13 键）+ 从 IPParameters 摘除；
-2. 补 `-NorPsramChipSelect1_1` 族的 9 个缺失参数 + `NORSRAM_Instance`/`Extended`，
-   值全部照抄当时生成代码（保证输出不变）；补 I2C2 的
-   `I2C_Coeff_DF=0`/`Analog_Filter=I2C_ANALOGFILTER_ENABLE`；
-3. **无头生成**（`STM32CubeMX.exe -q`，注意 exe4j 立即返回、JVM 后台跑完，看
-   `~/.stm32cubemx/STM32CubeMX.log`）→ fsmc.c/i2c.c/main.c/gpio.c/main.h 与备份
-   **逐字节一致**；CubeMX round-trip 接受全部新键、未再写回 `-Lcd1` 参数族；
-4. 四道门禁全绿。
+```bash
+python tools/derive_project.py <新项目名> --dest <父目录> --go
+```
 
-**遗留（留人）**：PC5(TP_INT) 改 GPIO_Input 仍未做（R6）；CubeMX 里打开 FSMC 页
-确认下拉可编辑、生成时警告是否消失，尚未人眼复核。备份：
-`firmware/_backup_20260928_cubemx_regenerate/` + `G2026.ioc.bak_20260928_prefsmc_clean`。
+自动完成：复制 AGENTS/CLAUDE/.gitignore/tidy_workspace.py/.vscode（按新名改写）、生成 README/PROJECT/INDEX 最小骨架、建 `_work/_archive/hardware` 空目录，并打印三步手工清单（固件模板派生 / 重铺项目门 skillman doors / git init）。
+之后：写第一篇 `hardware/01-需求冻结-<日期>.md`，登记 INDEX，开始走编号文档流程。本工程的约定演进后（改 AGENTS/工具），**下次派生自动带上**——无需维护另一份模板。
 
-**⚠️ 留给人的（上板前）**：PC5(TP_INT) 在 `.ioc` 里仍是 `GPIO_Output` 初始低，
-而 FT6336 的 INT 是 **IC 的输出脚**，有对打风险 —— 上板前在 CubeMX 把 PC5 改成
-`GPIO_Input`（R6：改 `.ioc` 引脚需人批准）。代码侧 bsp_touch 不碰这个脚。
+## 历史与恢复
 
-## 遗留
-
-- 原路径 `stm32prj\G2026` 若还有空壳文件夹：是进程占用的残留，确认没有程序开着它后整个删掉。
-- 迁移期间 `DWIN_prj`（4 个 DGUS 屏工程）在本机消失，与本项目无关但一并留意。
+固件迁移/CubeMX 治愈的完整记录见 [`_archive/README-状态与恢复-20260928.md`]（原 README，历史留档）；
+EDA 整包回退点见 [`PROJECT.md`](PROJECT.md) 的「回退点」节。
