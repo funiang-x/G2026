@@ -50,38 +50,14 @@ void app_poll(void);
  *   ⇒ 这正是本文件顶部那条"`app_init()` 里不许取任何 FreeRTOS 原语"的兑现。 */
 void app_adc_selftest(void);
 
-/* 致命错误路径：**出声 + 停机**，不返回。
- *
- * 调用点（只有一处）：`Core/Src/main.c` 的 `Error_Handler()`。
- *
- * ★ 为什么需要它（实测过的可用性坑）：
- *   CubeMX 生成的 `Error_Handler()` 默认实现是 `__disable_irq(); while(1);` ——
- *   **完全无声**。而它最常被谁调？`SystemClock_Config()` 里 HSE 起振失败
- *   （板子没焊晶振 / 晶振坏 / `HSE_VALUE` 与实际不符）。
- *   那时的现象是"板子毫无反应、RTT 一个字都没有" ——
- *   与"固件根本没烧进去""探针没插"**完全无法区分**，白查半小时。
- *
- * ★ 打的是 `BOARD_BOOT_FAIL_MARKER`（`[AI_FAIL]`）⇒ `fw.py verify` 会返回
- *   **退出码 1（固件主动报错）**，而不是 2（超时、原因未知）。
- *   把"未知"变成"已知"，这是本工程"故障要响亮"原则的直接兑现。
- *
- * ⚠️ 内部只能用 **nolock** 日志：此刻调度器可能没起、时钟可能不对，
- *    取锁 / 等中断都是死路。
- * ⚠️ 它**不返回** —— 别在需要继续执行的地方调。 */
-#if defined(__GNUC__)
-__attribute__((noreturn))
-#endif
-void app_panic(const char *reason);
-
-/* 报告"某个 HAL 初始化没成功"，但**不停机**（与 app_panic 语义相反）。
+/* 报告"某个 HAL 初始化没成功"，但**不停机**。
  *
  * ★ 为什么需要它（2026-09-23 上板实测）：
- *   `Error_Handler()` 会被**所有** HAL 初始化失败调到，其中最典型的是
- *   `MX_SDIO_SD_Init()` —— 板子上没插 TF 卡时 `HAL_SD_Init()` 必然失败。
- *   而 TF 卡是**可选外设**，不该让整块板子起不来。
- *
- *   实测到的调用栈：
- *     Reset_Handler → main → MX_SDIO_SD_Init → Error_Handler → app_panic（停机）
+ *   CubeMX 生成的 `Error_Handler()` 默认实现是 `__disable_irq(); while(1);` ——
+ *   **完全无声**，而且它会被**所有** HAL 初始化失败调到（其中曾包括
+ *   `MX_SDIO_SD_Init()`：没插 TF 卡时 `HAL_SD_Init()` 必然失败，而 TF 卡是
+ *   可选外设，不该让整块板子起不来 —— 那次的调用栈是
+ *   `main → MX_SDIO_SD_Init → Error_Handler → 停机`，只留一行 [AI_FAIL]）。
  *
  * ⇒ `Error_Handler` 改调本函数：打一行 ERROR 日志，然后**返回**，
  *   让 `main()` 继续走（`app_init()` 照常执行，板子照常跑）。
@@ -101,6 +77,26 @@ void app_init_failed(const char *reason);
  * 返回 0 成功；-1 = 参数非法 / 需要的段数超过 `APP_FLASH_MAX_SEGS` / 写超时。
  * ⚠️ **不负责擦除** —— Flash 只能 1→0，改写已有数据前要先擦扇区，见 bsp_spi.h。 */
 int app_flash_write(uint32_t addr, const uint8_t *buf, uint32_t len);
+
+/* ---- 上电自检结果（给 UI 第 3 页 STATE 显示）---------------------------
+ * ★ 为什么要有这个出口：自检原来**只打 RTT 日志** —— 那条链只有插着 J-Link 的
+ *   人看得到，现场评委什么都看不到。而"这台机器知道自己好不好"本身就是技术力
+ *   的一部分（grill-me 拷问后定下的），所以把结果搬一份到屏上。
+ *
+ * ⚠️ 结果是**边跑边填**的：第 ①~⑧ 项在 `app_init()` 里跑（早于 UI 首帧），
+ *    但第 ⑤ 项 ADC 自检在 `app_adc_selftest()`（调度器起来之后）才跑 ⇒
+ *    **别在 `app_ui_init()` 里读一次就完事**，第 3 页要定时重读。
+ *
+ * ⚠️ `name` 必然是**英文**：LVGL 内置字体无 CJK 字形，中文会渲染成方块。 */
+#define APP_ST_MAX 8
+typedef struct {
+    const char *name;
+    int         ok; /* 1 = 通过，0 = 失败 */
+} app_st_item_t;
+
+/* 把已收集到的自检结果拷进调用方给的数组，返回写入的项数。
+ * `cap < APP_ST_MAX` 返回 -1（调用方数组不够，宁可不填也不要越界写）。 */
+int app_selftest_snapshot(app_st_item_t *out, int cap);
 
 #ifdef __cplusplus
 }

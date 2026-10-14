@@ -61,19 +61,10 @@ PIN_LABELS = {
     #    ⇒ 这里也删掉，否则每次跑都报"找不到这个引脚"。
     #    派生工程要把 SPI2 开回来时：先在那边的 CubeMX 里配好，再把这三条加回来
     #    （排针位置见 Core/Inc/board_config.h 的"排针上的自由 IO"一节）。
-    # USART1 —— 日志出口（默认后端是 RTT，这是 --preset Debug-UART 用的那组）
-    "PA9": "LOG_TX",
-    "PA10": "LOG_RX",
-    # USB_OTG_FS —— Device Only
-    "PA11": "USB_DM",
-    "PA12": "USB_DP",
-    # SDIO —— 板载 TF 卡座，4-bit 宽总线
-    "PC8": "SD_D0",
-    "PC9": "SD_D1",
-    "PC10": "SD_D2",
-    "PC11": "SD_D3",
-    "PC12": "SD_CK",
-    "PD2": "SD_CMD",
+    # ⚠️ USART1（PA9/PA10）、USB_OTG_FS（PA11/PA12）、SDIO（PC8~PC12 + PD2）
+    #    三组**已从模板移除**（2026-10-06）—— `.ioc` 里不再配这三个外设，
+    #    所以这里也删掉，否则每次跑都报"找不到这个引脚"（与上面 SPI2 同理）。
+    #    要用回来：先在 CubeMX 里配好，再把对应的 label 条目加回来。
     # 用户按键 —— 板上 SW2，按下为高（外部 10k 下拉）
     "PA0-WKUP": "KEY_SW2",
     # 调试口 —— 不要复用为 GPIO，否则烧录失联

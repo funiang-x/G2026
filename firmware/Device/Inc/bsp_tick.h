@@ -1,7 +1,7 @@
 #ifndef BSP_TICK_H
 #define BSP_TICK_H
 /* bsp_tick —— 毫秒时基。
- * 上层只调 bsp_tick_ms() / bsp_delay_ms()，不直接依赖 HAL_GetTick，
+ * 上层只调 bsp_tick_ms()（需要阻塞延时就用 osDelay），不直接依赖 HAL_GetTick，
  * 将来换 RTOS 或换芯片时只改这一层。
  *
  * ⚠️ **两个独立时基**（本工程实测确认）：`bsp_tick_ms()` 走 **TIM6**（HAL 时基），
@@ -14,25 +14,21 @@
 extern "C" {
 #endif
 
-/* 初始化 1ms 时基（HAL_Init 已配好，这里是显式重申依赖，幂等可重入）。 */
-void bsp_tick_init(void);
-
 /* 自启动以来的毫秒数，32 位会在大约 49.7 天后回绕。
  * 比较时间差请用无符号减法： (uint32_t)(now - last) >= period ，天然抗回绕。 */
 uint32_t bsp_tick_ms(void);
-
-/* 忙等指定毫秒（基于时基中断，不是空转延时）。
- *
- * ⚠️⚠️ **在 FreeRTOS 下它是忙等，不让出 CPU** —— 在高优先级任务里调
- *    `bsp_delay_ms(1000)` 会**卡住整个系统 1 秒**（低优先级任务、idle 全停）。
- *    任务上下文请用 `osDelay()`；本函数只留给**调度器启动前**与
- *    **已经在临界区里**的场合（那两处不能调 osDelay）。 */
-void bsp_delay_ms(uint32_t ms);
 
 /* 当前 SYSCLK 频率（Hz）。用于自检时把"实际值"和"期望值"对一下 ——
  * 时钟配错的话这里会立刻显形（比如 HSE 起振失败退化成 HSI 16MHz）。
  * ⚠️ 它返回的是 HAL 记录的值，不是示波器量出来的；能证明"软件认为自己在跑多快"。 */
 uint32_t bsp_tick_sysclk_hz(void);
+
+/* ---- DWT 周期计数器（"这段代码花了多久"的时基，2026-10-14 八轮从 bsp_lcd 搬来）----
+ * `bsp_tick_cyc_now()` 首次调用自动打开 TRCENA/CYCCNT（调试单元，对正常运行无副作用），
+ * 返回 CPU 周期计数（32 位自由运行 ⇒ 只做**差值**，不要当绝对时间）；
+ * `bsp_tick_cyc_to_us()` 把周期差换算成微秒。 */
+uint32_t bsp_tick_cyc_now(void);
+uint32_t bsp_tick_cyc_to_us(uint32_t cyc);
 
 #ifdef __cplusplus
 }

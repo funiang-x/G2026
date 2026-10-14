@@ -1,20 +1,13 @@
 {
  "tokens": [
   {
-   "op": "通用/访谈与文档",
-   "ts": 1791266296.666905,
-   "token": "bc38425142ed",
+   "op": "软件/调试",
+   "ts": 1791860084.354617,
+   "token": "6fccbd7268ca",
    "skills": {
-    "grilling": "5a914f4ce1b7f6e3c09960a8947d66b06be8838794fc69c2451e3000198ae55c",
-    "handoff": "817c3d6c6131ffd6342717640e0117c42ef35eb5db5fe1b54df6d84aaec4951b",
-    "writing-for-agents": "a175766e61eaeb2bc9c73a4e51a40708f842ca560a073c784f19f7c5ceea9be4"
+    "stm32-hang-triage": "300b1394967bf3f52539dc6508e402e1849c816116207a4528d092b9ee08e6b5",
+    "debug-jlink": "98e171e33cdd94572307dea01d851f98358db22c9032fc73d60a2958eee3608e"
    }
-  },
-  {
-   "op": "文档/报告",
-   "ts": 1791267792.7715805,
-   "token": "57cfc1b09a32",
-   "skills": {}
   }
  ]
 }

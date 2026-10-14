@@ -184,76 +184,36 @@ static void scenario_uj(const char *name, const tone_t *tones, int n_tones, doub
 
 int main(void) {
     /* S1 题面示例：10.5k 基波，m=(1,3,4)。真值口径 = ΣA sin（全零相位），
-     * Upp/Urms 用 verify_dsp 的 true_params 同式数值复算（8192 点）。 */
+     * Upp/Urms 用 verify_dsp 的 true_params 同式数值复算（8192 点，truth()）。 */
     {
         const tone_t t1[] = {{10500.0, 60.0, 0.0}, {31500.0, 30.0, 0.0}, {42000.0, 20.0, 0.0}};
-        double wmax = -1e30, wmin = 1e30, urms = 0.0;
-        for (int j = 0; j < 8192; j++) {
-            const double t = (double)j / (8192.0 * 10500.0);
-            double w = 0.0;
-            for (unsigned k = 0; k < sizeof(t1) / sizeof(t1[0]); k++) {
-                w += t1[k].a * sin(2.0 * 3.14159265358979323846 * t1[k].f * t + t1[k].ph);
-            }
-            if (w > wmax) wmax = w;
-            if (w < wmin) wmin = w;
-        }
-        for (unsigned k = 0; k < sizeof(t1) / sizeof(t1[0]); k++) {
-            urms += t1[k].a * t1[k].a / 2.0;
-        }
-        scenario("S1 题面示例 f1=10.5k m=(1,3,4)", t1, 3, wmax - wmin, sqrt(urms));
+        double upp, urms;
+        truth(t1, 3, &upp, &urms);
+        scenario("S1 题面示例 f1=10.5k m=(1,3,4)", t1, 3, upp, urms);
     }
 
     /* S2 最小信号（Upp≈50mV：9/11/11） */
     {
         const tone_t t2[] = {{10000.0, 9.0, 0.0}, {20000.0, 11.0, 0.0}, {30000.0, 11.0, 0.0}};
-        double wmax = -1e30, wmin = 1e30, urms = 0.0;
-        for (int j = 0; j < 8192; j++) {
-            const double t = (double)j / (8192.0 * 10000.0);
-            double w = t2[0].a * sin(2.0 * 3.14159265358979323846 * 10000.0 * t) +
-                       t2[1].a * sin(2.0 * 3.14159265358979323846 * 20000.0 * t) +
-                       t2[2].a * sin(2.0 * 3.14159265358979323846 * 30000.0 * t);
-            if (w > wmax) wmax = w;
-            if (w < wmin) wmin = w;
-        }
-        for (unsigned k = 0; k < 3; k++) {
-            urms += t2[k].a * t2[k].a / 2.0;
-        }
-        scenario("S2 最小信号 f1=10k m=(1,2,3)", t2, 3, wmax - wmin, sqrt(urms));
+        double upp, urms;
+        truth(t2, 3, &upp, &urms);
+        scenario("S2 最小信号 f1=10k m=(1,2,3)", t2, 3, upp, urms);
     }
 
     /* S3 高频边缘（250k/500k：f_hi 边界上的峰必须能检出） */
     {
         const tone_t t3[] = {{250000.0, 60.0, 0.0}, {500000.0, 40.0, 0.0}};
-        double wmax = -1e30, wmin = 1e30, urms = 0.0;
-        for (int j = 0; j < 8192; j++) {
-            const double t = (double)j / (8192.0 * 250000.0);
-            double w = t3[0].a * sin(2.0 * 3.14159265358979323846 * 250000.0 * t) +
-                       t3[1].a * sin(2.0 * 3.14159265358979323846 * 500000.0 * t);
-            if (w > wmax) wmax = w;
-            if (w < wmin) wmin = w;
-        }
-        for (unsigned k = 0; k < 2; k++) {
-            urms += t3[k].a * t3[k].a / 2.0;
-        }
-        scenario("S3 高频边缘 f1=250k m=(1,2)", t3, 2, wmax - wmin, sqrt(urms));
+        double upp, urms;
+        truth(t3, 2, &upp, &urms);
+        scenario("S3 高频边缘 f1=250k m=(1,2)", t3, 2, upp, urms);
     }
 
     /* S4 全带组合（f1=10k，m=(1,4,8)：40k/80k 靠中带） */
     {
         const tone_t t4[] = {{10000.0, 50.0, 0.0}, {40000.0, 25.0, 0.0}, {80000.0, 25.0, 0.0}};
-        double wmax = -1e30, wmin = 1e30, urms = 0.0;
-        for (int j = 0; j < 8192; j++) {
-            const double t = (double)j / (8192.0 * 10000.0);
-            double w = t4[0].a * sin(2.0 * 3.14159265358979323846 * 10000.0 * t) +
-                       t4[1].a * sin(2.0 * 3.14159265358979323846 * 40000.0 * t) +
-                       t4[2].a * sin(2.0 * 3.14159265358979323846 * 80000.0 * t);
-            if (w > wmax) wmax = w;
-            if (w < wmin) wmin = w;
-        }
-        for (unsigned k = 0; k < 3; k++) {
-            urms += t4[k].a * t4[k].a / 2.0;
-        }
-        scenario("S4 全带组合 f1=10k m=(1,4,8)", t4, 3, wmax - wmin, sqrt(urms));
+        double upp, urms;
+        truth(t4, 3, &upp, &urms);
+        scenario("S4 全带组合 f1=10k m=(1,4,8)", t4, 3, upp, urms);
     }
 
     /* S13 高次谐波重建（**2026-09-28 新增**）：f1=10k + 500k 分量 ⇒ m_max=50。
@@ -263,19 +223,9 @@ int main(void) {
      * 本用例在修复前必失败、修复后 |ΔUpp|<0.01mV —— 是那个修复的回归保护。 */
     {
         const tone_t t5[] = {{10000.0, 60.0, 0.0}, {20000.0, 30.0, 0.0}, {500000.0, 20.0, 0.0}};
-        double wmax = -1e30, wmin = 1e30, urms = 0.0;
-        for (int j = 0; j < 8192; j++) {
-            const double t = (double)j / (8192.0 * 10000.0);
-            double w = t5[0].a * sin(2.0 * 3.14159265358979323846 * 10000.0 * t) +
-                       t5[1].a * sin(2.0 * 3.14159265358979323846 * 20000.0 * t) +
-                       t5[2].a * sin(2.0 * 3.14159265358979323846 * 500000.0 * t);
-            if (w > wmax) wmax = w;
-            if (w < wmin) wmin = w;
-        }
-        for (unsigned k = 0; k < 3; k++) {
-            urms += t5[k].a * t5[k].a / 2.0;
-        }
-        scenario("S13 高次谐波重建 f1=10k m=(1,2,50)", t5, 3, wmax - wmin, sqrt(urms));
+        double upp, urms;
+        truth(t5, 3, &upp, &urms);
+        scenario("S13 高次谐波重建 f1=10k m=(1,2,50)", t5, 3, upp, urms);
     }
 
     /* ---- S5~S12：单频干扰 u_J（题面第 3 项）----
@@ -363,12 +313,61 @@ int main(void) {
         op_dsp_pack_real_to_cfft(s_xw, NULL, OP_DSP_N);
     }
 
+    /* ---- S16 2026-10-13 UI 重构新增：5 峰拷贝 + THD 口径（纯峰表层单测）----
+     * 页 1 FREQ 的谐波柱与页 2 DETAILS 的 THD 卡都按 5 峰设计 ⇒ 这里钉住
+     * ① op_meas_build 对 5 峰的拷贝不截断；② THD 两条边界（纯基波=0、
+     *    基波 + 50% 二次 = 0.5）。走全链（synth→op_dsp→op_peak→op_meas）。 */
+    {
+        /* 5 根音：f1=10k 起，m=1..5，幅值全在 1.5mV 门限之上。 */
+        const tone_t t16[] = {{10000.0, 60.0, 0.0}, {22000.0, 30.0, 0.0},
+                              {33000.0, 20.0, 0.0}, {44000.0, 15.0, 0.0},
+                              {55000.0, 10.0, 0.0}};
+        double upp, urms;
+        meas_result_t r;
+        TEST_CASE("S16 5 峰输入（拷贝与 n_peaks 正确）");
+        truth(t16, 5, &upp, &urms);
+        const int n_pk = run_chain(t16, 5, &r);
+        CHECK_EQ(n_pk, 5); /* 5 根都检出（主瓣合并不多吃） */
+        if (n_pk == 5) {
+            CHECK_EQ(r.n_peaks, 5);
+            CHECK(fabs((double)r.f1_hz - 10000.0) < 20.0);
+            for (int k = 0; k < 5; k++) {
+                const char got =
+                    (fabs((double)r.peak[k].freq_hz - t16[k].f) < 20.0) ? 1 : 0;
+                CHECK(got); /* 峰表按频率升序、逐根对得上 */
+            }
+            /* THD = √(A2²+A3²+A4²+A5²)/A1 = √(30²+20²+15²+10²)/60 */
+            const double thd_exp = sqrt(30.0 * 30.0 + 20.0 * 20.0 + 15.0 * 15.0 +
+                                        10.0 * 10.0) / 60.0;
+            CHECK(fabs((double)r.thd - thd_exp) < 0.05);
+        }
+    }
+    {
+        /* THD 边界：纯基波 ⇒ 0 */
+        const tone_t t17[] = {{10500.0, 60.0, 0.0}};
+        double upp, urms;
+        meas_result_t r;
+        TEST_CASE("S17 THD 纯基波（≈0）");
+        truth(t17, 1, &upp, &urms);
+        CHECK_EQ(run_chain(t17, 1, &r), 1);
+        CHECK_EQ(r.n_peaks, 1);
+        CHECK(fabs((double)r.thd) < 1e-6);
+    }
+    {
+        /* THD 边界：基波 60mV + 50% 二次谐波 30mV ⇒ 0.5 */
+        const tone_t t18[] = {{10500.0, 60.0, 0.0}, {21000.0, 30.0, 0.0}};
+        double upp, urms;
+        meas_result_t r;
+        TEST_CASE("S18 THD 基波+50% 二次（≈0.5）");
+        truth(t18, 2, &upp, &urms);
+        CHECK_EQ(run_chain(t18, 2, &r), 2);
+        CHECK(fabs((double)r.thd - 0.5) < 0.05);
+    }
+
     /* 未检出路径：全零输入 → n_peaks=0，结果体全 0（UI 显示占位不空转） */
     {
         meas_result_t r;
         TEST_CASE("未检出路径");
-        const tone_t none[1] = {{0.0, 0.0, 0.0}};
-        (void)none;
         for (uint32_t i = 0; i < OP_DSP_N; i++) {
             s_raw[i] = 2048U; /* 直流码：去 DC 后全 0，无峰 */
         }

@@ -60,10 +60,6 @@ int bsp_spi_flash_write_page(uint32_t addr, const uint8_t *buf, uint32_t len);
 /* 擦除 addr 所在的 4KB 扇区（addr 向下对齐到扇区边界）。返回 0 成功。 */
 int bsp_spi_flash_erase_sector(uint32_t addr);
 
-/* 整片擦除。⚠️ W25Q128 典型耗时 **~40 秒**，别在任务里干等 ——
- * 本函数是阻塞的，调用方自己决定放哪个上下文。返回 0 成功。 */
-int bsp_spi_flash_erase_chip(void);
-
 #ifdef __cplusplus
 }
 #endif

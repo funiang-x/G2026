@@ -11,10 +11,7 @@
             "hidden": true,
             "generator": "Ninja",
             "binaryDir": "${sourceDir}/build/${presetName}",
-            "toolchainFile": "${sourceDir}/cmake/gcc-arm-none-eabi.cmake",
-            "cacheVariables": {
-                "LOG_BACKEND": "RTT"
-            }
+            "toolchainFile": "${sourceDir}/cmake/gcc-arm-none-eabi.cmake"
         },
         {
             "name": "Debug",
@@ -42,16 +39,6 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "RelWithDebInfo"
             }
-        },
-        {
-            "name": "Debug-UART",
-            "inherits": "base",
-            "displayName": "Debug + 串口日志",
-            "description": "日志改走 USART1（引脚在 Core/Inc/board_config.h），手边没有 J-Link 时用",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug",
-                "LOG_BACKEND": "UART"
-            }
         }
     ],
     "buildPresets": [
@@ -66,10 +53,6 @@
         {
             "name": "RelWithDebInfo",
             "configurePreset": "RelWithDebInfo"
-        },
-        {
-            "name": "Debug-UART",
-            "configurePreset": "Debug-UART"
         }
     ]
 }

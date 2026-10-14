@@ -24,15 +24,13 @@
 #define CMD_READ_DATA 0x03U
 #define CMD_PAGE_PROGRAM 0x02U
 #define CMD_SECTOR_ERASE 0x20U
-#define CMD_CHIP_ERASE 0xC7U
 #define CMD_JEDEC_ID 0x9FU
 
 #define SR1_BUSY 0x01U /* 状态寄存器 1 的 bit0 = 忙 */
 
 /* 超时（ms）。SPI 单字节本身是微秒级，这些值只为防"硬件坏了导致死等"。 */
 #define XFER_TIMEOUT_MS 100U
-#define BUSY_TIMEOUT_MS 5000U        /* 单扇区擦除典型 45ms，给足余量 */
-#define CHIP_ERASE_TIMEOUT_MS 90000U /* 整片擦除典型 ~40s */
+#define BUSY_TIMEOUT_MS 5000U /* 单扇区擦除典型 45ms，给足余量 */
 
 /* 软件片选 PA4。端口/引脚号取自 board_config.h（唯一来源，本层不写魔数）。 */
 static const bsp_gpio_t s_cs = {(bsp_gpio_port_t)BOARD_SPI_FLASH_CS_PORT,
@@ -168,14 +166,3 @@ int bsp_spi_flash_erase_sector(uint32_t addr) {
     return 0;
 }
 
-int bsp_spi_flash_erase_chip(void) {
-    write_enable();
-    cs_low();
-    spi_xfer(CMD_CHIP_ERASE);
-    cs_high();
-    if (flash_wait_busy(CHIP_ERASE_TIMEOUT_MS) != 0) {
-        LOG_E("整片擦除超时");
-        return -1;
-    }
-    return 0;
-}

@@ -3,8 +3,8 @@
 /* ============================================================================
  *  app_tasks —— 任务创建（全静态）· 见 project_config.h 的参数小节
  *
- *  ---- 任务表（2026-09-28 定）----
- *      Task_Engine  26  ·  Task_Ui  23  ·  defaultTask(CubeMX)  24
+ *  ---- 任务表（2026-10-14 定序）----
+ *      Task_Ui  26  ·  Task_Engine  25  ·  defaultTask(CubeMX)  24（垫底）
  *
  *      Task_Engine  测量编排：阻塞等 ADC 帧信号量 → DSP 链 → 发结果（app_engine.c）
  *      Task_Ui      LVGL 主循环 + 四页面刷新（app_ui.c）—— 全工程唯一碰 LVGL 的任务
@@ -16,9 +16,13 @@
  *      重测请求     ──[任务通知：UI 发、engine 收]──▶ Task_Engine
  *
  *  ---- 为什么全部用 `xTaskCreateStatic` ----
- *  栈与 TCB 一律是本文件的 **static 数组**，不动 FreeRTOS 堆（堆只留给内核对象
- *  与 LVGL 的互斥量，configTOTAL_HEAP_SIZE = 15KB）。代价是"栈深写在编译期"，
- *  换来的是**不会有运行期分配失败**。
+ *  栈与 TCB 一律是本文件的 **static 数组**，不动 FreeRTOS 堆（堆只留给内核对象：
+ *  结果队列 + 两个互斥量 + 日志的递归互斥量）。
+ *  ⚠️ 2026-10-14 订正：旧注释写"configTOTAL_HEAP_SIZE = 15KB"，**实际是 4096 B**
+ *     （真相源 = `Core/Inc/FreeRTOSConfig.h`，`.ioc` 的 `FREERTOS.configTOTAL_HEAP_SIZE`
+ *     同值；15KB 是更早一版的口径）。差 3.75× —— 这个数字是"为什么必须静态建任务"
+ *     的全部理由，写错就等于没理由。改内核配置时**以 FreeRTOSConfig.h 为准**。
+ *  代价是"栈深写在编译期"，换来的是**不会有运行期分配失败**。
  *
  *  ---- 降级 ----
  *  `app_tasks_init()` 失败时返回非 0；组合根（app.c）据 `app_tasks_ok()`

@@ -26,7 +26,7 @@
  * ==========================================================================*/
 #include <stdint.h>
 
-#include "op_dsp_winh4.h" /* OP_DSP_N / OP_DSP_CG / op_dsp_winh4[]（生成表） */
+#include "op_dsp_winh4.h" /* OP_DSP_N / OP_DSP_CG / op_dsp_winh4_at()（生成表·半表+镜像） */
 
 #ifdef __cplusplus
 extern "C" {

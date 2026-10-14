@@ -22,7 +22,7 @@
 |---|---|
 | 定位 | **STM32F407VGT6 四层工程模板**：CubeMX 直生成 + GCC/Ninja + J-Link SWD + RTT + GDB |
 | 芯片 | STM32F407VGTx（1MB Flash / 192KB SRAM / 64KB CCM）· SYSCLK 168MHz · HSE 8MHz · FreeRTOS |
-| 板卡 | 立创·梁山派·天空星 F407 开发板；已配 SPI2 / USART1 / USB_OTG_FS / SWD |
+| 板卡 | 立创·梁山派·天空星 F407 开发板；已配 FSMC / SPI1 / I2C2 / ADC1+DMA / TIM8 / RTC / FreeRTOS / SWD（SPI2 · USART1 · USB_OTG_FS · SDIO 已于 2026-10-02/06 从 `.ioc` 拆除） |
 | 工具链 | `arm-none-eabi-gcc` 15.2.1（PATH 上）· CMake 4.3.1 + Ninja 1.13.2 |
 | 探针 | J-Link SWD 4MHz，器件名 `STM32F407VG`；`C:/Program Files/SEGGER/JLink_V936/` |
 | 日志 | SEGGER RTT 通道 0，源码 vendor 在 `Middlewares/RTT/` |

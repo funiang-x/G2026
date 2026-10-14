@@ -222,11 +222,11 @@ void Error_Handler(void)
    *   "探针没插"完全无法区分 —— 实测能白查半小时。
    *   ⇒ 至少要把日志后端拉起来（RTT 只要内存，不需要时钟与中断）打一行。
    *
-   * ⚠️ 但**不能**用 app_panic（那是"停机"语义）—— 2026-09-23 上板实测：
+   * ⚠️ 但**不能**走"停机"路径 —— 2026-09-23 上板实测：
    *    Error_Handler 会被**所有** HAL 初始化失败调到，其中最常见的是
    *    `MX_SDIO_SD_Init()`：**板子上没插 TF 卡时 `HAL_SD_Init()` 必然失败**，
    *    结果整块板子起不来。实测调用栈：
-   *      Reset_Handler → main → MX_SDIO_SD_Init → Error_Handler → app_panic
+   *      Reset_Handler → main → MX_SDIO_SD_Init → Error_Handler → 停机
    *    TF 卡是可选外设，不该绑架启动。
    *
    * ⇒ 改成 app_init_failed()：打一行 ERROR 日志后**返回**，让 main() 继续。

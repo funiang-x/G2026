@@ -103,20 +103,6 @@ def parse_ld_regions(path: Path) -> dict[str, int]:
             stm32_size.read_memory_regions(path).items()}
 
 
-def ioc_pin_signal(ioc: dict[str, str], signal: str) -> tuple[int, int] | None:
-    """按 .ioc 的 `<引脚>.Signal=<信号>` 反查引脚号，返回 (端口号, 引脚号)。
-
-    形如 `PA9.Signal=USART1_TX` → (0, 9)。
-    """
-    for key, val in ioc.items():
-        if not key.endswith(".Signal") or val != signal:
-            continue
-        m = re.match(r"^(P[A-I])(\d+)$", key[: -len(".Signal")])
-        if m:
-            return PORT_INDEX[m.group(1)[1]], int(m.group(2))
-    return None
-
-
 def ioc_gpio_output_pin(ioc: dict[str, str], want: tuple[int, int]) -> bool:
     """某个引脚在 .ioc 里是不是配成了 GPIO_Output。"""
     for key, val in ioc.items():
@@ -188,22 +174,41 @@ def _cmp_str(res: Result, item: str, ioc_val: str | None, board_val: str | None)
         res.fail(item, f".ioc={ioc_val}  board_config.h={board_val}  ← 不一致")
 
 
-def _cmp_pin(res: Result, item: str, ioc: dict[str, str], signal: str,
-             port_macro: str, pin_macro: str, m: dict[str, str]) -> None:
-    """比一个"信号 ↔ 引脚号"。.ioc 用 Signal 反查，board_config.h 用两个宏。"""
-    got = ioc_pin_signal(ioc, signal)
-    want_port, want_pin = _num(m.get(port_macro, "")), _num(m.get(pin_macro, ""))
-    if got is None and want_port is None:
-        res.warn(item, "两边都没有值")
-    elif got is None:
-        res.warn(item, f"仅 board_config.h 有值：port={want_port} pin={want_pin}")
-    elif want_port is None or want_pin is None:
-        res.warn(item, f"仅 .ioc 有值：{signal} → port={got[0]} pin={got[1]}")
-    elif got == (want_port, want_pin):
-        res.ok(item, f"{signal} = P{'ABCDEFGHI'[got[0]]}{got[1]}")
-    else:
-        res.fail(item, f".ioc: {signal} → port={got[0]} pin={got[1]}  "
-                       f"board_config.h: port={want_port} pin={want_pin}  ← 不一致")
+# ---------------------------------------------------------------- CMSIS v2 优先级
+# CubeMX 在 CMSIS_V2 模式下把 `.ioc` 里的**数字**优先级写成**枚举名**，
+# 所以对账必须做一次名字→数字的翻译。命名规则是"基值 + 后缀"：
+#     osPriorityLow = 8 · Low1..Low7 = 9..15
+#     osPriorityBelowNormal = 16 · BelowNormal1..7 = 17..23
+#     osPriorityNormal = 24 · Normal1..7 = 25..31
+#     osPriorityAboveNormal = 32 · High = 40 · Realtime = 48（各带 1..7）
+# ⚠️ **不能"取字符串里的数字"** —— `osPriorityNormal` 后面没数字，值是 **24 不是 0**；
+#    而 `osPriorityNormal4` = 24+4 = **28**。搞错方向就会把"一致"报成"不一致"。
+# 真相源：CMSIS-RTOS2 的 `cmsis_os2.h`（`osPriority_t` 枚举）。
+_CMSIS_V2_PRIO_BASE = {
+    "Idle": 1,
+    "Low": 8,
+    "BelowNormal": 16,
+    "Normal": 24,
+    "AboveNormal": 32,
+    "High": 40,
+    "Realtime": 48,
+}
+_CMSIS_V2_PRIO_EXACT = {"None": 0, "ISR": 56}
+
+
+def cmsis_priority_value(token: str) -> int | None:
+    """`osPriorityBelowNormal4` → 20；认不出 → None（调用方按"解析不出"跳过）。"""
+    m = re.fullmatch(r"osPriority([A-Za-z]+)(\d*)", token.strip())
+    if m is None:
+        return None
+    name, suffix = m.group(1), m.group(2)
+    if name in _CMSIS_V2_PRIO_EXACT:
+        return _CMSIS_V2_PRIO_EXACT[name] if suffix == "" else None
+    base = _CMSIS_V2_PRIO_BASE.get(name)
+    if base is None:
+        return None
+    n = int(suffix) if suffix else 0
+    return base + n if n <= 7 else None
 
 
 def check(root: Path) -> Result:
@@ -272,20 +277,10 @@ def check(root: Path) -> Result:
         res.warn("PLL 自洽", "HSE / PLLM / PLLN / SYSCLK 有缺项，跳过")
 
     # ---- 引脚（.ioc 的 Signal ↔ board_config.h 的两个宏）----
-    _cmp_pin(res, "日志串口 TX", ioc, "USART1_TX",
-             "BOARD_LOG_UART_TX_PORT", "BOARD_LOG_UART_TX_PIN", m)
-    _cmp_pin(res, "日志串口 RX", ioc, "USART1_RX",
-             "BOARD_LOG_UART_RX_PORT", "BOARD_LOG_UART_RX_PIN", m)
-    _cmp_pin(res, "SPI2 SCK", ioc, "SPI2_SCK",
-             "BOARD_SPI2_SCK_PORT", "BOARD_SPI2_SCK_PIN", m)
-    _cmp_pin(res, "SPI2 MISO", ioc, "SPI2_MISO",
-             "BOARD_SPI2_MISO_PORT", "BOARD_SPI2_MISO_PIN", m)
-    _cmp_pin(res, "SPI2 MOSI", ioc, "SPI2_MOSI",
-             "BOARD_SPI2_MOSI_PORT", "BOARD_SPI2_MOSI_PIN", m)
-    _cmp_pin(res, "USB DM", ioc, "USB_OTG_FS_DM", "BOARD_USB_OTG_FS_DM_PORT",
-             "BOARD_USB_OTG_FS_DM_PIN", m)
-    _cmp_pin(res, "USB DP", ioc, "USB_OTG_FS_DP", "BOARD_USB_OTG_FS_DP_PORT",
-             "BOARD_USB_OTG_FS_DP_PIN", m)
+    # ⚠️ 原先这里还有"日志串口 TX/RX"（USART1）与 SPI2×3、USB×2 的对账项 ——
+    #    这些外设 2026-10-02/06 已从 .ioc 移除，两边都没有值，检查永远只出
+    #    warning。2026-10-07 随 UART 后端下线一并删除；_cmp_pin/ioc_pin_signal
+    #    随之无人调用，也删。要用回来：在 CubeMX 配好外设后把对账项加回来。
 
     # ---- 心跳灯：.ioc 里必须真的是 GPIO_Output ----
     led_port, led_pin = _num(m.get("BOARD_LED_PORT", "")), _num(m.get("BOARD_LED_PIN", ""))
@@ -317,19 +312,25 @@ def check(root: Path) -> Result:
                 res.fail(f"{region} 容量",
                          f"{macro}={kb} KB  但 .ld 的 {region} 段是 {ld_kb} KB")
 
-    # ---- CubeMX 的默认任务栈：.ioc 与生成物 freertos.c 必须一致 ----
-    # 判据：.ioc 的 FREERTOS.Tasks01=<名>,<优先级>,<栈words>,... 与
-    #       Core/Src/freertos.c 的 `.stack_size = <words> * 4`
+    # ---- CubeMX 的默认任务：`.ioc` 与生成物 `freertos.c` 必须一致 ----
+    # 判据：`.ioc` 的 `FREERTOS.Tasks01=<名>,<优先级>,<栈words>,...` 与
+    #       `Core/Src/freertos.c` 的 `.stack_size = <words> * 4` / `.priority = (osPriority_t) <枚举>`
     # ⚠️ 这一项能抓到"改了 .ioc 但没重新生成" —— 那是最隐蔽的一种漂移。
+    # ⚠️ **2026-10-14 补优先级**：原先只比栈（`parts[2]`）、**不读 `parts[1]`** ⇒
+    #    改 `.ioc` 的优先级而没重新生成时门禁**照样全绿**，恰好漏掉这项检查的立意所在。
+    #    补上之后，改优先级这条路上才有判据（配套脚本 `Tools/cubemx_gen.txt`）。
     tasks = ioc.get("FREERTOS.Tasks01", "")
     parts = tasks.split(",") if tasks else []
     fr_path = root / "Core" / "Src" / "freertos.c"
     if len(parts) < 3 or not fr_path.is_file():
         res.warn("默认任务栈", "缺 FREERTOS.Tasks01 或 freertos.c，跳过")
+        res.warn("默认任务优先级", "缺 FREERTOS.Tasks01 或 freertos.c，跳过")
     else:
+        src = fr_path.read_text(encoding="utf-8", errors="replace")
+
+        # ① 栈深（words）
         want = _num(parts[2])
-        m2 = re.search(r"\.stack_size\s*=\s*(\d+)\s*\*\s*4", fr_path.read_text(
-            encoding="utf-8", errors="replace"))
+        m2 = re.search(r"\.stack_size\s*=\s*(\d+)\s*\*\s*4", src)
         got = _num(m2.group(1)) if m2 else None
         if want is None or got is None:
             res.warn("默认任务栈", "解析不出栈深，跳过")
@@ -338,6 +339,22 @@ def check(root: Path) -> Result:
         else:
             res.fail("默认任务栈",
                      f".ioc={want} words  freertos.c={got} words  ← 改了 .ioc 但没重新生成？")
+
+        # ② 优先级（.ioc 是数字，freertos.c 是 CMSIS v2 枚举名 ⇒ 要翻译）
+        want_p = _num(parts[1])
+        m3 = re.search(r"\.priority\s*=\s*\([^)]*\)\s*(osPriority\w+)", src)
+        got_p = cmsis_priority_value(m3.group(1)) if m3 else None
+        if want_p is None or got_p is None:
+            res.warn("默认任务优先级",
+                     f"解析不出优先级（.ioc={parts[1]!r} "
+                     f"freertos.c={m3.group(1) if m3 else '无'}），跳过")
+        elif want_p == got_p:
+            res.ok("默认任务优先级",
+                   f"{want_p}（freertos.c 的 {m3.group(1)} 与 .ioc 一致）")
+        else:
+            res.fail("默认任务优先级",
+                     f".ioc={want_p}  freertos.c={got_p}（{m3.group(1)}）"
+                     f"  ← 改了 .ioc 但没重新生成？")
 
     return res
 

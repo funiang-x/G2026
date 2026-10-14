@@ -55,19 +55,6 @@ void bsp_gpio_write(bsp_gpio_t g, int level);
 /* 读电平，返回 0/1；参数非法返回 -1。 */
 int bsp_gpio_read(bsp_gpio_t g);
 
-/* 翻转电平。 */
-void bsp_gpio_toggle(bsp_gpio_t g);
-
-/* 快速开关需要的端口掩码（避免每次算），返回 0 成功。 */
-int bsp_gpio_mask(bsp_gpio_t g, uint16_t *out_mask);
-
-/* 复杂外设（SPI/UART/PWM）要配复用脚，但调用方不该自己拼 bsp_gpio_mode_t。
- * 这个便捷函数等价于 bsp_gpio_config(g, BSP_GPIO_AF_PP, af)，
- * 让 BSP 内部各外设文件读起来是一行。返回 0 成功。 */
-static inline int bsp_gpio_config_af(bsp_gpio_t g, uint32_t af) {
-    return bsp_gpio_config(g, BSP_GPIO_AF_PP, af);
-}
-
 /* 输出推挽的便捷写法（CS/DC/RST 这类控制脚）。返回 0 成功。 */
 static inline int bsp_gpio_config_out(bsp_gpio_t g) {
     return bsp_gpio_config(g, BSP_GPIO_OUT_PP, 0U);

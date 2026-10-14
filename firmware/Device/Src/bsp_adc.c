@@ -34,7 +34,6 @@
 #include "FreeRTOS.h"
 #include "semphr.h"
 
-static volatile int s_done = 0;   /* DMA 搬满标志：ISR 里置 1，主上下文读 */
 static volatile int s_busy = 0;
 static int          s_inited = 0;
 
@@ -60,7 +59,6 @@ static uint16_t s_probe_buf[64];
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
     if (hadc->Instance == ADC1) {
         __HAL_TIM_DISABLE(&htim8); /* 先停触发源，防止继续转换把缓冲写脏 */
-        s_done = 1;
         /* 投事件：唤醒在 bsp_adc_wait_frame() 上阻塞的测量任务。
          * ⚠️ DMA2_Stream0 的 NVIC 抢占优先级 = 5 = configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY
          *    ⇒ 允许调 FromISR 系列（数值再小就不许了，见 FreeRTOSConfig.h）。 */
@@ -90,7 +88,6 @@ int bsp_adc_init(void) {
         LOG_E("[ADC] 帧信号量创建失败 —— 测量任务将无法阻塞等待");
         return -1;
     }
-    s_done = 0;
     s_busy = 0;
     s_inited = 1;
     LOG_I("[ADC] 就绪（CubeMX 生成物）：ADCCLK=36MHz（PCLK2/2）· 采样 3 周期 · "
@@ -115,7 +112,6 @@ int bsp_adc_start(uint16_t *buf, uint32_t n) {
         return -1; /* 上一帧还没收走 —— 调用方应先 poll_done + stop */
     }
 
-    s_done = 0;
     s_busy = 1;
 
     /* 清掉可能残留的"上一帧"信号量（自检的忙等路径不走信号量，但超时路径会留），
@@ -130,6 +126,11 @@ int bsp_adc_start(uint16_t *buf, uint32_t n) {
         s_busy = 0;
         return -1;
     }
+    /* ★ 八轮（P2.4）：**关掉半传输中断**。HAL 的 `HAL_ADC_Start_DMA` 会给 ADC 挂上
+     *   `XferHalfCpltCallback`（ADC 驱动内部总是设），于是 DMA 的 HTIE 被打开；而
+     *   本工程**没有** `HAL_ADC_ConvHalfCpltCallback` ⇒ 那半个中断就是每帧一次
+     *   （每 1.024 ms = 976 次/s）空跑 ISR，白烧 0.2~1% CPU。取数只认"帧满"。 */
+    __HAL_DMA_DISABLE_IT(hadc1.DMA_Handle, DMA_IT_HT);
     if (HAL_TIM_Base_Start(&htim8) != HAL_OK) {
         (void)HAL_ADC_Stop_DMA(&hadc1); /* 主上下文，允许 Stop */
         s_busy = 0;
@@ -138,9 +139,7 @@ int bsp_adc_start(uint16_t *buf, uint32_t n) {
     return 0;
 }
 
-int bsp_adc_poll_done(void) {
-    return s_done;
-}
+
 
 int bsp_adc_wait_frame(uint32_t timeout_ms) {
     if (s_frame_sem == NULL) {
@@ -162,7 +161,6 @@ void bsp_adc_stop(void) {
 }
 
 int bsp_adc_self_check(void) {
-    uint32_t t0;
     uint32_t sum = 0;
     uint16_t lo = 0xFFFFU;
     uint16_t hi = 0;
@@ -184,15 +182,15 @@ int bsp_adc_self_check(void) {
      *    的 `xSemaphoreTake()` 与 DMA 中断里的 `xSemaphoreGiveFromISR()` 两处
      *    FreeRTOS 原语；调度器启动前跑会被 ISR 入栈校验断言拦成死循环
      *    （2026-10-02 上板实测，PC 停在 vPortValidateInterruptPriority）。 */
-    t0 = HAL_GetTick();
-    while (!bsp_adc_poll_done()) {
-        if ((HAL_GetTick() - t0) > 20U) {
-            bsp_adc_stop();
-            LOG_W("[SELFTEST] ADC 采集超时 —— TIM8 没触发？DMA 没搬？"
-                  "（核对 .ioc：ADC1 触发源=Tim8 TRGO、DMA Continuous Requests、"
-                  "DMA2_Stream0 循环半字）");
-            return -1;
-        }
+    /* 等帧：走**生产的**信号量路径（原来是本文件自己那套忙等标志 `s_done` ——
+     * 与帧信号量重复的第二套"帧就绪"状态，2026-10-14 八轮删除）。64 点只要 32µs，
+     * 给 20ms；走信号量还能让出 CPU。 */
+    if (bsp_adc_wait_frame(20U) != 0) {
+        bsp_adc_stop();
+        LOG_W("[SELFTEST] ADC 采集超时 —— TIM8 没触发？DMA 没搬？"
+              "（核对 .ioc：ADC1 触发源=Tim8 TRGO、DMA Continuous Requests、"
+              "DMA2_Stream0 循环半字）");
+        return -1;
     }
     bsp_adc_stop();
 

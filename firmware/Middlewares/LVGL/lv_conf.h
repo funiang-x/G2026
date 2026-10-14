@@ -168,6 +168,13 @@
  * and can't be drawn in chunks. */
 
 /** The target buffer size for simple layer chunks. */
+/* ★ 2026-10-14 C5 A/B 结论：**保持 24 KB（上游默认）** —— 本宏是**本工程的死配置**，改它无用。
+ * why：它只对"带 `style_opa<255` 或非 NORMAL blend 的控件"生效（LVGL 原文注释见上），
+ *   而本界面**全 UI 只有 `bg_opa` / `border_opa`**（`Task/Src/app_ui.c`），
+ *   **没有** `style_opa`、**没有**非 NORMAL blend ⇒ **没有任何控件会触发 simple layer**。
+ * 证据：试过 `(8 * 1024)` 并上板 —— 滑动读数与 24 KB **逐项相同**
+ *   （`heap free` 1 B / `handler` 88.6% / 帧率 16.2 fps / `flush÷handler` 25.9%），
+ *   说明这条路径根本没被走到。依据与判据：`docs/03_LVGL刷屏优化评估-20261014.md` §5.7。 */
 #define LV_DRAW_LAYER_SIMPLE_BUF_SIZE    (24 * 1024)    /**< [bytes]*/
 
 /* Limit the max allocated memory for simple and transformed layers.
@@ -525,7 +532,11 @@
  * Debug
  *-----------*/
 
-/** 1: Draw random colored rectangles over the redrawn areas. */
+/** 1: Draw random colored rectangles over the redrawn areas.
+ * ★ 2026-10-13 六轮用过一次（临时打开）：定位"每次刷新重绘了多少面积"。
+ *   结论：单次最大 = 一块 draw buffer、总量 ~280 kpx/s ⇒ **没有整屏重绘**，
+ *   所以**已关回 0**（开着会在屏上额外画随机色块，且要花 CPU）。
+ *   要再用：把它改 1、重编烧录；模拟器侧的 lv_conf.h 不要跟着开（截图会被染色）。 */
 #define LV_USE_REFR_DEBUG 0
 
 /** 1: Draw a red overlay for ARGB layers and a green overlay for RGB layers*/
@@ -666,19 +677,19 @@
 #define LV_FONT_MONTSERRAT_18 0
 #define LV_FONT_MONTSERRAT_20 0
 #define LV_FONT_MONTSERRAT_22 0
-#define LV_FONT_MONTSERRAT_24 0
+#define LV_FONT_MONTSERRAT_24 1 /* 时域三个数用它（36px 的 2/3，渲染像素少 ~55%）*/
 #define LV_FONT_MONTSERRAT_26 0
 #define LV_FONT_MONTSERRAT_28 1
 #define LV_FONT_MONTSERRAT_30 0
 #define LV_FONT_MONTSERRAT_32 0
 #define LV_FONT_MONTSERRAT_34 0
-#define LV_FONT_MONTSERRAT_36 0
+#define LV_FONT_MONTSERRAT_36 1
 #define LV_FONT_MONTSERRAT_38 0
 #define LV_FONT_MONTSERRAT_40 0
 #define LV_FONT_MONTSERRAT_42 0
 #define LV_FONT_MONTSERRAT_44 0
 #define LV_FONT_MONTSERRAT_46 0
-#define LV_FONT_MONTSERRAT_48 0
+#define LV_FONT_MONTSERRAT_48 1
 
 /* Demonstrate special features */
 #define LV_FONT_MONTSERRAT_28_COMPRESSED    0  /**< bpp = 3 */
@@ -778,15 +789,15 @@
 
 #define LV_USE_ANIMIMG    0
 
-#define LV_USE_ARC        1
+#define LV_USE_ARC        0
 
 #define LV_USE_ARCLABEL  0
 
-#define LV_USE_BAR        1
+#define LV_USE_BAR        0
 
-#define LV_USE_BUTTON        1
+#define LV_USE_BUTTON        0
 
-#define LV_USE_BUTTONMATRIX  1
+#define LV_USE_BUTTONMATRIX  0
 
 #define LV_USE_CALENDAR   0
 #if LV_USE_CALENDAR
@@ -805,17 +816,17 @@
 
 #define LV_USE_CANVAS     0
 
-#define LV_USE_CHART      1
+#define LV_USE_CHART      0
 
-#define LV_USE_CHECKBOX   1
+#define LV_USE_CHECKBOX   0
 
-#define LV_USE_DROPDOWN   1   /**< Requires: lv_label */
+#define LV_USE_DROPDOWN   0   /**< Requires: lv_label */
 
-#define LV_USE_IMAGE      1   /**< Requires: lv_label */
+#define LV_USE_IMAGE      0   /**< Requires: lv_label */
 
 #define LV_USE_IMAGEBUTTON     0
 
-#define LV_USE_KEYBOARD   1
+#define LV_USE_KEYBOARD   0
 
 #define LV_USE_LABEL      1
 #if LV_USE_LABEL
@@ -834,13 +845,13 @@
 
 #define LV_USE_MENU       0
 
-#define LV_USE_MSGBOX     1
+#define LV_USE_MSGBOX     0
 
-#define LV_USE_ROLLER     1   /**< Requires: lv_label */
+#define LV_USE_ROLLER     0   /**< Requires: lv_label */
 
-#define LV_USE_SCALE      1
+#define LV_USE_SCALE      0
 
-#define LV_USE_SLIDER     1   /**< Requires: lv_bar */
+#define LV_USE_SLIDER     0   /**< Requires: lv_bar */
 
 #define LV_USE_SPAN       0
 #if LV_USE_SPAN
@@ -848,22 +859,22 @@
     #define LV_SPAN_SNIPPET_STACK_SIZE 64
 #endif
 
-#define LV_USE_SPINBOX    1
+#define LV_USE_SPINBOX    0
 
-#define LV_USE_SPINNER    1
+#define LV_USE_SPINNER    0
 
-#define LV_USE_SWITCH     1
+#define LV_USE_SWITCH     0
 
-#define LV_USE_TABLE      1
+#define LV_USE_TABLE      0
 
-#define LV_USE_TABVIEW    1
+#define LV_USE_TABVIEW    0
 
-#define LV_USE_TEXTAREA   1   /**< Requires: lv_label */
+#define LV_USE_TEXTAREA   0   /**< Requires: lv_label */
 #if LV_USE_TEXTAREA != 0
     #define LV_TEXTAREA_DEF_PWD_SHOW_TIME 1500    /**< [ms] */
 #endif
 
-#define LV_USE_TILEVIEW   0
+#define LV_USE_TILEVIEW   1   /**< 2026-10-13 UI 重构：4 页横排滑动（替代页签列）*/
 
 #define LV_USE_WIN        0
 
@@ -875,7 +886,20 @@
 /* Documentation for themes can be found here: https://docs.lvgl.io/master/common-widget-features/styles/styles.html#themes . */
 
 /** A simple, impressive and very complete theme */
-#define LV_USE_THEME_DEFAULT 1
+/* ★★ 2026-10-13 关（业务 UI 重做为横屏四页时）：**业务界面全手绘**，主题那份账
+ *   一分都不值 —— 实测（PC 侧逐页计量）：
+ *     · 主题自身基线 ≈ **3.6KB**（一堆 style 全在 32KB 池里）；
+ *     · 每个对象还要多挂一条主题样式条目 ≈ 16B × 80 个对象。
+ *   ⚠️ 关它还有一条**正确性**理由：`lv_style_prop_get_default()` 的默认值是
+ *      `BG_COLOR = white` / `BG_OPA = COVER`（lv_style.c）⇒ 主题一开，任何
+ *      "没显式设过底色"的对象都会变成**白色实心块**。业务 UI 靠"共享样式里显式
+ *      写 bg_opa"过活，和主题是两套叠加的外观来源 —— 留两个真相源就会出这种事
+ *      （2026-10-13 实测栽过一次：整屏发白、字看不见）。
+ *   ⚠️ 模拟器那份 `lv_conf.h`（lv_port_pc_vscode-master）必须**同值**，
+ *      否则"PC 截图 = 板上显示"这条前提就断了。
+ *   ⚠️ `lv_demo_widgets`（APP_LVGL_USE_DEMO=1 时才跑）没有主题会变难看 ——
+ *      那是验证态不是交付态（交付态 = 0，见 project_config.h）。 */
+#define LV_USE_THEME_DEFAULT 0
 #if LV_USE_THEME_DEFAULT
     /** 0: Light mode; 1: Dark mode */
     #define LV_THEME_DEFAULT_DARK 0
@@ -888,10 +912,10 @@
 #endif /*LV_USE_THEME_DEFAULT*/
 
 /** A very simple theme that is a good starting point for a custom theme */
-#define LV_USE_THEME_SIMPLE 1
+#define LV_USE_THEME_SIMPLE 0
 
 /** A theme designed for monochrome displays */
-#define LV_USE_THEME_MONO 1
+#define LV_USE_THEME_MONO 0
 
 /*==================
  * LAYOUTS
@@ -899,10 +923,10 @@
 /* Documentation for layouts can be found here: https://docs.lvgl.io/master/common-widget-features/layouts/index.html . */
 
 /** A layout similar to Flexbox in CSS. */
-#define LV_USE_FLEX 1
+#define LV_USE_FLEX 0
 
 /** A layout similar to Grid in CSS. */
-#define LV_USE_GRID 1
+#define LV_USE_GRID 0
 
 /*====================
  * 3RD PARTS LIBRARIES
@@ -1104,7 +1128,22 @@
 #define LV_USE_SNAPSHOT 0
 
 /** 1: Enable system monitor component */
-#define LV_USE_SYSMON   0
+/* ★ 2026-10-09 开（上板验证显示/触摸期间）：给官方 demo 挂"帧率 / CPU"浮层。
+ *   谁挂的：`lv_display.c` 建屏时自动调 `lv_sysmon_show_performance()`
+ *   ⇒ **本工程一行代码都不用写**，只开这一个宏就够（浮层在 sys 顶层，盖不住）。
+ *   ⚠️ 它在 `LV_OS_NONE` 下的空闲率来自 `lv_os_none.c` 的 `lv_timer_get_idle()`
+ *      （= LVGL 自己的空闲占比），是有效值；FPS 是 LVGL 重绘帧率（REFR_READY 计数），
+ *      与业务 UI 顶栏那个"等效 fps"（像素吞吐口径）**不是一回事**。
+ *   ⚠️ 验完想回到交付态：本宏 + `LV_USE_PERF_MONITOR`/`LV_USE_MEM_MONITOR` 一起关。
+ *   ★ 2026-10-13 重新开：**这次是产品要求**（横屏界面要带官方帧率控件），不是临时验证态。
+ *     ⚠️ 浮层不是本工程挂的 —— `lv_display_create()` 尾部有
+ *        `#if LV_USE_PERF_MONITOR  lv_sysmon_show_performance(disp);`（`display/lv_display.c`）
+ *        ⇒ 开这一个宏就够，**本工程零代码**。
+ *     ⚠️ 报的是**重绘**帧率（REFR_READY 计数 / 秒），且**上限 = 1000/重绘周期**
+ *        （`lv_sysmon.c` 里 `fps = LV_MIN(fps, 1000/disp_refr_period)`）⇒
+ *        周期在 `app_lvgl.c` 里被设成 `APP_LVGL_REFR_PERIOD_MS`(10ms) ⇒ 上限 100。
+ *        它**不是** `app_lvgl_fps_x10()` 那个"像素吞吐 ÷ 整帧"的口径，别互相印证。 */
+#define LV_USE_SYSMON   1
 #if LV_USE_SYSMON
     /** Get the idle percentage. E.g. uint32_t my_get_idle(void); */
     #define LV_SYSMON_GET_IDLE lv_os_get_idle_percent
@@ -1118,7 +1157,8 @@
 
     /** 1: Show CPU usage and FPS count.
      *  - Requires `LV_USE_SYSMON = 1` */
-    #define LV_USE_PERF_MONITOR 0
+    /* ★ 2026-10-13 开：官方帧率控件（产品要求）。右下角 FPS + CPU%。 */
+    #define LV_USE_PERF_MONITOR 1
     #if LV_USE_PERF_MONITOR
         #define LV_USE_PERF_MONITOR_POS LV_ALIGN_BOTTOM_RIGHT
 
@@ -1129,6 +1169,10 @@
     /** 1: Show used memory and memory fragmentation.
      *     - Requires `LV_USE_STDLIB_MALLOC = LV_STDLIB_BUILTIN`
      *     - Requires `LV_USE_SYSMON = 1`*/
+    /* ★ 2026-10-09 开：本工程 LVGL 堆只有 32KB @CCM，而 demo 是吃堆大户 ——
+     *   堆耗尽在日志里是**静默**的（lv_malloc 失败只按 INFO 打，本工程日志级 = WARN），
+     *   屏上表现为缺块/错乱而一个字都不报。左下角这个 MEM% 就是那道"看得见"的闸。
+     *   ★ 2026-10-13 关（交付态）；要看堆占用时再开回来。 */
     #define LV_USE_MEM_MONITOR 0
     #if LV_USE_MEM_MONITOR
         #define LV_USE_MEM_MONITOR_POS LV_ALIGN_BOTTOM_LEFT
@@ -1209,7 +1253,10 @@
 #define LV_USE_IMGFONT 0
 
 /** 1: Enable an observer pattern implementation */
-#define LV_USE_OBSERVER 0
+/* ★ 2026-10-09 开：**不是可选项** —— `LV_USE_SYSMON=1` 的头里有
+ *   `#error "lv_observer: lv_observer is required"`（sysmon 的浮层靠 subject/observer
+ *   把数据推给 label），所以"开帧率浮层"必然连带开它。关 sysmon 时它也可以一起关。 */
+#define LV_USE_OBSERVER 1
 
 /** 1: Enable Pinyin input method
  *  - Requires: lv_keyboard */
@@ -1468,10 +1515,11 @@
 
 #if LV_BUILD_DEMOS
     /** Show some widgets. This might be required to increase `LV_MEM_SIZE`. */
-    /* ★ 2026-10-02 关闭（S5 清残留）：交付态是业务 UI（`APP_LVGL_USE_DEMO=0`），
-     *   demo 不再被任何代码引用 ⇒ 关掉它，widgets 源码也就不进 lvgl target
-     *   （见 CMakeLists.txt）。要再上板验证显示/触摸时，把这里和 project_config.h
-     *   的 `APP_LVGL_USE_DEMO` 一起改回 1，并把 CMakeLists 的 demo 源加回去。 */
+    /* ★ 2026-10-09 开（上板验证显示/触摸期间）：与 `project_config.h` 的
+     *   `APP_LVGL_USE_DEMO=1`、`CMakeLists.txt` 里那两行 demo 源**三处必须同开**
+     *   —— 少一处就是"编不过"或"屏幕空着"。
+     *   验完回交付态：三处一起关（理由与历史见 `hardware/04 §6.17`）。
+     *   ★ 2026-10-13 关回 0（交付态 = 业务 UI）。 */
     #define LV_USE_DEMO_WIDGETS 0
 
     /** Demonstrate usage of encoder and keyboard. */

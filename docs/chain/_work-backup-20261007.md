@@ -1,0 +1,743 @@
+# G2026 · 逻辑链（2026-10-07）
+
+> 由 `swhw-chain` 产出。**两条链，各画各的**：
+> **硬件链**按信号处理路径（器件级，从 SMA 到 ADC 引脚）；
+> **软件链**按软件架构（模块/任务级，从复位到屏幕）。
+> 揉在一张图上必然糊 —— 这是踩过的。
+> 证据分级：`已核`（直接读到）· `推导`（按物理数学算出）· `待确认`（两种读法都通）。
+> 铁律：一手为准 · 先对口径再信数字 · 每个数字有来源 · 待确认必须闭环。
+
+## 0 · 证据边界
+
+| 类别 | 具体 |
+|---|---|
+| 源码 | `firmware/Core/Src/main.c` · `firmware/Core/Inc/board_config.h` · `firmware/Task/Src/{app.c,app_tasks.c,app_rtos.c,app_engine.c,app_ui.c,app_lvgl.c}` · `firmware/Device/Src/{bsp_adc.c,bsp_lcd.c,bsp_touch.c,bsp_spi.c}` · `firmware/Operation/Src/{op_dsp.c,op_peak.c,op_meas.c,op_cal.c}` · `firmware/Common/Inc/meas_result.h` · `firmware/project_config.h` |
+| 原理图网表 | 活体工程 `funiang/G2026` 三页：INT `63accad121e053cf` · PWR `0c870c063661db6c` · AFE `fe840e6f545a2753`（`easyeda sch read` + `sch list` 合并取元件值） |
+| 配置/生成物 | `firmware/G2026.ioc` · `firmware/Core/Src/fsmc.c` · `firmware/STM32F407XX_FLASH.ld` · `git log -G` 的 `.ioc` 变更史 |
+| 跑过的验证 | `fw.py lint` · `fw.py test`（5/5）· `fw.py build`（零告警）· `tools/sim/` 的 `selftest_mna` / `s8_e2e_fw` / `verify_opt` / `indep_check` · `_work/hwsw-chain/{afe_response.py,cal_phase_wrap.py,c5_value_check.py}` |
+
+**明确没读什么**：未读 `hardware/*.md` 与 `docs/*.md` 的任何结论（只用于交叉核对）；
+未读适配板（40pin FPC → 30pin 排针）的原理图。
+
+## 1 · 两条链是什么
+
+| 链 | 走什么 | 粒度 | 从 → 到 |
+|---|---|---|---|
+| **硬件链**（H01–H17） | **信号处理路径** | 器件 / 节点 | `J1`（SMA）→ `PA1`（ADC 输入脚） |
+| **软件链**（S01–S19） | **软件架构** | 模块 / 函数 / 任务 | 复位 → 屏幕出现数字 |
+
+**为什么分开**：硬件链问的是"这个信号被谁怎么处理了"（单位一路是 mV），
+软件链问的是"这段逻辑谁在什么时候跑"（单位是码值/结构体）。
+两条链的**阶段、执行体、判据**完全不同 —— 合并只会互相干扰。
+
+**交界点**：`PA1` 引脚（H16）。硬件链到此结束，软件链从 `ADC1` 的寄存器配置接上。
+
+## 链节（硬件链）
+
+| ID | 做什么 | 上游 | 下游 | 载体 | 单位 | 阶段 | 执行体 | 证据 |
+|---|---|---|---|---|---|---|---|---|
+| H01 | 被测信号源 → 连接器 | — | H02 | `J1`（SMA-KE） | V_emf (mV) | 输入与保护 | Analog | AFE 页 |
+| H02 | 50Ω 端接（对 AGND） | H01 | H03 | `R1 49.9Ω` | mV ×0.5 | 输入与保护 | Analog | AFE 页 |
+| H03 | ESD 钳位（对 AGND） | H02 | H04 | `D1` PESD5V0X1BT | 限幅 ±5V | 输入与保护 | Analog | AFE 页 |
+| H04 | AC 耦合（断直流路径） | H03 | H05 | `C1 100nF` | 交流 mV | 输入与保护 | Analog | AFE 页 |
+| H05 | 断点 → 缓冲（+ 端经 R2 拉 VBIAS） | H04 | H06 | `JP1 0Ω` / `U1A` OPA2197 | mV，偏置 1.650 V | 缓冲与阻尼 | Analog | AFE 页 |
+| H06 | 源端阻尼（给 LC 定源阻抗） | H05 | H07 | `R3 49.9Ω` | 50Ω 源阻抗 | 缓冲与阻尼 | Analog | AFE 页 |
+| H07 | LC 低通 ① | H06 | H08 | `L1 4.7µH` + `C2 6.2nF` | mV（双端接 ×0.5） | 8 阶 LC 滤波 | Analog | AFE 页 |
+| H08 | LC 低通 ② | H07 | H09 | `L3 22µH` + `C4 10nF` | mV | 8 阶 LC 滤波 | Analog | AFE 页 |
+| H09 | LC 低通 ③ | H08 | H10 | `L5 22µH` + `C6 9.1nF` | mV | 8 阶 LC 滤波 | Analog | AFE 页 |
+| H10 | LC 低通 ④（TP3 测试点） | H09 | H11 | `L7 12µH` + `C8 1.8nF` | mV | 8 阶 LC 滤波 | Analog | AFE 页 |
+| H11 | DC 阻断 + 50Ω 负载端接 | H10 | H12 | `C7 10µF` + `R4 49.9Ω` | 50Ω 假负载 | 8 阶 LC 滤波 | Analog | AFE 页 |
+| H12 | AC 耦合 | H11 | H13 | `C9 100nF` | 交流 mV | 增益与抗混叠 | Analog | AFE 页 |
+| H13 | 同相放大（参考 VBIAS） | H12 | H14 | `U1B`，`R6 24.9k`/`R7 3.57k` | **×7.9748** | 增益与抗混叠 | Analog | AFE 页 |
+| H14 | RC 抗混叠（TP4 测试点） | H13 | H15 | `R11 100Ω` + `C10 470pF` | fc ≈ 3.39 MHz | 增益与抗混叠 | Analog | AFE 页 |
+| H15 | 断点（AFE ↔ ADC 可断开） | H14 | H16 | `JP2 0Ω` → `AFE_ADC_IN` | mV（源端口径 ×2.0） | 进 ADC | Analog | AFE 页 |
+| H16 | 核心板排针 → MCU 引脚 | H15 | H17 | `EVK1.4` = `PA1` | ADC1_IN1 | 进 ADC | Analog | INT 页 |
+| H17 | ADC 采样网络（采样保持） | H16 | — | `Rsw 2.2kΩ` + `Cadc 4pF` | 3 ADCCLK = 83.3 ns 孔径 | 进 ADC | Analog | `tools/sim/afe_net.py` |
+
+## 链节（软件链）
+
+> **`人话` 列就是画图时写在节点正面的那句话** —— 用大白话，不用术语。
+
+| ID | 做什么 | 人话 | 上游 | 下游 | 载体 | 单位 | 阶段 | 执行体 | 证据 |
+|---|---|---|---|---|---|---|---|---|---|
+| S01 | 复位 → 配时钟树（PLL M4/N144/P2/Q6） | **把心跳调到 144MHz** | — | S02 | `RCC` / `SystemClock_Config()` | SYSCLK 144 MHz | 起机 | Init | `firmware/Core/Src/main.c` |
+| S02 | CubeMX 初始化全部外设 | **把外设挨个打开** | S01 | S03 | `MX_{GPIO,DMA,SPI1,RTC,TIM8,I2C2,ADC1,FSMC}_Init()` | — | 起机 | Init | `firmware/Core/Src/main.c` |
+| S03 | 组合根 `app_init()`：Device 就位 + Operation 注入 + 引擎/UI 初始化 | **把零件装起来** | S02 | S04 | `app.c` / `bsp.h` | — | 起机 | Init | `firmware/Task/Src/app.c` |
+| S04 | `app_self_test()` 十项自检 | **摸一遍板子，记日志** | S03 | S05 | `app_self_test()` | — | 起机 | Init | `firmware/Task/Src/app.c` |
+| S05 | `app_rtos_run()`：建两任务 → 等 VBIAS → 采样链自检 | **建两个工人，等罐子灌满** | S04 | S06 | `Task_Engine(26)` / `Task_Ui(23)` | 延时 200 ms | 起机 | Init | `firmware/Task/Src/app_rtos.c` |
+| S06 | 测量任务等"周期到"或"UI 请求重测" | **睡觉，等人叫醒** | S05 | S07 | `xTaskNotifyWait(500ms)` | 事件 | 采集 | Engine | `firmware/Task/Src/app_engine.c` |
+| S07 | 抢 LCD 总线闸（采样窗静默的第一步） | **锁屏幕，免得电钻吵** | S06 | S08 | `bsp_lcd_bus_take(20ms)` | — | 采集 | Engine | `firmware/Task/Src/app_engine.c` |
+| S08 | 挂 ADC+DMA → 放 TIM8 触发 | **挂上 ADC，开定时器** | S07 | S09 | `bsp_adc_start()` | 2.000 MHz | 采集 | Engine | `firmware/Device/Src/bsp_adc.c` |
+| S09 | **中断**：搬满一帧 → 停触发源 → 给信号量 | **搬满了，拍一下肩膀** | S08 | S10 | `HAL_ADC_ConvCpltCallback` / `s_frame_sem` | 事件 | 采集 | ISR | `firmware/Device/Src/bsp_adc.c` |
+| S10 | 阻塞等到帧 → 停采集 → 放闸 | **收到，关掉，开锁** | S09 | S11 | `bsp_adc_wait_frame(50ms)` | — | 采集 | Engine | `firmware/Device/Src/bsp_adc.c` |
+| S11 | 去DC + 折算 mV + BH4 加窗 + 交织 + FFT + 取模 | **码值 → 频谱** | S10 | S12 | `s_xw[4096]` @SRAM1 / `s_fft[8192]` @CCM | **mV（输入端）** | 算法 | Engine | `firmware/Operation/Src/op_dsp.c` |
+| S12 | 找峰：栅格预筛 → 两级抛物线精化 → 单点 DFT | **找最高的几根线** | S11 | S13 | `meas_peak_t` | amp (mV)，φ (rad) | 算法 | Engine | `firmware/Operation/Src/op_peak.c` |
+| S13 | 标定修正（幅值 / 相位） | **查表修正读数** | S12 | S14 | `op_cal_table_t`（17 点，W25Q128 扇区 0） | amp/=g；φ−=p；φ+=π/2 | 算法 | Engine | `firmware/Operation/Src/op_cal.c` |
+| S14 | 四口径（f1 / Upp / Urms） | **算三个数** | S13 | S15 | `meas_result_t`（56 B） | Hz / mV | 算法 | Engine | `firmware/Operation/Src/op_meas.c` |
+| S15 | 发布结果（覆盖式 mailbox） | **三个数放进信箱** | S14 | S16 | `xQueueOverwrite(s_result_q)` | 结构体拷贝 | 算法 | Engine | `firmware/Task/Src/app_engine.c` |
+| S16 | UI 避让采集窗 → 取快照（按 `seq` 判新） | **A 在采就躲开，再拿信箱** | S15 | S17 | `app_engine_acquiring()` / `xQueuePeek` | — | 呈现 | Ui | `firmware/Task/Src/app_ui.c` |
+| S17 | 重建波形曲线 / 谱线 | **三个数 → 波形和柱子** | S16 | S18 | `op_wave_build` / `op_spec_build` | mV / 归一 0..1 | 呈现 | Ui | `firmware/Operation/Src/op_wave.c` |
+| S18 | LVGL 脏区重绘 | **重画变了的地方** | S17 | S19 | `lv_timer_handler()` → `s_draw_buf` | RGB565 大端 | 呈现 | Ui | `firmware/Task/Src/app_lvgl.c` |
+| S19 | 分块写 FSMC → 屏出现数字 | **一块一块推到屏幕** | S18 | — | `bsp_lcd_write_pixels` → `0x60020000` | **104.2 ns/字** | 呈现 | Ui | `firmware/Device/Src/bsp_lcd.c` |
+
+## 分层
+
+> **软件的本质是「结构归属」，不是「执行顺序」。** 这张表回答：谁属于哪一层、谁调用谁、
+> 谁**不许**调谁。规则只有一条：**只能向下调**（`Task → Operation → Device → Core`）。
+
+| 层 | 归属 | 不许做什么 | 节点 |
+|---|---|---|---|
+| `Task` | 调度：只管"什么时候做" | 不写硬件细节、不算边界 | S03 S04 S05 S06 S07 S15 S16 S18 |
+| `Operation` | 纯逻辑：吃数字吐数字 | **禁 HAL、禁 FreeRTOS、不读配置头** | S11 S12 S13 S14 S17 |
+| `Device` | 唯一直接碰 HAL 的层 | 中断只投事件不跑业务；**不反向调 Operation** | S08 S09 S10 S19 |
+| `Core` | 启动序列 + CubeMX 生成物 | `main()` 里只写胶水 | S01 S02 |
+
+## 调用边
+
+| 从 | 到 | 为什么允许 |
+|---|---|---|
+| `firmware/Core/Src/main.c` | `firmware/Task/Src/app.c` | 启动唯一入口（调度器还没起） |
+| `firmware/Task/Src/app.c` | `Device/*` + `Operation/*` | **组合根**（全工程唯一跨层） |
+| `firmware/Task/Src/app_engine.c` | `Operation/*` | 测量编排调纯算法 |
+| `firmware/Task/Src/app_engine.c` | `Device/*` | 采样链 + 总线闸 + 标定落盘 |
+| `firmware/Task/Src/app_ui.c` | `Operation/*` | UI 只读结果、只做重建 |
+| `firmware/Task/Src/app_lvgl.c` | `Device/*` | 显示 / 触摸适配 |
+| `Operation/*` | （不调任何下层） | 禁 HAL / 禁 FreeRTOS / 不读配置头 —— 所以能在 PC 上单测 |
+| `Device/*` | （不反向调 Operation） | Device 只依赖 HAL 与 board_config |
+
+## 回环
+
+> ⚠️ **软件链上 S06–S15 与 S16–S19 不是"顺序走一遍"，而是两个各自转的循环** ——
+> 下面前两条就是那两条循环。**看不懂软件链，多半是因为没看见这两条回边。**
+> 后两条是真正的"回头路"（切页重测、标定）。
+
+| 从 | 到 | 为什么 |
+|---|---|---|
+| S15 | S06 | **Engine 循环**：测完一帧 → 回到"等下一拍"。周期 500ms，与 Ui 循环**并发** |
+| S19 | S16 | **Ui 循环**：刷完一屏 → 回到"取快照"。周期 10ms，与 Engine 循环**并发** |
+| S16 | S06 | 切页 / 换场景 → `xTaskNotifyGive` 唤醒 engine 立刻重测（不等 500ms 周期） |
+| S16 | S13 | 长按 CAL → UI 逐点同步测 17 次 → 写 W25Q128 扇区 0 → 下次上电由 S03 载入 |
+
+## 时序
+
+> 单位 ms。**每条车道按自己的周期归一化**（Engine 一圈 500ms，Ui 一圈 10ms）——
+> 所以这不是一条时间轴，而是"各转各的两条循环"。看这张表能回答：
+> **"我按一下键，多久出数？"** ⇒ 最长 500ms（等下一拍）+ 15ms（采样 + DSP）≈ **0.5s**。
+> `起点` 列缺省时按"段时长累加"排；给了数就按它定位。
+
+| 车道 | 周期 (ms) | 起点 (ms) | 段 | 时长 (ms) | 说明 |
+|---|---|---|---|---|---|
+| Engine | 500 | 0 | 等通知 | 485 | 睡满一拍；被 UI 叫醒（切页 / 换场景）则立即返回 |
+| Engine | 500 | 485 | **采样窗** | 2.05 | 抢总线闸 → 采 4096 点 → 放闸。**整机唯一不能被打扰的 2ms** |
+| Engine | 500 | 487.05 | DSP 链 | 13 | 加窗 → FFT → 找峰 → 标定 → 四口径 |
+| Engine | 500 | 500.05 | 发布 | 0.1 | 写 mailbox（覆盖式，不阻塞） |
+| Engine 工作段 | 15.15 | 0 | 采样窗 | 2.05 | ↑ 同一段，放大看 —— 500ms 尺度下它只有 3.8px，看不见 |
+| Engine 工作段 | 15.15 | 2.05 | DSP 链 | 13 | FFT ~4ms + 找峰 ~8ms + 标定/四口径 ~1ms |
+| Engine 工作段 | 15.15 | 15.05 | 发布 | 0.1 | — |
+| ISR | 500 | 487 | 搬满一帧 | 0.02 | 采样窗结束时触发一次：停 TIM8 → 给信号量 |
+| Ui | 10 | 0 | 取快照 + 重建 | 1 | 每 10ms 一次；采样窗内主动让路 |
+| Ui | 10 | 1 | 重绘 + 写屏 | 2 | 分块抢闸写 FSMC |
+| Ui | 10 | 3 | 空等 | 7 | — |
+
+
+## 附件
+
+### 需求（R）
+
+| ID | 内容 | 挂在链节 | 判据 | 证据 | 强度 |
+|---|---|---|---|---|---|
+| R1 | u_a：Upp 100~250mV，10k~200kHz | H02,H07,H10,H13,H14,H17 | Upp 误差 ≤ ±5mV | `tools/sim/verify_opt.py`（标定后残差 −0.098mV） | 已核 |
+| R2 | u_b：50~250mV，10k~500kHz | H07,H10,H13,H14 | 同上，且 500kHz 处 +0.79dB 峰须被标定吃掉 | `_work/hwsw-chain/afe_response.py` | 已核 |
+| R3 | u_b + u_J（f_J ≥ 1MHz 干扰） | H07,H14,S11 | 折叠带衰减 ≥ 57dB | `_work/hwsw-chain/afe_response.py`（最差 −57.4dB，余量 14.9dB） | 推导 |
+| R4 | 各项 ≤ 2s 完成 | S05,S10,S15,S16,S19 | 屏上数据 ≤0.6s 旧 | `firmware/project_config.h`（`APP_MEAS_PERIOD_MS 500`） | 已核 |
+| R5 | **隐含**：ADC 采样率须 ≥1MSPS | S02,S08 | fs = 2.000 MHz | `firmware/Core/Inc/board_config.h`（PSC=0/ARR=71） | 已核 |
+| R6 | **隐含**：12bit 分辨率够 | H17,S12 | 门限 1.5mV vs 噪声底 0.053mVrms（28×） | `firmware/project_config.h` · `tools/sim/verify_opt.py` | 推导 |
+| R7 | **隐含**：波形/谱线能显示 | S17,S18,S19 | 320×480 竖屏 5 页 | `firmware/Task/Src/app_ui.c` | 已核 |
+
+### 功能（F）
+
+| ID | 内容 | 落在链节 | 证据 |
+|---|---|---|---|
+| F1 | 组合根装配（创建实例 → 注入参数 → 启动） | S03 | `firmware/Task/Src/app.c` |
+| F2 | 任务/中断调度（Engine 26 > default 24 > Ui 23） | S05,S09,S15 | `firmware/Task/Src/app_tasks.c` |
+| F3 | 采样编排（抢闸 → start → 等帧 → stop → 放闸） | S07,S08,S10 | `firmware/Task/Src/app_engine.c` |
+| F4 | 加窗 + FFT | S11 | `firmware/Operation/Src/op_dsp.c` |
+| F5 | 找峰 + 标定修正 | S12,S13 | `firmware/Operation/Src/op_peak.c` |
+| F6 | 四口径重建 | S14 | `firmware/Operation/Src/op_meas.c` |
+| F7 | 结果发布与消费（覆盖式 mailbox） | S15,S16 | `firmware/Task/Src/app_engine.c` |
+| F8 | 界面渲染与上屏 | S17,S18,S19 | `firmware/Task/Src/app_ui.c` |
+
+### 交互（I）
+
+| ID | 硬件实体 | 固件实体 | 落在链节 | 改了要连带什么 | 证据 |
+|---|---|---|---|---|---|
+| I1 | AFE 无源/有源网络（H01–H15） | `BOARD_ADC_VREF_MV` / `BOARD_NET_GAIN` | H02,H07,H10,H13,H14 | 改增益 ⇒ 改 `BOARD_NET_GAIN` ⇒ `lsb_in_mv` 变 ⇒ **重新标定** | AFE 页 · `firmware/Core/Inc/board_config.h` |
+| I2 | `TIM8` | `BOARD_TIM8_PSC=0` / `BOARD_TIM8_ARR=71` | S08 | 改 fs ⇒ Δf 变 ⇒ 找峰参数与标定表**全废** | `firmware/Core/Inc/board_config.h` |
+| I3 | `ADC1` + `DMA2_Stream0` | `bsp_adc.c`（只 start/wait/stop） | S08,S09,S10 | 采样周期数 ↑ ⇒ 转换超 500ns ⇒ 2.0MSPS 不成立 | `firmware/Device/Src/bsp_adc.c` |
+| I4 | LCD 总线闸（互斥量） | `bsp_lcd_bus_take/give` | S07,S19 | 闸漏 give ⇒ engine 被堵（有 20ms 超时兜底） | `firmware/Device/Src/bsp_lcd.c` |
+| I5 | `FSMC` Bank1/NE1 | `bsp_lcd.c` 两个 volatile 指针 | S19 | 数据地址写成 `1<<16` ⇒ 打到 A15 ⇒ **屏完全没反应** | `firmware/Core/Src/fsmc.c` · `firmware/G2026.ioc` |
+| I6 | `I2C2` + FT6336（`R15/R16 4.7k` 上拉） | `bsp_touch.c` | S16 | 误当 GT911（0x5D/16 位寄存器）⇒ 读不到 | `firmware/Device/Src/bsp_touch.c` · PWR 页 |
+| I7 | `W25Q128`（SPI1，PA4 软件 CS） | `bsp_spi.c` + `op_cal` | S13 | 换扇区地址 ⇒ 标定表丢失（现为扇区 0） | `firmware/Device/Src/bsp_spi.c` |
+| I8 | 背光（`R12 1kΩ` → J5.28） | `bsp_lcd_backlight()` | S19 | 改 PWM（PB0=TIM3_CH3）⇒ 分析带内固定伪峰 | `firmware/Device/Src/bsp_lcd.c` |
+| I9 | `PB2` LED / RTC(LSE) | `app_poll_at()` / `bsp_rtc.c` | S05 | RTC 时钟源只改 `.ioc` 无效 —— 必须在 CubeMX GUI 点 LSE | `firmware/Task/Src/app.c` |
+| I10 | `AGND` / `GND` | —（无固件实体） | H02,H11,H14 | 底板补第二处连接 ⇒ 制造地环（现为核心板 `R8 0Ω` 单点） | INT/PWR/AFE 三页网表 |
+
+### 判据（J）
+
+| ID | 判据 | 守在链节 | 判错症状 | 失败语义 | 证据 |
+|---|---|---|---|---|---|
+| J1 | 十项自检各自独立，任一失败不停机 | S04 | 任何一项当门槛 ⇒ 可选外设绑架启动 | 不停机 | `firmware/Task/Src/app.c` |
+| J2 | `Error_Handler` 调 `app_init_failed`（返回）而非 `app_panic` | S02,S03 | 调 panic ⇒ 整板不启动（曾因没插 TF 卡触发） | 降级 | `firmware/Core/Src/main.c` |
+| J3 | 调度器启动前建内核对象后必须 `portENABLE_INTERRUPTS()` | S03,S08,S09 | 漏了 ⇒ BASEPRI 钉住 ⇒ `HAL_Delay()` 死循环 | 死锁 | `firmware/Device/Src/bsp_adc.c` |
+| J4 | `bsp_adc_start`：buf 地址不落在 CCM | S08 | 不判 ⇒ **采集恒 0 且不报错** | 拒绝启动 | `firmware/Device/Src/bsp_adc.c` |
+| J5 | `s_buf_busy`：engine 进函数第一件事就查 | S07,S13 | 查晚了 ⇒ 抢占写坏标定数据 | 跳过本帧 | `firmware/Task/Src/app_engine.c` |
+| J6 | `bsp_lcd_bus_take(20ms)` 拿不到则退化 | S07,S19 | 不拿 ⇒ 采样窗内 FSMC 照 toggle | 退化 | `firmware/Device/Src/bsp_lcd.c` |
+| J7 | `bsp_adc_wait_frame(50ms)` 超时则跳过 | S10 | 不超时 ⇒ 链断了永久挂死 | 跳过本帧 | `firmware/Device/Src/bsp_adc.c` |
+| J8 | `op_dsp_run`：`n == OP_DSP_N` 且 fs/lsb > 0 | S11 | — | 返回 −1 | `firmware/Operation/Src/op_dsp.c` |
+| J9 | 栅格预筛 `2·mag/(N·CG) ≥ 1.5mV` | S12 | 门限太低 ⇒ 量化噪声伪峰被当真线 | 跳过 | `firmware/Operation/Src/op_peak.c` |
+| J10 | 终判：精化后 `amp ≥ 1.5mV` 且 `9k ≤ f ≤ 502k` | S12 | 只做预筛 ⇒ 精化后掉下门限的假线混进来 | 丢弃 | `firmware/Operation/Src/op_peak.c` |
+| J11 | 扫带自检 `k_lo < 10k/df` 且 `k_hi−4 ≥ 500k/df` | S12 | 不检 ⇒ 改 fs 或 `OP_DSP_N` 后**静默漏掉 10kHz/500kHz 的峰** | 报 ERROR | `firmware/Task/Src/app_engine.c` |
+| J12 | `app_engine_acquiring()`：UI 主动避让 | S16 | 不避让 ⇒ 采样窗名存实亡 | 避让 | `firmware/Task/Src/app_ui.c` |
+| J13 | `bsp_touch_read`：I2C 错与"没按"都算抬起 | S16 | 分开处理 ⇒ I2C 抖动变成假点击 | 抬起 | `firmware/Device/Src/bsp_touch.c` |
+| J14 | `op_cal_set_point`：建表时把相位折到离上一点最近的主值 | S13 | 不展开 ⇒ 306~392kHz 插出 **179.5°** 的错，Upp 偏 −19mV | — | `firmware/Operation/Src/op_cal.c` |
+
+### 风险（K）
+
+| ID | 结论 | 挂在链节 | 强度 | 依据 |
+|---|---|---|---|---|
+| K1 | 四处文档写「FSMC DS=85」，`.ioc` 与生成码是 `AS=2/DS=12` —— 那个"85"**从未落地** | S19 | 已核 | `firmware/G2026.ioc` · `git log -G DataSetupTime1` |
+| K2 | 净增益段注释写「R6 69.8k / R7 10k」，网表是 `24.9k / 3.57k`（比值同 ⇒ 增益不变） | H13 | 已核 | AFE 页网表 |
+| K3 | VBIAS 建立时间推导错：直流戴维南是 5.0kΩ（非 1.46kΩ）⇒ τ=50ms、需 129.5ms | S05 | 推导 | 直流下只有 R9/R10 带电流 |
+| K4 | 标定表相位折回：最差 179.5°，Upp 偏 −18.95mV（**已修**，残差降到 3.9°） | S13 | 已核 | `_work/hwsw-chain/cal_phase_wrap.py` |
+| K5 | 仿真 `s8_e2e_fw.py` 用 `np.unwrap`，固件存 `atan2` 主值 ⇒ 仿真把 K4 藏了 | S13 | 已核 | `tools/sim/s8_e2e_fw.py` |
+| K6 | `C5`/`C3` 的 Value(10µF) 与 MPN(`CC0805KRX7R9BB104`=100nF) 矛盾 ⇒ 会订错料 | H11 | 待确认 | `_work/hwsw-chain/c5_value_check.py` |
+| K7 | FSMC 真实吞吐未量：理论 104.2ns/字，2026-10-02 实测 DS=15 下 312ns/字（差 2.65×） | S19 | 待确认 | 2026-10-02 示波器记录 |
+| K8 | 触摸轴映射三宏在竖屏下的正确组合未知 | S16 | 待确认 | `firmware/Core/Inc/board_config.h` |
+| K9 | `tools/sim/afe_net.py` 的位号与活体图纸不一致（sim `R8/C13/C23` = 图纸 `R11/C5/C7`） | H07 | 已核 | 网表 vs `tools/sim/afe_net.py` |
+| K10 | `.ccmram` 的越界 ASSERT 到底补上没有（`app_engine.c` 注释自相矛盾） | S11 | 待确认 | `firmware/Task/Src/app_engine.c` |
+
+## 讲解
+
+> 链节表只写"**是什么**"，这里逐节讲"**为什么 / 怎么做 / 关键数字 / 边界 / 失效**"。
+> 角度是自由的 —— 想加"成本角度""时序角度"就往表里加一行。
+
+### H01 · 信号源 → 连接器
+
+| 角度 | 内容 |
+|---|---|
+| 是什么 | 把被测信号源以 50Ω 同轴接到板上 |
+| 为什么 | 50Ω 是仪器与同轴的标准阻抗。不统一阻抗就会有反射，幅值读数会随电缆长度变 |
+| 怎么做 | `J1` 是 SMA-KE 座，屏蔽壳 4 个脚全接 AGND；芯线进 `$3N702` |
+| 关键数字 | 50Ω 特性阻抗；源端 EMF 就是被测的 u_a / u_b |
+| 边界 | **假定源是 50Ω 输出**。若源设成 High-Z（高阻），端接网络的分压比就变了 |
+| 失效 | 屏蔽没接地 ⇒ 引入共模干扰，频谱上出现 50Hz 及其谐波 |
+
+### H02 · 50Ω 端接
+
+| 角度 | 内容 |
+|---|---|
+| 是什么 | `R1 49.9Ω` 从信号节点到 AGND，把源阻抗配平 |
+| 为什么 | 这是整条链**第一个 ×0.5** —— 与源的 50Ω 构成分压。不端接则电缆上有反射，且源看到的负载不是 50Ω |
+| 怎么做 | `R1` 并在 `$3N702` 与 AGND 之间；`D1` 也挂在这个节点做 ESD |
+| 关键数字 | 49.9Ω（E96，比 50Ω 少 0.2%）；分压 ×0.5 |
+| 边界 | 只在源为 50Ω 时成立。它是 `BOARD_NET_GAIN = 2` 里两个 ×0.5 的第一个 |
+| 失效 | `R1` 开路 ⇒ 幅度翻倍；标定表会把整条链的错误吸收掉，但 ADC 可能削顶 |
+
+### H03 · ESD 钳位
+
+| 角度 | 内容 |
+|---|---|
+| 是什么 | `D1` PESD5V0X1BT 把外部静电 / 过压钳到安全范围 |
+| 为什么 | `J1` 是直接对外的接口，人体静电可达 kV 级；没有它首当其冲的是 U1A |
+| 怎么做 | pin1 接信号、pin3 接 AGND、**pin2 悬空**（单线 ESD 的常态） |
+| 关键数字 | 钳位电压 ~9V；结电容 1.5pF（对 500kHz 信号可忽略） |
+| 边界 | 结电容到 1.2MHz 以上才开始有分流作用 —— 仿真按 1.5pF 建模 |
+| 失效 | pin2 若实际不是 NC 而漏焊 ⇒ DRC 每次报；器件装反 ⇒ 直接短路信号到地 |
+
+### H04 · AC 耦合
+
+| 角度 | 内容 |
+|---|---|
+| 是什么 | `C1 100nF` 隔掉直流，只让交流过 |
+| 为什么 | 被测信号是纯交流，而 U1A 的 + 端已被 `R2` 拉到 VBIAS=1.65V。不隔直，外部直流会和 VBIAS 打架 |
+| 怎么做 | `C1` 串在 `$3N702` 与 `$3N700` 之间（1206 封装，耐压余量足） |
+| 关键数字 | 100nF；与 `R2 10k` 构成高通 fc ≈ 159Hz（远低于分析带下限 10kHz） |
+| 边界 | 高通拐点必须远低于 10kHz —— 159Hz 有 60× 余量 |
+| 失效 | 容值偏小 ⇒ 低频段幅值偏低；用有极性电容且接反 ⇒ 长期漏电 |
+
+### H05 · 断点 → 缓冲
+
+| 角度 | 内容 |
+|---|---|
+| 是什么 | `JP1`（0Ω）后接 `U1A` 电压跟随器，+ 端经 `R2 10k` 拉到 VBIAS |
+| 为什么 | **给 LC 梯形一个确定的源阻抗**（运放输出阻抗≈0，加 `R3` 成 50Ω）；同时把高阻输入与后面的无源网络隔开 |
+| 怎么做 | `U1A` 输出直接短接反相端（单位增益）；`R2` 提供直流偏置通路 |
+| 关键数字 | 偏置 1.650V（= VREF/2）；`R2` 10kΩ；跟随器带宽 ≈10MHz（GBW） |
+| 边界 | 偏置的戴维南阻抗 = R9//R10//R2//R5//R7 —— **AC 阻抗**，不是直流建立时间常数 |
+| 失效 | `JP1` 未装 ⇒ 整条模拟链断开，ADC 只读到 VBIAS 直流（自检报"模拟轨可疑"其实是断点） |
+
+### H06 · 源端阻尼
+
+| 角度 | 内容 |
+|---|---|
+| 是什么 | `R3 49.9Ω` 串在缓冲输出与 LC 之间 |
+| 为什么 | LC 梯形是**双端接**设计（源 50Ω + 负载 50Ω）。没有 `R3`，源阻抗近似 0，通带会严重峰起 |
+| 怎么做 | `R3` 串在 `$3N701` 与 `$3N526` 之间 |
+| 关键数字 | 49.9Ω；与 `R4` 一起构成梯形的两端匹配 |
+| 边界 | 与 `R4` **成对存在** —— 改一个必须改另一个，否则原型不再是 Butterworth |
+| 失效 | `R3` 短路 ⇒ 通带大幅峰起，500kHz 处幅值严重偏高 |
+
+### H07 · LC 低通 ①
+
+| 角度 | 内容 |
+|---|---|
+| 是什么 | `L1 4.7µH` + `C2 6.2nF`，8 阶 LC 低通的第一节 |
+| 为什么 | 抗混叠的主力。ADC 以 2MHz 采样，1MHz 以上必须压下去，否则折叠回分析带内 |
+| 怎么做 | 8 阶双端接 Butterworth 原型（`g_k = 2sin((2k−1)π/16)`），R0 = 50Ω |
+| 关键数字 | 本节谐振 ≈ 932kHz；整链 1MHz 处 **−27.8dB**、折叠带最差 **−57.4dB** |
+| 边界 | `C2` 实测值 6.2nF 比原型 5.49nF 高 **+12.9%**（有更近的 E24 值 5.6nF） |
+| 失效 | `L1` 开路 ⇒ 链断，读数恒 0 |
+
+### H08 · LC 低通 ②
+
+| 角度 | 内容 |
+|---|---|
+| 是什么 | `L3 22µH` + `C4 10nF`，第二节 |
+| 为什么 | 单节 LC 只有 12dB/oct，四节串起来才够 48dB/oct 把 1MHz 压到 −28dB |
+| 怎么做 | 与前后节串联，每节的电容都到 AGND |
+| 关键数字 | 本节谐振 ≈ 339kHz；`L3` 实测 22µH 比原型 20.54µH 高 **+7.1%** |
+| 边界 | `C4` 是**唯一已是 E24 最近值**的一颗（偏差 +3.2%） |
+| 失效 | 电容装错量级（如 10nF 装成 10µF）⇒ 通带塌陷 |
+
+### H09 · LC 低通 ③
+
+| 角度 | 内容 |
+|---|---|
+| 是什么 | `L5 22µH` + `C6 9.1nF`，第三节 |
+| 为什么 | 与 ② 对称的中间两节 —— 8 阶原型的中间元件值最大，决定带边陡度 |
+| 怎么做 | 同上 |
+| 关键数字 | 本节谐振 ≈ 356kHz；`C6` 实测 9.1nF 比原型 8.22nF 高 **+10.8%** |
+| 边界 | 与 `C2` 是"电容择优"那一轮里被优化过的两颗（标定残差 0.0299→0.0102dB） |
+| 失效 | 同 ② |
+
+### H10 · LC 低通 ④
+
+| 角度 | 内容 |
+|---|---|
+| 是什么 | `L7 12µH` + `C8 1.8nF`，第四节；TP3 是测点 |
+| 为什么 | 末节把最后的残余高频压掉，并把输出呈现给 50Ω 负载 |
+| 怎么做 | 同前三节 |
+| 关键数字 | 本节谐振 ≈ 1.083MHz；`L7` 实测 12µH 比原型 13.72µH 低 **−12.6%**（整链偏差最大的一颗） |
+| 边界 | TP3 可直接量这一节的频响，是**唯一能上板验 LC 形状**的点 |
+| 失效 | 同 ② |
+
+### H11 · DC 阻断 + 负载端接
+
+| 角度 | 内容 |
+|---|---|
+| 是什么 | `C7 10µF` 隔直 + `R4 49.9Ω` 到 AGND |
+| 为什么 | `R4` 是梯形**另一端**的 50Ω 端接（双端接的另一半）；`C7` 让 `R4` 只对交流呈现 50Ω，不把直流通路带进来 |
+| 怎么做 | `C7` 串在 `$3N686` 与 `$3N687`；`R4` 从 `$3N687` 到 AGND |
+| 关键数字 | 10µF 对 10kHz 的阻抗 1.6Ω（vs 50Ω 可忽略）；高通拐点 ≈0.32Hz |
+| 边界 | ⚠️ `C7` 的 Value(10µF) 与 MPN(`CC0805KRX7R9BB104`=100nF) **矛盾** —— 会订错料 |
+| 失效 | `R4` 缺失 ⇒ 梯形变单端接，通带形状全变 |
+
+### H12 · AC 耦合
+
+| 角度 | 内容 |
+|---|---|
+| 是什么 | `C9 100nF` 把 LC 输出耦合到 U1B 的 + 端 |
+| 为什么 | LC 输出直流为 0V（`R4` 接地），而 U1B 的 + 端要偏置在 VBIAS=1.65V —— 必须隔开 |
+| 怎么做 | `C9` 串在 `$3N686` 与 `$3N682`；`R5 10k` 从 `$3N682` 到 VBIAS |
+| 关键数字 | 100nF；与 `R5` 10k 的高通拐点 ≈159Hz |
+| 边界 | 与 H04 的 `C1` **成对** —— 两级隔直，任一级容值偏小都会压低低频段 |
+| 失效 | `C9` 开路 ⇒ U1B 只看到 VBIAS 直流，读数恒为 0 |
+
+### H13 · 同相放大
+
+| 角度 | 内容 |
+|---|---|
+| 是什么 | `U1B` 把 LC 出来的信号放大 **7.9748 倍**，参考点是 VBIAS 而不是地 |
+| 为什么 | 前面端接与 LC 双端接各损失一半（×0.5×0.5=0.25），要补回净增益 2；**R7 接 VBIAS 而不是地**，是为了让输出直流自动落在 ADC 的半量程 |
+| 怎么做 | `R6 24.9k` 从输出到反相端，`R7 3.57k` 从反相端到 VBIAS；增益 = 1 + R6/R7 |
+| 关键数字 | ×7.9748；闭环带宽 = GBW/gain = **1.254MHz**；500kHz 处 +0.18dB / −22° |
+| 边界 | 绝对阻值由 H2 改图从 69.8k/10k 改成 24.9k/3.57k（**比值不变**）——目的是降 R7 热噪声（ADC 端噪声第一大项，√R7 律） |
+| 失效 | **R7 接地 ⇒ 直流增益也是 ×7.97 ⇒ 输出 13.16V 贴轨**（`tools/sim/dc_bias_check.py` 专门验过这条） |
+
+### H14 · RC 抗混叠
+
+| 角度 | 内容 |
+|---|---|
+| 是什么 | `R11 100Ω` + `C10 470pF` 到 AGND，一级 RC 低通；TP4 是测点 |
+| 为什么 | LC 在高频已衰减，但仍需一级就近的 RC 磨平陡沿，并给 ADC 采样保持提供低阻源 |
+| 怎么做 | `R11` 串在 U1B 输出与 `$3N656` 之间；`C10` 从 `$3N656` 到 AGND |
+| 关键数字 | fc = 1/(2π·100·470p) ≈ **3.39MHz**；与 LC 一起把折叠带压到 −57.4dB |
+| 边界 | `R11` 也是运放的**隔离电阻** —— 直接带容性负载会引起振荡，100Ω 保证相位余量 |
+| 失效 | `C10` 缺失 ⇒ 高频折叠余量下降；`R11` 过大 ⇒ 与 ADC 采样电容构成建立不足 |
+
+### H15 · 断点
+
+| 角度 | 内容 |
+|---|---|
+| 是什么 | `JP2`（0Ω）把 AFE 输出接到 `AFE_ADC_IN` |
+| 为什么 | 这是 AFE 与 ADC 之间的**唯一可断开点** —— 台面上没有 AFE 硬件时，断开它可让 ADC 单独自检 |
+| 怎么做 | `JP2` 串在 `$3N656` 与 `AFE_ADC_IN` 之间 |
+| 关键数字 | 0Ω |
+| 边界 | 断开后 ADC 只读到 VBIAS 直流 ⇒ 自检报"模拟轨可疑"是**预期行为**，不是故障 |
+| 失效 | 把它当成故障 ⇒ 白查半天（`bsp_adc.c` 的自检注释专门点名这条） |
+
+### H16 · 排针 → MCU 引脚
+
+| 角度 | 内容 |
+|---|---|
+| 是什么 | 核心板排针 `EVK1.4` 把信号送进 MCU 的 `PA1` |
+| 为什么 | 底板与核心板之间只有排针；`PA1` 是 ADC1_IN1 |
+| 怎么做 | INT 页网表 `AFE_ADC_IN = EVK1.4`；`board_config.h` 的 `BOARD_ADC_IN_PIN = 1` |
+| 关键数字 | `EVK1.4` = `PA1`；两个来源（网表 + 宏）已交叉核对 |
+| 边界 | ⚠️ 2026-09-28 从 PA0 挪到 PA1 —— PA0 上挂着 SW2 的按键电路（10k 下拉 + 触点），对模拟前端是多余的并联负载 |
+| 失效 | 接错脚 ⇒ 采到别的通道；`PA0` 若仍配成模拟输入 ⇒ 按键按下会改变读数 |
+
+### H17 · ADC 采样网络
+
+| 角度 | 内容 |
+|---|---|
+| 是什么 | MCU 内部的采样开关 + 采样电容，决定"孔径"与建立时间 |
+| 为什么 | 采样保持不是理想的 —— 它要在 3 个 ADCCLK 内把外部源充到 0.5LSB 以内，这决定了前级允许的最小源阻抗 |
+| 怎么做 | `Rsw ≈ 2.2kΩ` 串 + `Cadc = 4pF` 到地（由 t_s = 3 ADCCLK = 83.3ns 满足 0.5LSB **反解**） |
+| 关键数字 | 3 ADCCLK = **83.3ns**；ADCCLK = 36MHz；转换 15 ADCCLK = **416.67ns < 500ns** |
+| 边界 | ADCCLK 必须 ≥30MHz 且 ≤36MHz —— 这正是 SYSCLK 必须 **144MHz**（而非 168MHz）的原因 |
+| 失效 | 源阻抗过大 ⇒ 采样电容充不满 ⇒ 幅值系统性偏低（且随频率变化） |
+
+### S01 · 复位 → 时钟树
+
+| 角度 | 内容 |
+|---|---|
+| 人话 | 把 8MHz 晶振倍频到 144MHz。**不是随便选的** —— 是「ADC 要 2MSPS」倒推出来的唯一解 |
+| 是什么 | `SystemClock_Config()` 配 PLL，把 8MHz HSE 变成 144MHz SYSCLK |
+| 为什么 | **144MHz 不是偏好，是唯一解** —— 2.0MSPS 要求 ADCCLK=36MHz，要求 PCLK2=72MHz，要求 SYSCLK=144MHz。168MHz 下 PCLK2=84MHz：÷2 超 36MHz 上限、÷4 只有 21MHz，**无解** |
+| 怎么做 | PLL M=4 / N=144 / P=2 / Q=6；AHB ÷1、APB1 ÷4、APB2 ÷2；Flash 等待 5 周期 |
+| 关键数字 | SYSCLK 144 · AHB 144 · APB1 36 · APB2 72 · **ADCCLK 36** · TIM8 144（MHz） |
+| 边界 | 改晶振或 PLL 必须**同时**改 `board_config.h` 与 `.ioc`，否则 `fw.py lint` 报确定性矛盾 |
+| 失效 | 时钟配错 ⇒ HAL 时基失准、所有延时与波特率全错；`fw.py lint` 是唯一的自动拦截 |
+
+### S02 · CubeMX 外设初始化
+
+| 角度 | 内容 |
+|---|---|
+| 人话 | 按 `.ioc` 的配置把 GPIO / DMA / SPI / RTC / 定时器 / I2C / ADC / FSMC 挨个打开 |
+| 是什么 | `MX_*_Init()` 把 GPIO/DMA/SPI1/RTC/TIM8/I2C2/ADC1/FSMC 配好 |
+| 为什么 | 外设配置一律走 GUI 生成 —— 手改寄存器没有单一真相源；`.ioc` 是唯一来源 |
+| 怎么做 | `main()` 里顺序调用；每个 `MX_*_Init` 的引脚与时钟来自 `.ioc` |
+| 关键数字 | FSMC **`AS=2 / DS=12`**；TIM8 `PSC=0/ARR=71`；ADC1 触发 `TIM8_TRGO` + DMA 连续请求 |
+| 边界 | ⚠️ **注释与 `.ioc` 冲突时以 `.ioc` 为准** —— 四处文档写"DS=85"但从未落地 |
+| 失效 | 初始化失败走 `Error_Handler`；若它调 `app_panic` ⇒ **整板不启动**（曾因没插 TF 卡触发） |
+
+### S03 · 组合根
+
+| 角度 | 内容 |
+|---|---|
+| 人话 | 把所有零件装起来：先让驱动就位 → 再把参数交给算法 → 最后建界面。跑在调度器启动**之前** |
+| 是什么 | `app_init()` —— 全工程唯一的应用入口，做三件事：创建实例 → 注入参数 → 启动 |
+| 为什么 | 它是四层结构里**唯一允许跨层**的地方（同时看 Device 与 Operation）；其余文件只向下调 |
+| 怎么做 | `bsp_log_init` → `bsp_tick_init` → `bsp_adc_init` → `app_lvgl_init` → `app_engine_init` → `app_ui_init` → `app_self_test` |
+| 关键数字 | 运行在**调度器启动前** ⇒ 不许取任何 FreeRTOS 原语 |
+| 边界 | 建内核对象后必须 `portENABLE_INTERRUPTS()` —— 否则 BASEPRI 被钉住、`HAL_Delay()` 死循环 |
+| 失效 | 顺序颠倒（如 `app_ui_init` 早于 `app_engine_init`）⇒ UI 读不到"已标定"状态 |
+
+### S04 · 十项自检
+
+| 角度 | 内容 |
+|---|---|
+| 人话 | 上电后把板上的东西挨个摸一遍，通不通都记进日志。**任何一项不通都不停机** |
+| 是什么 | `app_self_test()` 把板载外设挨个探一遍，结果打进 RTT 日志 |
+| 为什么 | **"编译通过 ≠ 能跑"** —— 符号入库证明不了 Flash 读得出 JEDEC ID、屏读得到 ID |
+| 怎么做 | 十项各自独立：SPI Flash / 时钟 / RTC / 读写往返 / LCD RDDID / 触摸 / DSP 链 … |
+| 关键数字 | 任何一项失败**都不停机** |
+| 边界 | 教训：SDIO 曾因没插卡让整板起不来（`Error_Handler` → `app_panic`） |
+| 失效 | 把某一项当启动门槛 ⇒ 可选外设绑架启动 |
+
+### S05 · 建任务 + 等模拟轨
+
+| 角度 | 内容 |
+|---|---|
+| 人话 | 建两个任务（一个测量的、一个画界面的），然后**等模拟偏置电压站稳**再开始干活 |
+| 是什么 | `app_rtos_run()` 建 `Task_Engine(26)` / `Task_Ui(23)`，等 VBIAS 建立后跑采样自检 |
+| 为什么 | VBIAS 要充电到稳定 —— 不等就采，帧直流均值偏出半量程带，会报**假**的"模拟轨可疑" |
+| 怎么做 | `xTaskCreateStatic` ×2（栈与 TCB 是静态数组，不动 15KB 的 FreeRTOS 堆）；`osDelay(200)` |
+| 关键数字 | **直流**戴维南 = R9//R10 = **5.0kΩ** ⇒ τ=50ms ⇒ 到 92.5% 需 **129.5ms** |
+| 边界 | 改前靠 `bsp_lcd_init` 的 140ms 延时**侥幸**盖住 —— 那是屏的时序需求，不是 AFE 的依赖 |
+| 失效 | 不等 ⇒ 报假告警，把人往"查地 / 查 JP2"的错方向带 |
+
+### S06 · 等通知
+
+| 角度 | 内容 |
+|---|---|
+| 人话 | 停在这儿等人叫醒。没人叫就每 500ms 自己醒一次，去测一帧 |
+| 是什么 | 测量任务用 `xTaskNotifyWait` 等"周期到"或"UI 请求重测" |
+| 为什么 | 把"周期超时"与"外部唤醒"合成一次阻塞调用 —— 不轮询、不多一个队列；切页即刻响应 |
+| 怎么做 | 超时 500ms；`app_engine_remeasure()` 用 `xTaskNotifyGive` 唤醒 |
+| 关键数字 | 周期 500ms ⇒ 屏上数据 ≤0.6s 旧（题面"每项 ≤2s"的 1/3） |
+| 边界 | 退出时清空通知计数，避免多次 remeasure 攒成"连续狂测" |
+| 失效 | 用"定时 + 轮询标志"代替 ⇒ 采集完成最多白等一拍，切页响应变慢 |
+
+### S07 · 抢总线闸
+
+| 角度 | 内容 |
+|---|---|
+| 人话 | 先把屏幕的「话事权」要过来 —— 免得我采样的时候屏幕正在狂写总线 |
+| 是什么 | `bsp_lcd_bus_take(20ms)` —— 采样窗静默的第一步 |
+| 为什么 | 写屏是板内最大干扰源（2 层板没有地平面兜底），而采样窗只有 2.048ms。闸在**开采集之前**拿，写屏就会在块边界停住 |
+| 怎么做 | 互斥量带**优先级继承**（写屏侧持闸时 engine 来抢，会让它临时提权把当前块写完） |
+| 关键数字 | 等待上限 20ms（正常只需等一个块 ≈0.107ms） |
+| 边界 | 拿不到 ⇒ **退化为整帧级避让**，不比改前差（不是失败） |
+| 失效 | 不拿闸 ⇒ 采样窗内 FSMC 照 toggle，最大干扰源灌进 AFE |
+
+### S08 · 挂 ADC+DMA
+
+| 角度 | 内容 |
+|---|---|
+| 人话 | 把 ADC 和 DMA 挂上，再打开定时器让它开始按 2MHz 敲 |
+| 是什么 | `bsp_adc_start()` 挂 ADC+DMA，然后放 TIM8 触发 |
+| 为什么 | 顺序不能反 —— 先放 TIM8 的话前几次触发会丢（DMA 还没就绪） |
+| 怎么做 | `HAL_ADC_Start_DMA`（内部启动 ADON + 使能 DMA 请求 + 挂完成回调）→ `HAL_TIM_Base_Start` |
+| 关键数字 | 一帧 4096 点 @2.000MHz = **2.048ms**；DMA2_Stream0 循环 / 半字 |
+| 边界 | **有 CCM 落区守卫** —— buf 落在 CCM 会**静默恒 0**，这是唯一能拦住它的地方 |
+| 失效 | 缓冲放 CCM ⇒ 采集恒 0 且不报错（最阴险的静默失效） |
+
+### S09 · 中断给信号量
+
+| 角度 | 内容 |
+|---|---|
+| 人话 | 定时器敲够 4096 下、DMA 搬满了 —— 我（中断）醒一下，告诉测量任务「数据好了」 |
+| 是什么 | `HAL_ADC_ConvCpltCallback` —— 搬满一帧时停触发源、置标志、给信号量 |
+| 为什么 | 中断里**只投事件不跑业务**；真正的收尾由主上下文做（`HAL_ADC_Stop_DMA` 会取锁、可能阻塞） |
+| 怎么做 | `__HAL_TIM_DISABLE(&htim8)` → `s_done=1` → `xSemaphoreGiveFromISR` → `portYIELD_FROM_ISR` |
+| 关键数字 | DMA2_Stream0 抢占优先级 = 5 = `configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY` ⇒ **正好允许**调 FromISR 系列 |
+| 边界 | 优先级再小一号就不许调 FromISR 了 |
+| 失效 | Circular 模式下 DMA 永不停 ⇒ 调用方必须自己 `bsp_adc_stop()`，否则数据被循环覆盖 |
+
+### S10 · 收帧放闸
+
+| 角度 | 内容 |
+|---|---|
+| 人话 | 等到「数据好了」，把定时器和 DMA 都关掉，再把屏幕的「话事权」还回去 |
+| 是什么 | `bsp_adc_wait_frame(50ms)` 阻塞等信号量，拿到后 `bsp_adc_stop()` 再放闸 |
+| 为什么 | `bsp_adc_stop` 的顺序是**先停触发源再停搬运** —— 反过来会留下"还在转换但没人搬"的窗口，下一帧第一个点是上一帧的残留 |
+| 怎么做 | 等待期间让出 CPU；UI 任务会跑，但它在块边界拿不到闸 ⇒ 不写 FSMC |
+| 关键数字 | 超时 50ms（正常 2.048ms，50ms 是"链断了也不永久挂死"的看门狗口径） |
+| 边界 | 超时 ⇒ 报 W 日志并**跳过本帧**，不是停机 |
+| 失效 | 不设超时 ⇒ 触发链或 DMA 断了就永久挂死 |
+
+### S11 · 去DC / 折算 / 加窗 / FFT
+
+| 角度 | 内容 |
+|---|---|
+| 人话 | 把 4096 个**码值**变成 4096 个**毫伏数**，去掉平均值（那是偏置不是信号），加窗，再做 FFT 变成频谱 |
+| 是什么 | `op_dsp_run()` —— 去均值 → 折成输入端 mV → 乘 BH4 窗 → 交织复数 → 4096 点 FFT → 取模 |
+| 为什么 | 去 DC 是因为 VBIAS 偏置是"0 点"；加窗压泄漏（BH4 旁瓣 −92dB）；**交织那一步必须显式写虚部 0**，否则算的根本不是实序列谱 |
+| 怎么做 | `s_xw[4096]`（SRAM1）→ `op_dsp_pack_real_to_cfft` → `s_fft[8192]`（**CCM 低半区**）→ `arm_cfft_f32` |
+| 关键数字 | N=4096；Δf = fs/N = **488.28125Hz**；BH4 相干增益 CG = **0.35875**；`s_fft` 必须是 **2N** |
+| 边界 | `s_adc_buf`/`s_xw` 在 SRAM1（DMA 可达 / 普通 bss），`s_fft` 在 CCM —— **落区一错就是静默失效** |
+| 失效 | `s_fft` 只给 N ⇒ FFT 写穿 16KB 踩坏相邻数组（**PC 测不到**，host 走朴素 DFT 替身） |
+
+### S12 · 找峰
+
+| 角度 | 内容 |
+|---|---|
+| 人话 | 在频谱里找最高的那几根线，并把它们的位置算到**比栅格更细**（FFT 的格子太粗） |
+| 是什么 | `op_peak_run()` —— 栅格预筛 → log 域三点抛物线 → ±Δf/8 三点 \|X\| 抛物线 → 单点 DFT |
+| 为什么 | FFT 栅格只有 488Hz，题面要的分辨率不够；两次抛物线精化把频率推到栅格以下。幅值**不在栅格上直读**，而是在精化后的频率上做单点 DFT（口径①） |
+| 怎么做 | 预筛门限 1.5mV 挡伪峰；单点 DFT 用 **Kahan 补偿**累加 + 每 256 步重置旋转因子（误差不跨步累积） |
+| 关键数字 | 扫带 **[9000, 502000]Hz**；门限 **1.5mV** |
+| 边界 | `k_lo = (int)(f_lo/df)` 且搜索从 `k_lo+1` 起 ⇒ 写 10000 会**整个漏掉** 10kHz 的峰；循环止于 `k_hi−4` ⇒ 写 500000 会漏掉 500kHz |
+| 失效 | 门限太低 ⇒ 量化噪声伪峰被当真线；只做预筛不做终判 ⇒ 精化后掉下门限的假线混进来 |
+
+### S13 · 标定修正
+
+| 角度 | 内容 |
+|---|---|
+| 人话 | 拿标定表把读到的幅值和相位改成**真实值** |
+| 是什么 | `op_cal_lookup()` 用 17 点表修正幅值与相位（`amp/=g`、`φ−=p`、再 `φ+=π/2`） |
+| 为什么 | AFE 是 LTI 系统 —— 幅频相频的所有误差（端接分压、LC 形状、运放滚降、孔径效应）都能被"**赛前一次标定**"吃掉 |
+| 怎么做 | 表存 W25Q128 扇区 0（216B，magic+CRC）；`g` 与 `p` 都在 **log-f** 域插值 |
+| 关键数字 | 17 点对数间隔 10k→500k；修后 Upp 残差 ≤0.25mV（判据 ±5mV） |
+| 边界 | **相位必须在建表时展开（unwrap）** —— AFE 相移在 306.6~391.6kHz 穿过 ±180°，不展开该区间会插出 **179.5°** 的错 |
+| 失效 | 不展开 ⇒ 160kHz 基波 + 二次谐波时 Upp 偏 **−18.95mV**（判据的 3.8 倍）；且**仿真会把它藏住**（`s8_e2e_fw.py` 用了 `np.unwrap`） |
+
+### S14 · 四口径
+
+| 角度 | 内容 |
+|---|---|
+| 人话 | 算出三个数：基频、峰峰值 Upp、有效值 Urms |
+| 是什么 | `op_meas_build()` —— f1（最低峰）、Urms = √(ΣA²/2)、Upp = sin 重建取 max−min |
+| 为什么 | 题面要 Upp（峰值），而频谱只给分量幅值 —— 必须按级次与相位把波形重建出来才能取 max−min |
+| 怎么做 | 级次 `m_k = round(f_k/f1)`；重建点数按最高阶次自适应 `max(512, 32·m_max)` |
+| 关键数字 | 固定 512 点在 m_max=50 时只有 10.2 点/周期 ⇒ Upp 偏 **−1.75mV**（判据的 35%） |
+| 边界 | 重建用的是各分量**源端口径的相位** ⇒ S13 的相位修正直接决定它准不准 |
+| 失效 | 点数不足 ⇒ 大阶次信号 Upp 系统性偏低（是偏差不是噪声） |
+
+### S15 · 发布结果
+
+| 角度 | 内容 |
+|---|---|
+| 人话 | 把结果放进一个「信箱」，屏幕那边自己来取 |
+| 是什么 | `xQueueOverwrite(s_result_q, &r)` —— 1 深队列的覆盖式发布 |
+| 为什么 | engine 只写、UI 只读；队列自带临界区 ⇒ UI 永远读不到"写了一半"的结构。覆盖式 = 不阻塞、不失败 |
+| 怎么做 | 队列存储用**元素类型**声明（不是 `uint8_t[]`）—— 对齐天然正确（历史坑） |
+| 关键数字 | `meas_result_t` **56B ≤ 64B** 硬约束（历史教训：4144B 局部变量爆栈） |
+| 边界 | 结果体不含指针与波形数据 —— 波形只在 UI 层静态区生成 |
+| 失效 | 队列深度 >1 ⇒ 攒帧、UI 读到过期数据；用 `xQueueSend` 而非 Overwrite ⇒ 满时阻塞或丢新帧 |
+
+### S16 · UI 取快照
+
+| 角度 | 内容 |
+|---|---|
+| 人话 | 如果测量任务正在采样，我就**先躲一下**（别去写屏幕）；然后看信箱里有没有新结果 |
+| 是什么 | UI 任务先避让采集窗，再 `app_engine_result()` 取快照（`xQueuePeek`），按 `seq` 判新 |
+| 为什么 | `app_engine_acquiring()` 为 1 时不碰 FSMC —— engine 优先级更高，但 engine 阻塞在信号量上时 CPU 会回到 UI，那时必须**主动避让** |
+| 怎么做 | `while (app_engine_acquiring()) vTaskDelay(1)`；`xQueuePeek` 自带临界区且不消费 |
+| 关键数字 | 避让窗口 2.048ms；节拍 10ms（= LVGL 的时间分辨率） |
+| 边界 | `seq` 没变且没翻页 ⇒ 直接返回，不白刷 |
+| 失效 | 不避让 ⇒ 采样窗名存实亡；触摸读失败与"没按"若不都算抬起 ⇒ I2C 抖动变假点击 |
+
+### S17 · 重建曲线
+
+| 角度 | 内容 |
+|---|---|
+| 人话 | 把三个数变成一条波形和几根谱线柱 |
+| 是什么 | `op_wave_build()` 生成 320 点波形、`op_spec_build()` 生成谱线柱的 `x01/len01` |
+| 为什么 | UI 只该画、不该算 —— 重建是纯逻辑，放 Operation 层就能在 PC 上单测 |
+| 怎么做 | `op_wave_build(r, cycles, y, 320)`；`cycles` 支持 1T / 3T 切换（点波形页） |
+| 关键数字 | 320 = 屏宽 1:1（每像素一列，无插值观感）；320×3 分量 `sinf` ≈ 1ms 级 |
+| 边界 | 重建在 UI 刷新时跑，不能在中断里做 |
+| 失效 | 把重建塞进 `op_meas` ⇒ 结果体超 64B、栈爆 |
+
+### S18 · LVGL 重绘
+
+| 角度 | 内容 |
+|---|---|
+| 人话 | 让 LVGL 把**变了的地方**重画（不是全屏重画） |
+| 是什么 | `app_lvgl_poll()` 推进时基 → `lv_timer_handler()` 跑脏区重绘 |
+| 为什么 | LVGL 的时间分辨率**就是**这个循环的节拍（10ms）—— 改成 >16ms 会掉帧 |
+| 怎么做 | `lv_tick_inc(dt)` 用两次调用的差值推进；第一次只记时间不推（否则把开机那几秒当成一次 tick） |
+| 关键数字 | draw buffer 320×48×2 = **30.7KB @SRAM1**；LVGL 池 **32KB @CCM 高半区** |
+| 边界 | **draw buffer 不能放 CCM**（将来若改 DMA 搬 FSMC 会静默失效） |
+| 失效 | 漏了 `lv_display_flush_ready()` ⇒ 界面**永久卡死**（实测现象：屏上只有一条 48 行白带） |
+
+### S19 · FSMC 上屏
+
+| 角度 | 内容 |
+|---|---|
+| 人话 | 把画好的像素**一块一块**推到屏幕上（每块开写前抢一次总线闸） |
+| 是什么 | `lcd_send_color` 分块写 → `bsp_lcd_write_pixels` 把 16 位字写进 `0x60020000` |
+| 为什么 | 命令与数据只差一个地址（RS 接在 `FSMC_A16` 上）⇒ 不用翻引脚，CPU 只管 store |
+| 怎么做 | 每 1024 px 一块、每块**开写前抢闸**（engine 才能在块边界把总线拿过去） |
+| 关键数字 | 地址偏移 **`1<<17`**（16 位总线时 FSMC 把 HADDR 右移 1 位）；现行 `AS=2/DS=12` ⇒ **104.2ns/字** ⇒ 整帧 16.0ms ⇒ **62.5fps** |
+| 边界 | ⚠️ 写成 `1<<16` 会打到 A15 上，症状是"**屏完全没反应**" |
+| 失效 | 按时钟里流传的"DS=85"去推 ⇒ 整帧算成 90ms，结论差 **5.6 倍**（而那个值**从未落进 `.ioc`**） |
+
+## 2 · 冲突登记（一手 vs 文档）
+
+```
+[冲突] firmware/Core/Inc/board_config.h（FSMC 段）、firmware/Device/Src/bsp_lcd.c、
+       firmware/project_config.h（APP_LCD_CHUNK_PX）、firmware/Task/Src/app_lvgl.c
+       四处都写「DS=85 / 597ns/字 / 3.3MB/s / 整帧 90ms / 一个 draw buffer 9ms」
+  一手：firmware/G2026.ioc 是 FSMC.DataSetupTime1=12、AddressSetupTime1=2；
+        firmware/Core/Src/fsmc.c 同款；git 史 09-28 AS=1/DS=15 → 10-06 AS=2/DS=12
+  影响面：整帧从"90ms / 10.9fps"变成"16.0ms / 62.5fps" —— 量级差 5.6 倍。
+        且 2026-10-02 那次"为压 CS 率而全局放慢 FSMC"的拍板**从未落地**。
+  处置：改文档（四处已按现行值改写，2026-10-07）。
+```
+
+```
+[冲突] firmware/Core/Inc/board_config.h 净增益段写「U1B 同相 ×8（R6 69.8k / R7 10k ≈ 7.98）」
+  一手：AFE 页网表 R6 = 24.9kΩ、R7 = 3.57kΩ（比值 6.975 vs 6.98 ⇒ 增益不变）
+  影响面：增益结论仍成立；但绝对阻值决定噪声（H2 改图的目的就是降 R7 热噪声）。
+  处置：改文档（已按实测重写，2026-10-07）。
+```
+
+```
+[冲突] firmware/project_config.h 写「戴维南 = R9//R10//R2//R5//R7 = 2.0kΩ，τ=20ms，需 138ms」
+  一手：直流下 R2/R5 接运放高阻 + 端（无电流）、R7 两端直流等电位 ⇒ 只有 R9/R10 带电流
+        ⇒ 5.0kΩ ⇒ τ=50ms；自检判据只需到 92.5% ⇒ 129.5ms
+  影响面：原值 150ms 只余 16% 余量（不是注释暗示的宽裕）。
+  处置：改实现（APP_AFE_SETTLE_MS 150→200，余量 54%）+ 改文档。
+```
+
+```
+[冲突] 注释（op_cal.h / op_peak.c）隐含"标定表相位可直接线性插值"
+  一手：固件存的是 atan2 主值，AFE 相移在 306.6~391.6kHz 穿过 ±180° ⇒ 插值跨折回
+  影响面：该区间最差 179.5° 相位错 ⇒ 160kHz 基波 + 二次谐波时 Upp 偏 −18.95mV（判据 ±5mV）。
+  处置：改实现（新增 op_cal_set_point 展开相位）+ 加回归用例（2026-10-07）。
+```
+
+```
+[冲突] tools/sim/s8_e2e_fw.py 建相位表用 np.unwrap，固件存 atan2 主值
+  一手：s8_e2e_fw.py:142 是 np.unwrap；firmware/Operation/Src/op_peak.c 是 atan2f
+  影响面：仿真把上一条那个 180° 缺陷藏了 —— **仿真绿 ≠ 电路对**。
+  处置：固件已修（展开相位）⇒ 现在口径一致；应补"若固件不展开则仿真必须报错"的负向用例。
+```
+
+### 待确认（**每条都要写清"缺什么才能确认"**）
+
+| # | 待确认 | 缺什么才能确认 | 推荐答案 |
+|---|---|---|---|
+| 1 | C5/C3 装 10µF 还是 100nF（K6） | 看实物丝印 / 问设计者当初想装哪个 | 按 10µF 装（现有推导基于它），换 MPN 为 10µF 的 0805 件 |
+| 2 | FSMC 真实吞吐（K7） | 上板量一次（DWT->CYCCNT 或示波器量 NE1 连续脉冲周期） | 先量，再决定要不要动 `.ioc`；60 帧能否达成取决于这个差 |
+| 3 | 采样窗（2.048ms）内 NE1 是否真的一次都不动 | 示波器双通道：NE1 + 采集使能标志 | 必须为真 —— 那是"提速不放干扰"的唯一前提 |
+| 4 | 触摸轴映射（K8） | 上板进 UI 第 5 页 TOUCH，点四角看准星 | 三宏现为 0（横屏默认），竖屏下**必须重标** |
+| 5 | `.ccmram` 的 ASSERT（K10） | 直接读 `firmware/STM32F407XX_FLASH.ld` | 若没有 ⇒ 补 `(NOLOAD)` + 两条 ASSERT |
+| 6 | `D1.2`（PESD5V0X1BT）悬空且无 NC 标记 | 查该器件 datasheet 确认 pin2 是否 NC | 若 NC ⇒ 图上补 NC 标记 |
+| 7 | 底板 J5 脚号 ↔ 适配板排针的映射 | 适配板图纸或实物核对 | 按电容触摸版的接线核一遍 |
+
+## 3 · 验证记录
+
+| 跑了什么 | 命令 | 结果 | 跑不了的说明为什么 |
+|---|---|---|---|
+| 静态对账 | `python firmware/Tools/fw.py lint` | 通过（5 处单侧提示） | — |
+| PC 单测 | `python firmware/Tools/fw.py test` | **5/5 通过** | — |
+| 编译 | `python firmware/Tools/fw.py build` | 成功，**零告警**；RAM 66.8% / CCMRAM 50.0% / FLASH 47.9% | — |
+| MNA 内核自检 | `python tools/sim/selftest_mna.py` | 全通过 | — |
+| 端到端 DSP | `python tools/sim/s8_e2e_fw.py` | 三场景频率误差 ≤1kHz 且幅值误差 ≤5mV | ⚠️ 该脚本用 `np.unwrap`，与固件口径不一致（K5） |
+| 优化验收 | `python tools/sim/verify_opt.py` | 折叠余量 14.4dB；噪声底 0.0541mVrms；标定后 Upp 误差 ≤0.25mV | — |
+| 独立复核 | `python tools/sim/indep_check.py` | 8 阶原型逐颗比对 + 电容择优 + 容差 MC | — |
+| AFE 频响 | `python _work/hwsw-chain/afe_response.py` | 带边 +0.79dB；1MHz −27.8dB；折叠最差 −57.4dB | — |
+| 相位折回量化 | `python _work/hwsw-chain/cal_phase_wrap.py` | 最差 179.5°；修后 3.9° | — |
+| C5 敏感性 | `python _work/hwsw-chain/c5_value_check.py` | 两种取值 PSRR/噪声逐位相同 | — |
+| **上板验证** | — | **未做** | 需要探针与示波器（待确认 2/3/4 都卡在这里） |
+
+## 4 · 拷问清单（5~8 条，每条含推荐答案）
+
+1. **C5/C3 到底装 10µF 还是 100nF？** —— 推荐：按 10µF 装（现有推导与注释都基于它），把 MPN 换成 10µF 的 0805 件。
+2. **要不要为 60 帧去动 `.ioc` 的 FSMC 时序？** —— 推荐：先不动。现行 DS=12 理论已给 62.5fps；先上板量真实吞吐（待确认 2）。
+3. **采样窗静默那条闸，要不要用示波器验一次？** —— 推荐：验。它是"提速不放干扰"的唯一前提，不验就等于赌。
+4. **触摸映射什么时候重标？** —— 推荐：下一次上板第一件事，比调 UI 更优先（映射不对，所有 UI 交互都白调）。
+5. **`.ccmram` 的 ASSERT 要不要现在补？** —— 推荐：补。改动只有几行，且不补的话"往 .ccmram 加变量"是静默压进 LVGL 堆。
+6. **要不要修 `tools/sim/afe_net.py` 的位号？** —— 推荐：修（或加对照表）。否则"改图后同步 afe_net"会照着错的位号找。
+7. **要不要给 `s8_e2e_fw.py` 补一条负向用例？** —— 推荐：补。固件已展开相位，所以现在 `unwrap` 是对的；但应加"若固件不展开则仿真必须报错"，防止将来回退。
+
+## 5 · 附：命令与产物
+
+```bash
+# 一手取证
+easyeda sch pages
+easyeda sch read --doc <uuid> > raw/read_<页>.json
+easyeda sch list --doc <uuid> > raw/list_<页>.json
+python ~/.ai-skills/swhw-chain/scripts/netlist.py --from-json raw --out netlist.md
+python ~/.ai-skills/swhw-chain/scripts/relations.py firmware --md relations.md
+
+# 对口径 + 跑验证
+python tools/sim/selftest_mna.py && python tools/sim/s8_e2e_fw.py && python tools/sim/verify_opt.py
+python _work/hwsw-chain/afe_response.py
+python _work/hwsw-chain/cal_phase_wrap.py
+python _work/hwsw-chain/c5_value_check.py
+
+# 门禁
+python firmware/Tools/fw.py lint && python firmware/Tools/fw.py test && python firmware/Tools/fw.py build
+
+# 查链 + 自检 + 出图
+python ~/.ai-skills/swhw-chain/scripts/chain.py docs/chain/G2026-逻辑链-20261007.md
+python ~/.ai-skills/swhw-chain/scripts/chain.py docs/chain/G2026-逻辑链-20261007.md --walk H13
+python ~/.ai-skills/swhw-chain/scripts/chain.py docs/chain/G2026-逻辑链-20261007.md --html docs/chain/G2026-逻辑链-20261007.html
+python ~/.ai-skills/swhw-chain/scripts/check_report.py docs/chain/G2026-逻辑链-20261007.md --root .
+```

@@ -161,9 +161,7 @@ def resolve_config(preset: str) -> dict[str, str]:
     return {
         "device": be.get("JLINK_DEVICE", "STM32F407VG"),
         "mcu_name": be.get("MCU_NAME", ""),
-        "project": name,
         "elf": be.get("ELF", str(build_dir / f"{name}.elf")),
-        "hex": be.get("HEX", str(build_dir / f"{name}.hex")),
         "bin": be.get("BIN", str(build_dir / f"{name}.bin")),
         "log_backend": be.get("LOG_BACKEND", "RTT"),
         # ★ 链接脚本也走 board.env：体积口径（Tools/stm32_size.py）按它的 MEMORY 区
@@ -281,7 +279,7 @@ def cmd_env(args) -> int:
     log(f"  日志后端                 {cfg['log_backend']}")
 
     log("== 各预设构建目录 ==")
-    for p in ("Debug", "Release", "RelWithDebInfo", "Debug-UART", HOST_BUILD_DIR):
+    for p in ("Debug", "Release", "RelWithDebInfo", HOST_BUILD_DIR):
         d = ROOT / "build" / p
         log(f"  {p:<16} {'已配置' if (d / 'CMakeCache.txt').is_file() else '未配置'}")
 
@@ -396,7 +394,7 @@ def cmd_test(args) -> int:
         #    "The source ... does not match the source ... used to generate cache"
         #    —— 那句话指向 CMake 内部，很难联想到"只是路径变了"。
         #    实测（2026-09-22 平目录）：build/host 有 6 处旧路径，
-        #    Release / RelWithDebInfo / Debug-UART 各 7 处 —— 五个目录全中。
+        #    Release / RelWithDebInfo 各 7 处 —— 五个目录全中。
         #    ⇒ 自动 --fresh 重建缓存（需 CMake ≥ 3.24），让工具自愈。
         log("      configure 失败 —— 尝试 --fresh 重建缓存"
             "（目录搬过家时，旧 cache 里的绝对路径会让 CMake 拒绝复用）")

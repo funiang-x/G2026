@@ -17,6 +17,20 @@ void op_cal_default_freqs(op_cal_table_t *t) {
     }
 }
 
+void op_cal_set_point(op_cal_table_t *t, int idx, float g, float p) {
+    if (t == NULL || idx < 0 || idx >= OP_CAL_POINTS) {
+        return;
+    }
+    /* 相位展开（unwrap）：把 p 折到离上一个点最近的主值上。见 op_cal.h 的长说明
+     * —— 不展开的话，跨 ±180° 的那个区间查表会插出 180° 量级的错。 */
+    if (idx > 0) {
+        const float two_pi = 6.28318530717958647692f;
+        p -= two_pi * roundf((p - t->p[idx - 1]) / two_pi);
+    }
+    t->g[idx] = g;
+    t->p[idx] = p;
+}
+
 void op_cal_lookup(const op_cal_table_t *t, float freq_hz, float *g, float *p) {
     if (t == NULL) {
         return; /* 未标定：保持调用方的 1/0 */
@@ -50,7 +64,8 @@ void op_cal_lookup(const op_cal_table_t *t, float freq_hz, float *g, float *p) {
 
 /* ---- CRC32（反射 0xEDB88320）----
  * 位算法（无 256 项查表）：216B × 8 位 = 1728 次循环，毫秒不到，不值得为它
- * 挂一张 1KB 表。 */
+ * 挂一张 1KB 表。只给本模块 pack/unpack 用 —— 单测通过"改一个字节 ⇒ unpack
+ * 必失败"验证 CRC 有效性，不需要独立复算。 */
 static uint32_t crc32_reflect(const uint8_t *buf, size_t len) {
     uint32_t crc = 0xFFFFFFFFU;
     for (size_t i = 0; i < len; i++) {
@@ -60,10 +75,6 @@ static uint32_t crc32_reflect(const uint8_t *buf, size_t len) {
         }
     }
     return crc ^ 0xFFFFFFFFU;
-}
-
-uint32_t op_cal_crc32(const uint8_t *buf, size_t len) {
-    return crc32_reflect(buf, len);
 }
 
 /* 小端 32 位读写。float 走 union 位型（IEEE-754，F4 与 host 一致），

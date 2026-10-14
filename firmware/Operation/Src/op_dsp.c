@@ -82,7 +82,7 @@ int op_dsp_run(const uint16_t *raw, uint32_t n, float *xw_out, float *fft_buf,
 
     for (uint32_t i = 0; i < n; i++) {
         const float mv = ((float)raw[i] - mean) * s_lsb_mv;
-        xw_out[i] = mv * op_dsp_winh4[i]; /* op_peak 的单点 DFT 点积要用，保留 */
+        xw_out[i] = mv * op_dsp_winh4_at(i); /* op_peak 的单点 DFT 点积要用，保留 */
     }
 
     /* ② 装配 CFFT 输入（实序列 → 交织复数 + 虚部清零）。

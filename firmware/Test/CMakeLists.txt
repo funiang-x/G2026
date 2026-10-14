@@ -89,7 +89,6 @@ add_executable(test_op_meas
     ${TEST_COMMON_SRC})
 target_include_directories(test_op_meas PRIVATE ${TEST_INCLUDES})
 target_compile_options(test_op_meas PRIVATE ${PROJ_WARNING_FLAGS})
-target_compile_definitions(test_op_meas PRIVATE OP_DSP_HOST_FFT)
 target_compile_features(test_op_meas PRIVATE c_std_11)
 add_test(NAME op_meas COMMAND test_op_meas)
 

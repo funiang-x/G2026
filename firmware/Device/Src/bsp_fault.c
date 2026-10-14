@@ -42,16 +42,16 @@ void vApplicationMallocFailedHook(void);
  * 定位 PC/LR 只需要前 8 个，不受影响。 */
 static void dump_stack_frame(const uint32_t *sf) {
     if (sf == NULL) {
-        bsp_log_printf_nolock(BSP_LOG_ERROR, "[FAULT] 栈帧指针为空，无法取寄存器");
+        bsp_log_printf_nolock(LOG_LVL_ERROR, "[FAULT] 栈帧指针为空，无法取寄存器");
         return;
     }
-    bsp_log_printf_nolock(BSP_LOG_ERROR, "[FAULT] R0 =0x%08lx  R1 =0x%08lx  R2 =0x%08lx  R3 =0x%08lx",
+    bsp_log_printf_nolock(LOG_LVL_ERROR, "[FAULT] R0 =0x%08lx  R1 =0x%08lx  R2 =0x%08lx  R3 =0x%08lx",
                    (unsigned long)sf[0], (unsigned long)sf[1], (unsigned long)sf[2],
                    (unsigned long)sf[3]);
-    bsp_log_printf_nolock(BSP_LOG_ERROR, "[FAULT] R12=0x%08lx  LR =0x%08lx  PC =0x%08lx  xPSR=0x%08lx",
+    bsp_log_printf_nolock(LOG_LVL_ERROR, "[FAULT] R12=0x%08lx  LR =0x%08lx  PC =0x%08lx  xPSR=0x%08lx",
                    (unsigned long)sf[4], (unsigned long)sf[5], (unsigned long)sf[6],
                    (unsigned long)sf[7]);
-    bsp_log_printf_nolock(BSP_LOG_ERROR,
+    bsp_log_printf_nolock(LOG_LVL_ERROR,
                    "[FAULT] 定位源码: arm-none-eabi-addr2line -f -e <你的.elf> 0x%08lx",
                    (unsigned long)(sf[6] & ~1UL));
 }
@@ -59,18 +59,18 @@ static void dump_stack_frame(const uint32_t *sf) {
 /* 把 CFSR 的 3 个子域拆出来，才能一眼看出"是总线错误、还是非法指令" */
 static void dump_fault_status(void) {
     uint32_t cfsr = SCB->CFSR;
-    bsp_log_printf_nolock(BSP_LOG_ERROR, "[FAULT] CFSR=0x%08lx (MMFSR=0x%02lX BFSR=0x%02lX UFSR=0x%04lX)",
+    bsp_log_printf_nolock(LOG_LVL_ERROR, "[FAULT] CFSR=0x%08lx (MMFSR=0x%02lX BFSR=0x%02lX UFSR=0x%04lX)",
                    (unsigned long)cfsr, (unsigned long)(cfsr & 0xFFUL),
                    (unsigned long)((cfsr >> 8) & 0xFFUL), (unsigned long)((cfsr >> 16) & 0xFFFFUL));
-    bsp_log_printf_nolock(BSP_LOG_ERROR, "[FAULT] HFSR=0x%08lx", (unsigned long)SCB->HFSR);
+    bsp_log_printf_nolock(LOG_LVL_ERROR, "[FAULT] HFSR=0x%08lx", (unsigned long)SCB->HFSR);
 
     /* MMFAR/BFAR 只在对应 VALID 位置位时才有意义，否则是残留旧值 */
     if ((cfsr & SCB_CFSR_MMARVALID_Msk) != 0U) {
-        bsp_log_printf_nolock(BSP_LOG_ERROR, "[FAULT] 非法访问地址 MMFAR=0x%08lx",
+        bsp_log_printf_nolock(LOG_LVL_ERROR, "[FAULT] 非法访问地址 MMFAR=0x%08lx",
                        (unsigned long)SCB->MMFAR);
     }
     if ((cfsr & SCB_CFSR_BFARVALID_Msk) != 0U) {
-        bsp_log_printf_nolock(BSP_LOG_ERROR, "[FAULT] 非法访问地址 BFAR =0x%08lx",
+        bsp_log_printf_nolock(LOG_LVL_ERROR, "[FAULT] 非法访问地址 BFAR =0x%08lx",
                        (unsigned long)SCB->BFAR);
     }
 }
@@ -113,7 +113,7 @@ static const uint32_t *locate_stack_frame(const uint32_t *sp) {
             continue;
         }
         if (i != 0U) {
-            bsp_log_printf_nolock(BSP_LOG_ERROR,
+            bsp_log_printf_nolock(LOG_LVL_ERROR,
                                   "[FAULT] 栈帧已自动校正：跳过 %lu 个字（函数序言）",
                                   (unsigned long)i);
         }
@@ -132,28 +132,8 @@ void bsp_fault_report(uint32_t *stack_frame) {
      *   UFSR.UNALIGNED=1        → 结构体指针强转导致的非对齐访问
      *   BFSR.PRECISERR=1 + BFAR → 访问了未使能时钟的外设寄存器 / 野指针
      *   CFSR 全 0 但 HFSR.FORCED=1 → 多半是跳到了非法地址或栈溢出 */
-    bsp_log_printf_nolock(BSP_LOG_ERROR, "[FAULT] 固件已停在此处（死循环），复位后重试");
+    bsp_log_printf_nolock(LOG_LVL_ERROR, "[FAULT] 固件已停在此处（死循环），复位后重试");
 
-    for (;;) {
-    }
-}
-
-void bsp_fault_panic(const char *reason) {
-    FAULT_BANNER("\r\n========== [FAULT] ==========\r\n");
-    bsp_log_printf_nolock(BSP_LOG_ERROR, "[FAULT] 异常: %s", (reason != NULL) ? reason : "unknown");
-    dump_fault_status();
-    for (;;) {
-    }
-}
-
-void bsp_fault_reset(const char *reason) {
-    /* ★ nolock 而非 LOG_E：调用方（LVGL 断言等）可能处在任何古怪上下文，
-     *   取锁可能死锁；与文件末尾两个 FreeRTOS 钩子的取舍一致。 */
-    FAULT_BANNER("\r\n========== [RESET] ==========\r\n");
-    bsp_log_printf_nolock(BSP_LOG_ERROR, "[RESET] 原因: %s",
-                          (reason != NULL) ? reason : "unknown");
-    bsp_log_printf_nolock(BSP_LOG_ERROR, "[RESET] 正在复位（NVIC_SystemReset）");
-    NVIC_SystemReset();
     for (;;) {
     }
 }
@@ -185,13 +165,13 @@ void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName) {
     /* ⚠️ xTask 是个**指针**，只在栈还没被彻底踩坏时才有意义；
      *    用 %p 打地址而不是解引用它 —— 解引用一个可能已损坏的 TCB 会二次崩溃。 */
     FAULT_BANNER("\r\n========== [FAULT] 任务栈溢出 ==========\r\n");
-    bsp_log_printf_nolock(BSP_LOG_ERROR, "[FAULT] 溢出任务: %s",
+    bsp_log_printf_nolock(LOG_LVL_ERROR, "[FAULT] 溢出任务: %s",
                           (pcTaskName != NULL) ? pcTaskName : "(名字不可读)");
-    bsp_log_printf_nolock(BSP_LOG_ERROR, "[FAULT] TCB 地址: 0x%08lx", (unsigned long)(uintptr_t)xTask);
-    bsp_log_printf_nolock(BSP_LOG_ERROR,
+    bsp_log_printf_nolock(LOG_LVL_ERROR, "[FAULT] TCB 地址: 0x%08lx", (unsigned long)(uintptr_t)xTask);
+    bsp_log_printf_nolock(LOG_LVL_ERROR,
                           "[FAULT] 对策: 调大该任务的栈深（单位是 word，不是字节）"
                           "—— 见 project_config.h 的 APP_TASK_STACK_WORDS");
-    bsp_log_printf_nolock(BSP_LOG_ERROR, "[FAULT] 固件已停在此处，复位后重试");
+    bsp_log_printf_nolock(LOG_LVL_ERROR, "[FAULT] 固件已停在此处，复位后重试");
 
     for (;;) {
     }
@@ -201,12 +181,12 @@ void vApplicationMallocFailedHook(void) {
     /* ⚠️ 这里**只能**用 nolock：堆已经耗尽，任何建锁 / 分配都会再次失败并
      *    递归回到本函数（见 bsp_log.h 对 bsp_log_printf_nolock 的说明）。 */
     FAULT_BANNER("\r\n========== [FAULT] 堆耗尽 ==========\r\n");
-    bsp_log_printf_nolock(BSP_LOG_ERROR, "[FAULT] pvPortMalloc 返回了 NULL");
-    bsp_log_printf_nolock(BSP_LOG_ERROR,
+    bsp_log_printf_nolock(LOG_LVL_ERROR, "[FAULT] pvPortMalloc 返回了 NULL");
+    bsp_log_printf_nolock(LOG_LVL_ERROR,
                           "[FAULT] 对策: 调大 configTOTAL_HEAP_SIZE"
                           "（CubeMX 的 FREERTOS.HEAP_SIZE，当前 15360 B）"
                           "或用 xTaskCreateStatic 静态建任务");
-    bsp_log_printf_nolock(BSP_LOG_ERROR, "[FAULT] 固件已停在此处，复位后重试");
+    bsp_log_printf_nolock(LOG_LVL_ERROR, "[FAULT] 固件已停在此处，复位后重试");
 
     for (;;) {
     }

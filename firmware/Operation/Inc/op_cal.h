@@ -36,6 +36,23 @@ typedef struct {
 /* 填默认频点表（对数间隔）——建表流程开始前调，g/p 留给流程填。 */
 void op_cal_default_freqs(op_cal_table_t *t);
 
+/* ★ 写入第 idx 个标定点（g = 幅值修正，p = 相位修正）。**必须用它，不要直接写
+ * t->p[idx]** —— 相位要在这里展开（unwrap），否则查表会插出完全错误的值。
+ *
+ * 为什么必须展开（2026-10-07 实测，证据 `_work/hwsw-chain/cal_phase_wrap.py`）：
+ *   逐点测出来的相位是 `atan2` 的主值（再 +π/2 ⇒ 落在 (-π/2, 3π/2]）。而 AFE 的
+ *   相移是 8 阶 LC 梯形（fc≈644 kHz）⇒ **带内会穿过 ±180°**：本板实测在
+ *   306.6 kHz 存 -75.3°，到 391.6 kHz 存 +234.4°（同一支连续相位 -165.3°→-215.6°）。
+ *   而 `op_cal_lookup` 是"在 log-f 上线性插值"⇒ 这两个点之间会从 -75° 线性扫到
+ *   +234°，插出 **最差 179.5° 的相位误差 @347 kHz**（>10° 的区间占带内 5.9%）。
+ *   后果不是"相位读数难看"：`op_meas_build` 用各分量相位做 sin 重建取 max−min，
+ *   实测 160 kHz 基波 + 二次谐波（320 kHz 落在坏区间）⇒ **Upp 偏 -18.95 mV**
+ *   （题面判据 ±5 mV）。
+ * 展开规则：把 p 平移到离**上一个点**最近的等价主值（相邻点真实相移 <180°，
+ * 这是 17 点对数密度的保证）。idx==0 直接存主值。
+ * ⚠️ 旧表（未展开）若已写进 Flash，读回来仍会插错 —— 重新标定一次即可。 */
+void op_cal_set_point(op_cal_table_t *t, int idx, float g, float p);
+
 /* log 域线性插值取 (g,p)。f 越界取端点值（与 verify_dsp 的 np.interp 同为钳位）。
  * 表为 NULL 时不改 g 与 p（调用方初始化为 1/0 即"不修正"）。 */
 void op_cal_lookup(const op_cal_table_t *t, float freq_hz, float *g, float *p);
@@ -52,10 +69,6 @@ void op_cal_lookup(const op_cal_table_t *t, float freq_hz, float *g, float *p);
 
 int op_cal_pack(const op_cal_table_t *t, uint8_t *buf, size_t cap);
 int op_cal_unpack(const uint8_t *buf, size_t len, op_cal_table_t *t);
-
-/* CRC32（反射，0xEDB88320）—— 只给本模块序列化用，导出是为了让单测能
- * 独立复算校验（不依赖 pack 的内部布局假设）。 */
-uint32_t op_cal_crc32(const uint8_t *buf, size_t len);
 
 #ifdef __cplusplus
 }

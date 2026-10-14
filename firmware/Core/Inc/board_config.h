@@ -95,39 +95,24 @@
  *   所以这条一致性由 `fw.py lint` 的 CubeMX 对账（.ioc 的 RCC.HSE_VALUE）兜底。 */
 
 /* ---------------------------------------------------------------- 日志出口 ----
- * 默认后端是 **RTT**（走调试探针，不占串口、不打断实时性）——
- * 所以下面这一节**默认不被用到**，它是 `--preset Debug-UART` 的后端配置。
+ * 后端**只有 RTT 一条**（走 J-Link 调试探针，不占串口、不打断实时性）。
  *
- * 本板：USART1 = PA9(TX) / PA10(RX)，AF7。已由 CubeMX 配置（见 .ioc），
- * 所以 UART 后端是**可直接用**的（不是"宣称支持但没人用"）。
- *
- * ⚠️ 引脚/复用/时钟**不是**由 Device 层配的 —— 是 CubeMX 生成的
- *    `Core/Src/usart.c` 里的 `HAL_UART_MspInit` 配的（那是 .ioc 的产物）。
- *    Device 层的 bsp_log.c 只调 `HAL_UART_Init`，**刻意不自己定义 MSP**
- *    （两边都定义会 multiple definition，实测链接失败 —— 见 bsp_log.c 说明）。
- *
- *  ⇒ 所以下面这组宏分两类，用途不同，别混：
- *      · `PORT` / `BAUD`        —— **被 bsp_log.c 读**，是后端的行为参数
- *      · `TX_*` / `RX_*` / `AF` —— **接线事实的登记**，由 `fw.py lint` 与 .ioc 对账
- *        （保证"登记的接线"和"CubeMX 实际配的"不会漂移）。
- *        它们不参与驱动实现，改它们不会改变引脚 —— 改引脚要去 CubeMX 改。
- *    ⚠️ 这一区分是实测出来的：原先 Device 层自己配引脚，与生成的 usart.c
- *       撞了 `HAL_UART_MspInit`，`Debug-UART` 预设直接链接失败。 */
-#define BOARD_LOG_UART_PORT 1     /* 1 = USART1（bsp_log.c 读它选外设实例） */
-#define BOARD_LOG_UART_BAUD 115200U
-#define BOARD_LOG_UART_TX_PORT 0  /* 0 = GPIOA —— 登记项，见上方说明 */
-#define BOARD_LOG_UART_TX_PIN 9
-#define BOARD_LOG_UART_RX_PORT 0
-#define BOARD_LOG_UART_RX_PIN 10
-#define BOARD_LOG_UART_AF 7       /* AF7 = USART1/2/3 —— 登记项 */
+ * ⚠️ **UART 后端已于 2026-10-06 移除**（`.ioc` 里不再配任何 USART ⇒ 板子没有
+ *    串口出口）。原来这里的 `BOARD_LOG_UART_PORT` / `BAUD` / `TX_*` / `RX_*` / `AF`
+ *    七个宏与 `--preset Debug-UART` 预设一并删掉；`bsp_log.c` 的串口后端代码也整段移除。
+ *    要恢复：`.ioc` 勾回一个 USART 并重新生成 → 加回这组宏 → 恢复
+ *    `bsp_log.c` 的 UART 分支（注意**不要**自己定义 `HAL_UART_MspInit`，
+ *    与生成的 `Core/Src/usart.c` 会 multiple definition）。 */
 
 /* ------------------------------------------------------------ 外设（已配）----
  * 以下外设由 CubeMX 配置并生成（见 .ioc）。引脚宏列在这里是为了
  * 让"接线事实"有一个可查的地方 —— 驱动实现在 Device/ 下的 bsp_*.c。
  *
- * ✅ 驱动**已就位**（2026-09-23）：`bsp_spi.c` / `bsp_sd.c` / `bsp_rtc.c`
+ * ✅ 驱动**已就位**（2026-09-23）：`bsp_spi.c` / `bsp_rtc.c`
  *    都在 `Device/Src/` 下，且已挂进 `bsp.h` 能力总表。
  *    （本行原先写"还没有 bsp_spi.c / bsp_sd.c"，那是**过时描述**，已修正。）
+ *    ⚠️ `bsp_sd.c` **2026-10-06 起已从构建下线**（SDIO 从 `.ioc` 移除）——
+ *       源码留在 `Device/Src/`，但不进 `device` 目标、也不再挂进 `bsp.h`。
  *
  * ⚠️ 但**尚未上板验证** —— 只过了"编译 + 符号入库"（`arm-none-eabi-nm` 查得到符号）。
  *    "能编过"证明不了"能跑通"：Flash 读不读得出 JEDEC ID、卡识不识别得了，
@@ -197,6 +182,13 @@
 
 /* SDIO —— **板载 TF 卡座 CARD1**，4-bit 模式（不是 SPI）。
  *
+ * ⚠️⚠️ **2026-10-06：SDIO 已从 `.ioc` 移除，本节的宏与下面的接线描述
+ *    目前是"历史登记"，与现行 CubeMX 工程不符** —— 板子不再有 TF 卡座。
+ *    连带处置：`bsp_sd.c` 已从 `device` 目标下线、`bsp.h` 不再 include 它。
+ *    要用回来：`.ioc` 勾回 SDIO（PC8~PC12 + PD2，AF12）+ PD3 卡检测 →
+ *    重新生成 → 恢复 `CMakeLists.txt` 的 `Device/Src/bsp_sd.c` 与 `bsp.h` 的 include。
+ *    下面这段描述**保留原样**（它是 2026-09-23 当时的实测记录，不重写）。
+ *
  * ✅ `NVIC.SDIO_IRQn` 已使能（抢占优先级 5）。
  * ✅ `PD3`（卡检测）已配成 GPIO_Input + 上拉。
  * ✅ **卡检测已上板验证**（2026-09-23）：未插卡时自检正确报出"TF 卡未插入"。
@@ -204,8 +196,8 @@
  *
  * ⚠️ **「启动绑架」问题已修复**（2026-09-23 上板实测后）：
  *    `MX_SDIO_SD_Init()` 里的 `HAL_SD_Init()` 在**没插卡时必然失败**，
- *    而它原来调 `Error_Handler()` → `app_panic()` → **整块板子不启动**。
- *    实测调用栈：Reset_Handler → main → MX_SDIO_SD_Init → Error_Handler → app_panic。
+ *    而它原来调 `Error_Handler()` → 停机路径 → **整块板子不启动**。
+ *    实测调用栈：Reset_Handler → main → MX_SDIO_SD_Init → Error_Handler → 停机。
  *    修法：`Error_Handler` 改调 `app_init_failed()`（打日志后返回，不停机）。
  *    ⇒ 现在没插卡也能正常启动，只是多一行 `[E]` 日志。
  *
@@ -349,11 +341,33 @@
  *   受影响的只有未标定回退路径、以及模拟前端的直流工作点核算
  *   （VBIAS = VREF/2 = 1.65V，`BOARD_VBIAS_SENSE_CODE_MID` 的半量程判据不受影响）。 */
 #define BOARD_ADC_VREF_MV 3300U
-/* 模拟前端净增益（源端电动势 → ADC，2026-09-30 改图后口径，证据链 hardware/15）：
- * 端接 ×0.5 × LC 双端接插损 ×0.5 × U1B 同相 ×8（R6 69.8k / R7 10k ≈ 7.98）≈ 2.0。
+/* 模拟前端净增益（源端电动势 → ADC）。**2026-10-11 ×4 增益改造后重核**（证据：三页网表
+ * 直读 + `tools/sim/` 的 AC 扫描，`_work/hwsw-chain/afe_response.py`）：
+ *   端接 ×0.5（R1 49.9Ω 与源 50Ω 分压）
+ *   × LC 双端接插损 ×0.5（R3/R4 各 49.9Ω，8 阶 Butterworth 匹配时负载只拿到源的一半）
+ *   × U1B 同相 ×(1 + R6/R7) = 1 + 53.6k/3.57k = **16.0140**
+ *   ────────────────────────────────
+ *   = 4.0035 ≈ 4.0   ⇒ 仿真实测 |H(1kHz)| = 4.0137（`afe_response.py`）
+ *
+ * ★★ 2026-10-11 变更：净增益 **×2.0 → ×4.0**（`R6` 24.9k → **53.6k**，`R7` 保持 3.57k）。
+ *    目的：**提高 ADC 量程利用率** —— 原最大输入（250mVpp）在 ADC 端只占 3.3V 量程的
+ *    15%（1.40~1.90V），现 ~30%（1.15~2.15V）⇒ ADC 的 INL/DNL（固定 ±1.5 LSB）折算到
+ *    **输入端**同比减半（0.6 → 0.3 mV）。依据：`hardware/56 §5.2`、`hardware/57 §3 B1`。
+ *    R7 保持 3.57k 不变 —— 它是 ADC 端噪声的第一大项（√R7 律），不动它就不增加噪声。
+ *
+ * ⚠️ **副作用（必须知道）**：U1B 级增益 7.97 → 16.01 ⇒ 闭环带宽 **1251 → 623 kHz**，
+ *    500 kHz 处增益相对低频 **−1.19 dB**（原 −0.02 dB）。该跌落是 **LTI**，由标定表吸收；
+ *    但响应变陡 ⇒ "17 点等对数 + 线性插值"的残差变大（真实多音口径 0.173 → 0.290 mV）
+ *    ⇒ **必须同时做 A1（插值改 PCHIP + 布点改加权 20 点）**，残差才回到 ~0.022 mV
+ *    （见 `hardware/57 §2 A1`，复算脚本 `_work/acc_20261011/cal_resid_opt.py`）。
+ *    配套补偿：`R11` 100Ω → 300Ω（`55 §3.2.1`，把故障注入电流压进 ST 的 ±5mA）。
+ *
+ * ⚠️ **改增益后必须重做标定**：旧标定表的 g(f) 是按 ×2.0 测的，**不再有效**（表里存的是
+ *    比值，但那段频响已经变了）。
+ *
  * 码值 → 输入端 mV：lsb_in_mv = VREF/4096/净增益（app_engine.c 装配）。
  * 原 BOARD_FRONT_GAIN=4U 只是运放级增益、且漏算两个 ×0.5（14 号文档 D2/D7）——已废。 */
-#define BOARD_NET_GAIN 2U
+#define BOARD_NET_GAIN 4U
 
 /* TIM8：fs 的来源。144MHz / (PSC+1) / (ARR+1) = 144e6 / 72 = 2.000MHz
  *
@@ -452,18 +466,35 @@
  * 2026-09-26 修正：原先以为 FSMC 参数无法写进 `.ioc`（当时 CubeMX 每次都卡在
  * `IP not ready for code generation: FSMC`），后来查明**卡死的原因是 CubeMX 自己
  * 的模板临时文件 `MXTmpFiles/` + `*.ftl` 残留在工程根** —— 清掉之后参数全部被接受。
- * ⇒ 现在 `MX_FSMC_Init()`（Core/Src/fsmc.c）由 CubeMX 完整生成：
- *      16 位 SRAM 模式 / Bank1 / 扩展模式关 / AS=1 HCLK / DS=85 HCLK / AccessMode A
- *   **改时序请去 CubeMX 的 FSMC 页改 `.ioc`**，不要在这里加宏 ——
- *   加了也不会生效（没有代码读它），只会变成第二个真相源。
+ * ⇒ 现在 `MX_FSMC_Init()`（Core/Src/fsmc.c）由 CubeMX 完整生成。
+ * **改时序请去 CubeMX 的 FSMC 页改 `.ioc`**，不要在这里加宏 ——
+ * 加了也不会生效（没有代码读它），只会变成第二个真相源。
+ *
+ * ★★ 2026-10-13 现行值是 `AddressSetupTime=2` / `DataSetupTime=8`**
+ *    （`.ioc` 的 `FSMC.AddressSetupTime1/DataSetupTime1` 与生成的 `fsmc.c` 一致）。
+ *    写周期 ≈ (AS + DS + 1) HCLK = 11 HCLK = **76.4 ns/字** ⇒
+ *    **吞吐 ≈ 26.2 MB/s**，整屏 480×320（153600 px / 307 KB）≈ **11.7 ms ⇒ 85.5 fps**。
+ *    ⚠️ 2026-10-07 的核对结论是 AS=2/DS=12（104.2 ns/字 / 62.5 fps）；10-13 按"帧率拉满"
+ *       收紧到 **DS=8**。**为什么取 8 不取 7**：DS=7 ⇒ 10 HCLK = 69.4 ns，对屏 spec 的
+ *       TWC(min)=66 ns 只剩 **5%** 余量，而板上有 33Ω 串阻 + 排线负载（边沿会更慢）；
+ *       DS=8 留 **16%** 余量，只慢 10%。要再快必须换扩展模式（见下）。
+ *    ⚠️ 屏 spec 依据：ST7796S spec §7.4.1「8080 Series MCU Parallel Interface
+ *       Characteristics」TWC（写周期）**Min 66 ns**（⇒ 等效上限 15.15 MHz）。
+ *    ⚠️⚠️ **本文件、`bsp_lcd.c`、`project_config.h` 里原先写的"DS=85 / 597 ns/字 /
+ *       3.3 MB/s / 整帧 90ms / 一个 draw buffer 9ms" 全是**过期数字** —— 那是
+ *       2026-10-02 一次"为了把 CS 率压到 2 MHz 以下"的拍板，但它**从未落进 `.ioc`**：
+ *       `.ioc` 的实际走向是 09-28 的 `AS=1/DS=15` → 10-06 的 `AS=2/DS=12`（**更快**）。
+ *       git 证据：`git log -G DataSetupTime1 -- firmware/G2026.ioc`。
+ *    ⇒ **凡引用"DS=85"做推论的注释都已按现行值改写**；要真按 DS=85 跑，
+ *      必须先在 CubeMX 里改 `.ioc` 并重新生成，不能靠改注释。
  *
  * ⚠️ 时序取值依据（改之前先看）：单位 = 1 HCLK = 1/144MHz ≈ 6.944ns。
- *    DS=85 ⇒ 每字 86 HCLK ≈ 597ns：写 tWR(≥15ns) 与读 tACC(≈100ns) 仍都满足。
- *    2026-10-02 从 DS=15（111ns/字，约 18MB/s）降下来：示波器实测 CS(NE1)
- *    每写一个脉冲 3.202MHz，按"降到 2M 以下"拍板 DS=85 ⇒ CS 率 ≤1.67MHz。
- *    代价：写吞吐 ≈3.3MB/s（300KB 整帧 ≈90ms）。
- *    要提速就开扩展模式（AccessMode D + 读写时序分开，写能到 27.8ns/字），
- *    但注意 HAL 的约定是 `Timing`→BTR=**读**、`ExtTiming`→BWTR=**写**，极易搞反。 */
+ *    现行 AS=2/DS=8 ⇒ 每字 ≈76 ns：写 tWRH/tWRL(≥15ns，DS 期间 55.6ns) 与
+ *    读 tACC(≈100ns，走 Mode A 的读周期) 仍都满足。
+ *    要提速就开扩展模式（AccessMode D + 读写时序分开，写能到 ~27.8ns/字 ≈ 72 MB/s），
+ *    但注意 HAL 的约定是 `Timing`→BTR=**读**、`ExtTiming`→BWTR=**写**，极易搞反。
+ *    ⚠️ 提速的**干扰代价由 `bsp_lcd` 的"LCD 总线闸"兜**（采样窗内 FSMC 一次不动），
+ *       不再靠"全局放慢 FSMC"——但那条闸**必须上板用示波器验**（见 `hardware/` 相关页）。 */
 
 /* 8080 的两个"寄存器地址"：FSMC_A16 = HADDR[17]（16 位总线时地址线右移 1）
  *   Bank1 基址 0x60000000；A16 置 1 ⇒ +0x20000
@@ -522,17 +553,34 @@
 #define BOARD_TOUCH_HEIGHT 480U
 
 /* ---- 触摸轴映射（2026-10-02 新增：由"触摸测试"页现场定，定完写回这三个宏）----
- * 为什么要有它们：屏厂例程给的原始轴序是**面板竖屏**（第一轴=短边）；而本工程显
- * 示是**横屏 90°**（见 app_lvgl.c 的 lv_display_set_rotation），两者差一个交换。
- * 之前把这件事写在 bsp_touch_read 的注释里（"改哪两行"）—— 现在改成开关：
- *   · `BOARD_TOUCH_SWAP_XY=1`：交换两轴（横屏映射一般需要它）
- *   · `BOARD_TOUCH_INVERT_X/Y=1`：该轴镜像（面板贴合方向不同就需要）
- * 用法：进 UI 第 5 页"TOUCH"，**点四个角**看十字准星落哪 —— 落点对了就把当时的
- * 开关组合写回这里（页面上会显示当前组合）。
+ * 它们修的是「**FT6336 原始轴序 → 面板物理坐标**」这一段（在 `bsp_touch_read` 里应用）。
+ * ⚠️ **与显示方向无关** —— 显示旋转由 LVGL 自己负责：`lv_indev_read()` 每一拍都会按
+ *    **当前** rotation 调 `lv_display_rotate_point()`（`indev/lv_indev.c`），
+ *    而 indev 在 `lv_indev_create()` 时就绑定了默认 display。
+ *    ⇒ 2026-10-02 那句"横屏映射一般需要它（SWAP）"是**错的**（2026-10-13 订正）：
+ *      旋转不需要在这里补，这里只负责对齐**芯片自己的轴序**。
+ *   · `BOARD_TOUCH_SWAP_XY=1`：交换两轴（FT6336 的第一轴沿**长边**时才需要）
+ *   · `BOARD_TOUCH_INVERT_X/Y=1`：该轴镜像（由模组贴合方向决定）
+ * 用法：进 UI 左侧页签最下面的 **TOUCH** 页，**点四个角**看十字准星落哪 —— 落点对了
+ * 就把当时的开关组合写回这里（页面上会显示当前组合）。
+ * ★ 2026-10-13 横屏定稿后定的值，**已上板实测：完全跟手** ✓
+ *     定值链路（每一步都有证据，不是"转了几度推几个轴"）：
+ *     ① **轴分配看量程**：J-Link 读芯片直出值（`g_touch_hist` 诊断，已删）
+ *        得 x∈0..319、y∈0..479 ⇒ `P1_X` 沿**短边**、`P1_Y` 沿**长边** ⇒ `SWAP_XY=0`。
+ *        旁证：屏厂例程 `touch_CTP.c` 同样把 `buf[5]/[6]`(P1_Y) 当显示 x。
+ *     ② **方向靠实测**：全 0 时"点左上→报右下"（两轴都反）；只反一个轴时"x 跟手、y 反"
+ *        ⇒ 两轴都要镜像 ⇒ `INV_X=1` + `INV_Y=1`。
+ *   ⚠️⚠️ **最容易绕晕的一点**：LVGL 的 `ROTATION_270` 变换**把两个轴交叉了** ——
+ *      `lx = ty`、`ly = 319 - tx`。所以**现象上"y 轴反"要动的其实是 `INV_X`**
+ *      （它影响 tx ⇒ 影响 ly），改 `INV_Y` 只会让屏幕**横**坐标翻掉。
+ *      本次为此白绕了三轮（"改了没变化"就是这么来的）。
+ *      ⇒ 结论：**不要用屏幕现象反推这三个宏**。要么读芯片原值算，要么去 TOUCH 页翻开关实测。
+ *   ⚠️ 若换屏/换模组批次：进左侧页签的 **TOUCH** 页，三个开关**当场生效**，点四角看准星凑对，
+ *      再把屏上那行 `map SWAP=x INVX=y INVY=z` 写回这里。
  * ⚠️ 这三个宏只影响**坐标映射**，绝不要去动 bsp_lcd / MADCTL 的方向（会是两个来源）。 */
 #define BOARD_TOUCH_SWAP_XY 0
-#define BOARD_TOUCH_INVERT_X 0
-#define BOARD_TOUCH_INVERT_Y 0
+#define BOARD_TOUCH_INVERT_X 1
+#define BOARD_TOUCH_INVERT_Y 1
 
 /* ------------------------------------------------------- LVGL 内存池（放 CCM）----
  * ★ 需求：**LVGL 的堆放 CCM**（64KB，CPU 独占、不占主 RAM、也不吃 DMA 带宽）。
@@ -555,8 +603,27 @@
 #define BOARD_CCM_BASE_ADDR 0x10000000U
 #define BOARD_CCM_SIZE_KB 64U
 #define BOARD_LVGL_MEM_ADDR 0x10008000U  /* CCM 高半边（= 基址 + 32KB） */
-#define BOARD_LVGL_MEM_SIZE_KB 32U       /* LVGL 堆大小 */
-#define BOARD_DSP_CCM_SIZE_KB 32U        /* 留给 .ccmram（DSP 数组）的上限 */
+#define BOARD_LVGL_MEM_SIZE_KB 32U       /* LVGL 主堆大小 */
+/* ★ 2026-10-13 追加：LVGL 的**第二块池**（4KB，落在 SRAM1 的 .bss）。
+ *
+ * why 需要它：横屏业务界面实测吃 **≈21.4KB** LVGL 堆（65 个对象；PC 侧 `lv_mem_monitor`
+ *   逐条计量，推导与实测写在 `Task/Src/app_ui.c` 文件头"内存"一节）。
+ *   而 CCM 里**没有余量**：低半被 DSP 的 `s_fft`（2N float = 32KB）占死、
+ *   高半就是主池那 32KB。主池 + 板侧基线（`lv_init` ≈3.1KB + 显示/indev/sysmon）
+ *   ≈ 32~33KB ⇒ 差一点点，且**不留运行时余量** ⇒ 在 SRAM1 补 4KB：合计 ≈36KB。
+ *
+ * how：`Task/Src/app_lvgl.c` 的 `app_lvgl_init()` 里 `lv_mem_add_pool()`（LVGL 官方
+ *   多池接口，仅 `LV_USE_STDLIB_MALLOC = LV_STDLIB_BUILTIN` 时有效）。
+ * ⚠️ 代价 = RAM +4KB。预算以 `Tools/stm32_size.py` 的 `BUDGETS` 为**唯一口径**
+ *   （当前 RAM 门禁 120KB，2026-10-13 由用户两次点名放开；本文件不再复述数字，
+ *    免得又出现"三套口径互相矛盾"——2026-10-14 八轮订正）。
+ * ⚠️ 它**不占 CCM**：那 64KB 已按上面的切分用满，别往那儿挪。 */
+/* ★ 2026-10-14：**4 → 0**（页面改按需创建/用后销毁之后，这块 SRAM1 扩展不再需要）。
+ * 依据：稳态 `heap free ≈ 24.6~26.9 KB`（池合计 34.5 KB ⇒ 实际用 ~9 KB），
+ *   而峰值出现在"快滑时 2~3 页同时驻留"⇒ 观测到的 used 峰值 ~14.5 KB ⇒ 32 KB 主池
+ *   （CCM）就够。⚠️ 判据（改后必须验）：开机 + 三页来回滑若干次，
+ *   `[UI] LVGL 堆` 的 `free` **不得掉到 2 KB 以下**（低于它会静默分配失败）。*/
+#define BOARD_LVGL_MEM_EXT_KB 0U
 
 /* ---------------------------------------------------------------- 闭环契约 ----
  * AI 自动验证靠这两行标记判定固件是否真的跑起来了（详见 docs/11 §5）。

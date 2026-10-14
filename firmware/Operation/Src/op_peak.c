@@ -7,6 +7,10 @@
 
 #include "op_dsp.h" /* OP_DSP_CG —— 幅值归一要同一张窗的相干增益 */
 
+/* 静态默认值 = 与 project_config.h 的 APP_PEAK_* **同值**的兜底：
+ * 生产路径由 app_engine_init() 显式 op_peak_init() 注入，不读它；
+ * PC 单测（Test/test_op_meas.c）不调 init，靠这份默认跑 ——
+ * ⚠️ 改 APP_PEAK_* 时必须同步改这里（Operation 层不许 include 配置头）。 */
 static op_peak_params_t s_p = {
     9000.0f, 502000.0f, 1.5f,
 };
@@ -29,10 +33,15 @@ void op_peak_init(const op_peak_params_t *p) {
  * Kahan 在硬件 FPU 上 4 flops/项 ≈ 0.5ms/频点，误差 ~eps·|Σ| ≈ 0.01mV。 */
 static void dft_at(const float *xw, uint32_t n, float fs_hz, float f_hz,
                    float *re_out, float *im_out) {
-    /* 旋转步进：e^{−j2πf/fs} */
+    /* 旋转步进：e^{−j2πf/fs}
+     * ★ 2026-10-14 八轮（P3.3）：`cos/sin`(double) → `cosf/sinf`(float)。本工程只有
+     *   单精度 FPU ⇒ double 三角函数是软浮点（~500~1500 周期/次），而这里每帧要调
+     *   384 次（3 峰 × 4 次 dft_at × 16 次锚点重置 × 2）。角度仍用 double 算
+     *   （i 大时精度更好）、只在调用处转 float：锚点角的 float 误差 ~1e-4 rad
+     *   只影响 1/256 的样本 ⇒ 对 |X| 的影响 ~1e-7，远在 5mV 判据之内。 */
     const double w = -2.0 * 3.14159265358979323846 * (double)f_hz / (double)fs_hz;
-    const float step_re = (float)cos(w);
-    const float step_im = (float)sin(w);
+    const float step_re = cosf((float)w);
+    const float step_im = sinf((float)w);
 
     float re = 0.0f;
     float im = 0.0f;
@@ -43,8 +52,8 @@ static void dft_at(const float *xw, uint32_t n, float fs_hz, float f_hz,
     for (uint32_t i = 0; i < n; i++) {
         if ((i % PEAK_TWIDDLE_RESET) == 0U) {
             const double th = w * (double)i; /* 锚点重置：误差不跨步累积 */
-            c_re = (float)cos(th);
-            c_im = (float)sin(th);
+            c_re = cosf((float)th);
+            c_im = sinf((float)th);
         }
         {
             const float prod_re = xw[i] * c_re;

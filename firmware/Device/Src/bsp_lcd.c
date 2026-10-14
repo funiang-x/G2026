@@ -5,7 +5,7 @@
  *    ① 背光开关（普通 GPIO 脚；FSMC 时序由 CubeMX 的 `MX_FSMC_Init()` 配，
  *       本层不重复配 —— 见下方"FSMC 句柄"说明）
  *    ② 屏的硬复位（RESET 引脚时序）
- *    ③ 四个搬运原语：写命令 / 写参数 / 开窗 / 写像素
+ *    ③ 三个搬运原语：写命令 / 写参数 / 写像素
  *  **不含初始化序列、不含图形逻辑** —— 初始化序列由 LVGL 的 ST7796 驱动发。
  *
  *  ---- 8080 并口怎么"不用翻引脚" ----
@@ -43,12 +43,13 @@ static const bsp_gpio_t s_bl = {(bsp_gpio_port_t)BOARD_LCD_BL_PORT, BOARD_LCD_BL
 
 /* FSMC 句柄**不在本文件**：CubeMX 生成的 `Core/Src/fsmc.c` 里有全局
  * `hsram1`，`MX_FSMC_Init()` 已经用它配好了 8080 16 位 SRAM 时序
- * （AS=1 / DS=85 / AccessMode A，见 `Core/Src/fsmc.c` 的 `MX_FSMC_Init()`；
- *   DS=85 @144MHz = 590ns 写脉宽，对模块侧十几 ns 的要求是 6~9× 余量 ——
- *   `hardware/22 §5` 的 33Ω 源端阻尼就是给这套"慢而有余量"的时序兜底）
+ * （现行 **AS=2 / DS=8** / AccessMode A，见 `Core/Src/fsmc.c` 的 `MX_FSMC_Init()`
+ *  与 `board_config.h` 的 FSMC 段；**改时序去 CubeMX 改 `.ioc`，不在本层加宏**）
  * ⇒ 本层**不再配第二遍**：重复 HAL_SRAM_Init 没有意义，而且会把
  *    "时序到底在哪定义"这件事变成两个来源。 */
 static int s_ready = 0;
+
+
 
 /* LCD 总线闸（2026-10-02）：采样窗静默的落地机制，见 bsp_lcd.h 的说明。
  * 互斥量 ⇒ 带优先级继承（写屏侧持闸时 engine 来抢，会让写屏侧临时提权把当前块写完）。
@@ -68,10 +69,10 @@ void bsp_lcd_bus_give(void) {
     }
 }
 
-/* 常用 8080 命令（MIPI DCS 标准集，ST7796S / ILI9341 / ST7789 共用） */
+/* 常用 8080 命令（MIPI DCS 标准集，ST7796S / ILI9341 / ST7789 共用）
+ * ⚠️ `0x2C` 由本层发：LVGL 是把它当**参数**传进 `lcd_send_color()` 的，那一层不吃它
+ *    （见 `bsp_lcd_write_pixels()` 与 app_lvgl.c 的 flush 实现）。 */
 #define LCD_CMD_RDDID 0x04U /* 读显示 ID（4 字节） */
-#define LCD_CMD_CASET 0x2AU /* 列地址设置 */
-#define LCD_CMD_RASET 0x2BU /* 页地址设置 */
 #define LCD_CMD_RAMWR 0x2CU /* 写显存 */
 
 /* ------------------------------------------------------------------ 内部 */
@@ -83,6 +84,23 @@ static void lcd_hw_reset(void) {
     bsp_gpio_write(s_rst, 1);
     HAL_Delay(120);
 }
+
+/* ---- 写吞吐：**结论存档**（2026-10-13 六轮量过，2026-10-14 八轮把仪器删了）----
+ * 当时的怀疑：写周期走了 BWTR 的复位值（270 周期 = 1.875µs/字），因为
+ *   `MX_FSMC_Init()` 里 `ExtendedMode = DISABLE` 且 `HAL_SRAM_Init(..., &Timing, NULL)`
+ *   ⇒ HAL 从不写 BWTR。
+ * 实测结论（基准 + J-Link 读寄存器）：**怀疑是错的** ——
+ *   · 写吞吐实测 **100 ns/字 ≈ 10 Mpx/s**（BTR 理论 76.4 ns/字，多出来的是循环与 AHB）；
+ *   · 非扩展模式下 FSMC 的写周期用 **BTR**，BWTR 不参与（与 RM 一致）；
+ *   · 于是"波形一卡一卡"的真凶是 **LVGL 的软件渲染**，不是写屏 —— flush 全程只占
+ *     ~4% CPU（见 app_lvgl.c 的 `[LVGL] diag`）。
+ * ⚠️ 教训留在这里：**"算得通"不等于"就是它"** —— 该量的时候就量。当时若顺着怀疑
+ *   去改 `.ioc` 时序，就会在"改完发现没用"的同时还留下一个未验证的配置。
+ * ⚠️ 仪器（`lcd_bench_write` / `fsmc_fix_write_timing` / `s_bench_*` /
+ *   `bsp_lcd_bench_report` / 每 5s 打的那三个字段）**已删除**：假说被证伪、BWTR 在
+ *   非扩展模式下本来就不参与（"显式写一遍免得日后踩雷"是推测性用途），而基准还会
+ *   写坏当前 GRAM 窗口 ⇒ 留着只有风险没有收益。 */
+
 
 /* ------------------------------------------------------------------ 对外 */
 int bsp_lcd_init(void) {
@@ -104,6 +122,11 @@ int bsp_lcd_init(void) {
     if (s_bus_mtx == NULL) {
         LOG_W("[LCD] 总线闸创建失败 —— 采样窗静默退化为整帧级避让（见 bsp_lcd.h）");
     }
+
+    /* ★ 2026-10-14：这里**曾经**有一个 DMA 像素搬运的初始化（C9③）。
+     *   已按用户指示清理 —— 它卡在"`EN` 不能证明总线真的静默"上，而
+     *   采样窗静默（O1）不能赌；两次上板失败（ISR 里打日志 / 中断里还互斥量）
+     *   的教训留在 `docs/03_LVGL刷屏优化评估-20261014.md §8.1 C`。 */
 
     s_ready = 1;
     return 0;
@@ -128,46 +151,42 @@ void bsp_lcd_write_data(const uint8_t *data, uint32_t len) {
     }
 }
 
-void bsp_lcd_set_window(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1) {
-    uint8_t buf[4];
-
-    bsp_lcd_write_cmd(LCD_CMD_CASET);
-    buf[0] = (uint8_t)(x0 >> 8);
-    buf[1] = (uint8_t)(x0 & 0xFF);
-    buf[2] = (uint8_t)(x1 >> 8);
-    buf[3] = (uint8_t)(x1 & 0xFF);
-    bsp_lcd_write_data(buf, 4);
-
-    bsp_lcd_write_cmd(LCD_CMD_RASET);
-    buf[0] = (uint8_t)(y0 >> 8);
-    buf[1] = (uint8_t)(y0 & 0xFF);
-    buf[2] = (uint8_t)(y1 >> 8);
-    buf[3] = (uint8_t)(y1 & 0xFF);
-    bsp_lcd_write_data(buf, 4);
+/* ★★ 写像素流：**`0x2C` 只能在整个窗口的第一块之前发一次**（2026-10-12 实测）。
+ * 实测证据（J-Link 直接对屏做，脚本 `_work/lcd_flashscreen_20261012/ramwr_restart.jlink`）：
+ *   窗口设成 8 列 × 2 行 → 先 0x2C 写 8 个值 0111..0118 → **再 0x2C** 写 0121..0128
+ *   → 读回窗口：`0121..0128` + 8 个 `FFFF` ⇒ **第二批把第一批整个覆盖**。
+ * ⇒ 本屏每收到一次 `0x2C` 都会把写地址**复位到窗口起点**（不是"接着上次的指针写"）。
+ *   所以我们把一次 flush 切成 `APP_LCD_CHUNK_PX` 块时，**绝不能每块都重发 `0x2C`**
+ *   —— 那样每块都回到窗口第一行、反复覆写最前面几行，其余行永远是上电随机 GRAM
+ *   （现象就是"整屏雪花 + 几条均匀横线上有界面"）。 */
+void bsp_lcd_write_pixels(const uint8_t *px, uint32_t len) {
+    bsp_lcd_write_cmd(LCD_CMD_RAMWR);
+    bsp_lcd_write_pixels_cont(px, len);
 }
 
-void bsp_lcd_write_pixels(const uint8_t *px, uint32_t len) {
-    /* px 是 RGB565 **大端**字节流（高字节在前），与屏的期望一致。
-     * 本层把它重新拼成 16 位字写出去 —— 不是"多一遍转换"，
-     * 而是 16 位总线上必须这么拼（字节序的调整已经在 LVGL 侧做掉了，
-     * 见 bsp_lcd.h 关于 RGB565_SWAPPED 的说明）。 */
+void bsp_lcd_write_pixels_cont(const uint8_t *px, uint32_t len) {
+    /* px 是 RGB565 的**原生小端**字节流（低字节在前），本层把它拼成 16 位字写出去。
+     *
+     * ★★ 2026-10-14（C9①）**更正一条传了很久的错觉：这里并没有"字节序交换"。**
+     *   算术事实（不依赖任何硬件假设）：ARM Cortex-M 恒为小端 ⇒
+     *   `(p[1]<<8)|p[0]` **就等于** `*(const uint16_t *)p`（px 两字节对齐时），
+     *   也就是一次**原生半字读**。它写出去的值 = 屏要的那个 16 位字 V。
+     *   （写成这种形式而不是直接半字读，只是为了不依赖 px 的对齐 —— 值完全相同。）
+     *
+     *   ⚠️ 这条更正有实际后果，别再把"字节序"当障碍：
+     *   **DMA 半字搬运（内存 → FSMC 数据口）得到的是同一个 V** ⇒
+     *   「F407 的 DMA 不能交换字节，所以 DMA 刷屏要先解决字节序」是**假障碍**，
+     *   一个字节都不用动。（原判断见 `docs/03_LVGL刷屏优化评估-20261014.md` §5.3，
+     *   同日更正为"不适用"。）
+     *
+     * ⚠️ 本函数**不发任何命令**：调用者必须已经发过 `0x2C`，且中间不许再发
+     *    （理由见上）。 */
     const uint8_t *p = px;
     uint32_t       n = len / 2U; /* 像素数 */
 
-    bsp_lcd_write_cmd(LCD_CMD_RAMWR);
     for (uint32_t i = 0; i < n; i++) {
-        LCD_DAT_WR = (uint16_t)(((uint16_t)p[0] << 8) | (uint16_t)p[1]);
+        LCD_DAT_WR = (uint16_t)(((uint16_t)p[1] << 8) | (uint16_t)p[0]);
         p += 2;
-    }
-}
-
-void bsp_lcd_fill(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t rgb565) {
-    uint32_t n = (uint32_t)(x1 - x0 + 1U) * (uint32_t)(y1 - y0 + 1U);
-
-    bsp_lcd_set_window(x0, y0, x1, y1);
-    bsp_lcd_write_cmd(LCD_CMD_RAMWR);
-    for (uint32_t i = 0; i < n; i++) {
-        LCD_DAT_WR = rgb565;
     }
 }
 
@@ -188,11 +207,24 @@ int bsp_lcd_read_id(uint8_t id[4]) {
         id[i] = (uint8_t)(v & 0xFFU);
     }
 
-    /* 判据：全 0 或全 0xFF 都说明没读到东西（总线浮空 / 时序太紧）。
-     * ⚠️ 不要用"ID 值等于某个期望值"做判据 —— ST7796S 批次间有差异，
-     *    兼容片 HX8357 的 ID 完全不同（见 bsp_lcd.h 的说明）。 */
-    if ((id[0] == 0 && id[1] == 0 && id[2] == 0 && id[3] == 0) ||
-        (id[0] == 0xFF && id[1] == 0xFF && id[2] == 0xFF && id[3] == 0xFF)) {
+    /* 判据：**四字节全相同 ⇒ 判失败**（这一条同时盖住"全 0 / 全 0xFF"）。
+     *
+     * ★ 2026-10-09 加固，起因是一次**假通过**：单核心板（屏根本没接）时读到
+     *   `04 04 04 04`，原判据只挡"全 0 / 全 0xFF" ⇒ 判成"读到了"，日志打出
+     *   `[SELFTEST] LCD ok`，把"屏没接"报成了"屏通了"。
+     *   机理：上面刚往 CMD 窗口写了 `0x04`（RDDID 命令本身），而屏没接时数据线上
+     *   **没有任何器件驱动** ⇒ FSMC 读到的就是**自己上一次驱动的值在总线电容上的回声**。
+     *
+     * 两个已知场景被本条干净分开（都是实测值）：
+     *   · 屏没接  → `04 04 04 04`（= 命令字节回声）⇒ 四字节全同 ⇒ **拒绝**
+     *   · 屏接上  → `00 FF FF FF`（`hardware/04-pinout连接表.md`）⇒ 非全同 ⇒ 通过
+     * 真实 ID 也都不是四字节全同（ST7796S=00 77 96 00 · ILI9341=00 93 41 00 ·
+     * HX8357=00 D3 …）⇒ 本条**不会误杀真屏**。
+     *
+     * ⚠️ 仍然**不要**改成"ID 值等于某个期望值"——ST7796S 批次间有差异，兼容片
+     *    HX8357 的 ID 完全不同（见 bsp_lcd.h 的说明）。本判据只判"是不是在读一个
+     *    真器件"，不判"是哪个器件"。 */
+    if (id[0] == id[1] && id[1] == id[2] && id[2] == id[3]) {
         return -1;
     }
     return 0;
@@ -202,20 +234,21 @@ int bsp_lcd_self_check(void) {
     uint8_t id[4] = {0};
 
     if (bsp_lcd_read_id(id) != 0) {
-        LOG_W("[SELFTEST] LCD 读不到 ID（RD 没接 / 时序太紧 / 屏没供电）"
-              "—— 检查 PE/PD 数据线、PD4(NOE)、PD7(NE1)、PD11(A16)");
+        /* 把**读到的原始 4 字节**打出来 —— 这是"屏没接"和"屏接了但时序不对"
+         * 唯一的区分点，别只说一句"读不到"：
+         *   · 四字节全同（典型 `04 04 04 04`）= 命令字节回声 ⇒ **屏没接 / 没供电**
+         *     （数据线上没人驱动，读到的是自己刚写下去的值）；
+         *   · 其它组合 = 总线上有器件但 ID 不像话 ⇒ 查 PE/PD 数据线、PD4(NOE)、
+         *     PD7(NE1)、PD11(A16) 与 FSMC 时序。
+         * 2026-10-09：正是靠这个区分才发现"单核心板时被判成了 LCD ok"。 */
+        LOG_W("[SELFTEST] LCD 读不到 ID：读到 %02X %02X %02X %02X"
+              "（四字节全同 ⇒ 那是**刚写进去的命令字节的回声**，屏没接 / 没供电；"
+              "否则查 PE/PD 数据线、PD4(NOE)、PD7(NE1)、PD11(A16)）",
+              id[0], id[1], id[2], id[3]);
         return -1;
     }
     LOG_I("[SELFTEST] LCD ok, RDDID=%02X %02X %02X %02X（能读到即证明 16 位总线 + "
           "RS 地址译码 + 读写时序都通）",
           id[0], id[1], id[2], id[3]);
     return 0;
-}
-
-uint32_t bsp_lcd_width(void) {
-    return BOARD_LCD_WIDTH;
-}
-
-uint32_t bsp_lcd_height(void) {
-    return BOARD_LCD_HEIGHT;
 }

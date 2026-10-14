@@ -114,5 +114,81 @@ int main(void) {
         CHECK(op_cal_unpack(small, sizeof(small), &t) == -1);
     }
 
+    /* ---- ★ 相位展开（回归：2026-10-07 实测的 180° 插值错） ----
+     * 造一条**真实形状**的相位曲线：8 阶 LC 的相移随频率单调下降、穿过 -180°，
+     * 逐点测量拿到的是主值 ⇒ 序列里会跳 360°。用 op_cal_set_point 存表后，
+     * 查表结果必须跟连续真值只差"小量"，不能差 180°。
+     * （用不着真网表：只要曲线单调 + 跨 ±180°，就复现原缺陷。） */
+    TEST_CASE("相位展开（跨 ±180°）");
+    {
+        op_cal_table_t w;
+        const float PI = 3.14159265358979323846f;
+        op_cal_default_freqs(&w);
+        /* 真值：从 -0.05 rad 起，按 log-f 二次曲线降到 -5.0 rad（跨越 -π） */
+        float ptrue[OP_CAL_POINTS];
+        for (int k = 0; k < OP_CAL_POINTS; k++) {
+            const float x = (float)k / (float)(OP_CAL_POINTS - 1);
+            ptrue[k] = -0.05f - 4.95f * x * x;
+        }
+        for (int k = 0; k < OP_CAL_POINTS; k++) {
+            /* 逐点"测量"：取主值（等价于固件里的 atan2 + π/2 再折回） */
+            float meas = ptrue[k];
+            while (meas > PI) {
+                meas -= 2.0f * PI;
+            }
+            while (meas <= -PI) {
+                meas += 2.0f * PI;
+            }
+            op_cal_set_point(&w, k, 1.0f, meas);
+        }
+        /* ① 展开后必须单调（真值单调 ⇒ 展开正确就单调） */
+        for (int k = 1; k < OP_CAL_POINTS; k++) {
+            CHECK(w.p[k] < w.p[k - 1]);
+        }
+        /* ② 展开值必须等于真值（mod 2π 之外，还要同支） */
+        for (int k = 0; k < OP_CAL_POINTS; k++) {
+            CHECK(fabsf(w.p[k] - ptrue[k]) < 1e-4f);
+        }
+        /* ③ 中点查表：与真值差 < 0.05 rad（约 3°）。未展开时这里是 ~3.1 rad。 */
+        float g1, p1, worst = 0.0f;
+        for (int k = 0; k + 1 < OP_CAL_POINTS; k++) {
+            const float fm = sqrtf(w.f[k] * w.f[k + 1]); /* log 域中点 */
+            const float xm = ((float)k + 0.5f) / (float)(OP_CAL_POINTS - 1);
+            const float ptrue_m = -0.05f - 4.95f * xm * xm;
+            op_cal_lookup(&w, fm, &g1, &p1);
+            const float e = fabsf(p1 - ptrue_m);
+            if (e > worst) {
+                worst = e;
+            }
+        }
+        CHECK(worst < 0.05f);
+        /* ④ 直接写 t->p 的老路径会漏掉展开 —— 这条断言就是"为什么必须走 set_point" */
+        {
+            op_cal_table_t raw;
+            op_cal_default_freqs(&raw);
+            for (int k = 0; k < OP_CAL_POINTS; k++) {
+                float meas = ptrue[k];
+                while (meas > PI) {
+                    meas -= 2.0f * PI;
+                }
+                while (meas <= -PI) {
+                    meas += 2.0f * PI;
+                }
+                raw.p[k] = meas; /* 绕过展开 */
+            }
+            float bad = 0.0f;
+            for (int k = 0; k + 1 < OP_CAL_POINTS; k++) {
+                const float fm = sqrtf(raw.f[k] * raw.f[k + 1]);
+                const float xm = ((float)k + 0.5f) / (float)(OP_CAL_POINTS - 1);
+                op_cal_lookup(&raw, fm, &g1, &p1);
+                const float e = fabsf(p1 - (-0.05f - 4.95f * xm * xm));
+                if (e > bad) {
+                    bad = e;
+                }
+            }
+            CHECK(bad > 1.0f); /* 绕过展开 ⇒ 差 >1 rad，缺陷确实存在 */
+        }
+    }
+
     return test_report();
 }

@@ -39,11 +39,10 @@
  * ==========================================================================*/
 #include "bsp_fault.h" /* HardFault 取证（CFSR/HFSR 解码，别删）*/
 #include "bsp_gpio.h"  /* 通用 GPIO 抽象（引脚配置 / 读写 / 翻转）*/
-#include "bsp_log.h"   /* 日志后端（RTT / UART 两条）；LOG_* 宏在 Common/Inc/log.h */
+#include "bsp_log.h"   /* 日志后端（只有 RTT 一条）；LOG_* 宏在 Common/Inc/log.h */
 #include "bsp_rtc.h"   /* 板载 RTC（LSE 32.768kHz + VBAT 掉电保持）*/
-#include "bsp_sd.h"    /* 板载 TF 卡座（SDIO 4-bit + PD3 卡检测）*/
 #include "bsp_spi.h"   /* SPI1 + 板载 W25Q128（16MB SPI Flash）*/
-#include "bsp_tick.h"  /* 时基与阻塞延时 */
+#include "bsp_tick.h"  /* 毫秒时基 */
 
 #include "bsp_adc.h"   /* 采样链：TIM8 触发 ADC1 → DMA2（PA1，2.0MSPS）*/
 #include "bsp_lcd.h"   /* 液晶屏：ST7796S · 8080 16 位并口走 FSMC */

@@ -28,6 +28,8 @@
 /* ★ 2026-09-28：ADC 的 DMA 中断已由 CubeMX 生成的
  *   `DMA2_Stream0_IRQHandler → HAL_DMA_IRQHandler(&hdma_adc1)` 直接接管
  *   （.ioc 勾选了 DMA2_Stream0 中断），旧的 bsp_adc 转发机制退役。 */
+/* ★ 2026-10-14（C9③）：曾为"LCD 像素搬运的 DMA 完成中断"在这里 include 过 bsp_lcd.h，
+ *   那个中断入口已删除（完成检测改成轮询，见文件尾 USER CODE 1 的说明）⇒ 这里撤掉。 */
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -209,5 +211,12 @@ void DMA2_Stream0_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
+
+/* ★ 2026-10-14（C9③）：这里**原本**有一个 `DMA2_Stream1_IRQHandler`（LCD 像素搬运
+ * 的 DMA 完成中断，转发到 Device/Src/bsp_lcd.c）。
+ * ⚠️ 已删除：上板实测"TC 中断 + 中断里还总线闸"这条路会**把系统钉死**（两次，
+ *    心跳 LED 停、日志断在最后一行、无故障转储）⇒ 改成**轮询 EN 位**检测完成
+ *    （bsp_lcd.c 的"为什么放弃中断"一节有完整记录）。
+ * ⇒ 所以现在**不需要**任何新的中断入口。 */
 
 /* USER CODE END 1 */

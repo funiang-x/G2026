@@ -115,7 +115,9 @@ Common/      横切：日志接口（谁都能用，但它自己零依赖）
 | `Debug` | `-Og -g3` | 日常开发、单步调试 |
 | `Release` | `-Os -g0` | 发布；体积最小 |
 | `RelWithDebInfo` | `-O2 -g3` | 现场取证 / profiling |
-| `Debug-UART` | `-Og -g3` + 日志走 USART1 | 手边没有 J-Link 时用 |
+
+⚠️ 日志后端只有 RTT 一条（2026-10-06 起，`Debug-UART` 预设已删除）——
+详见 `docs/11_构建烧录调试.md` §3。
 
 ⚠️ 每个预设都要 `--clean-first` 才算"零告警"：增量构建只重编改动过的文件，
 只在别处触发的告警会被漏报。

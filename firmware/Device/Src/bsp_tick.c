@@ -17,21 +17,33 @@
 
 #include "stm32f4xx_hal.h"
 
-void bsp_tick_init(void) {
-    /* HAL_Init() 内部已经按 TICK_INT_PRIORITY 配好 1ms 时基（TIM6，不是 SysTick）；
-     * 这里再显式调一次是有意的：让"毫秒时基从哪来"这个依赖在代码里可见，
-     * 而不是靠某个远处的隐式初始化。幂等，重复调用无害。 */
-    (void)HAL_InitTick(TICK_INT_PRIORITY);
-}
-
+/* 1ms 时基由 HAL_Init() 按 TICK_INT_PRIORITY 配好（TIM6，不是 SysTick）——
+ * 本层不再显式重调一次：那是纯转发，反而让"时基在哪配的"有两个答案。 */
 uint32_t bsp_tick_ms(void) {
     return HAL_GetTick();
 }
 
-void bsp_delay_ms(uint32_t ms) {
-    HAL_Delay(ms);
-}
-
 uint32_t bsp_tick_sysclk_hz(void) {
     return HAL_RCC_GetHCLKFreq();
+}
+
+/* ---- DWT 周期计数器（2026-10-14 八轮从 bsp_lcd **搬过来**）----
+ * why 搬：它是"一段代码花了多久"的通用时基，跟 LCD 没有任何关系；而 Task 层不许引
+ *   HAL/DWT（规矩），所以必须落在 Device 层 —— 时基层（本文件）才是它的家。
+ *   原来的名字 `bsp_lcd_cyc_*` 会让"引擎计时"看起来像在量屏。
+ * ⚠️ 首次调用自动打开 TRCENA/CYCCNT（调试单元，对正常运行无副作用）；
+ *   32 位自由运行（144MHz ⇒ 29.8s 回绕）⇒ **只做差值**用，别当绝对时间。 */
+uint32_t bsp_tick_cyc_now(void) {
+    static int on = 0;
+    if (on == 0) {
+        on = 1;
+        CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+        DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+        DWT->CYCCNT = 0U;
+    }
+    return DWT->CYCCNT;
+}
+
+uint32_t bsp_tick_cyc_to_us(uint32_t cyc) {
+    return (uint32_t)((uint64_t)cyc * 1000000ULL / (uint64_t)SystemCoreClock);
 }

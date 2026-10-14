@@ -50,22 +50,15 @@ int bsp_adc_init(void);
  *
  * ⚠️ `n` 不能超过 DMA 配置时的缓冲长度（BOARD_ADC_BUF_LEN）。
  * ⚠️ DMA 是**循环模式**：搬满后 HAL 不停 —— 完成回调里已停 TIM8（断触发源），
- *    调用方拿到 poll_done 后应尽快 bsp_adc_stop() 收尾再开下一帧。 */
+ *    调用方拿到 wait_frame 后应尽快 bsp_adc_stop() 收尾再开下一帧。 */
 int bsp_adc_start(uint16_t *buf, uint32_t n);
-
-/* 查询本帧是否已采满（非阻塞）。
- * 返回 1 = 采满（调用方应尽快取走数据），0 = 还在采。
- *
- * ⚠️ 这是给**调度器启动前**用的（app_self_test 的忙等自检）——
- *    任务上下文请用 `bsp_adc_wait_frame()`（阻塞、不吃 CPU）。 */
-int bsp_adc_poll_done(void);
 
 /* 阻塞等本帧采满（**任务上下文专用**）。
  * 返回 0 = 采满；-1 = 超时或信号量未就绪。
  *
  * 机制：DMA 完成中断（`HAL_ADC_ConvCpltCallback`）里 `xSemaphoreGiveFromISR`，
  * 本函数 `xSemaphoreTake` —— 采集期间任务**让出 CPU**，不再轮询。
- * ⚠️ 调度器启动**前**不许调（FreeRTOS 阻塞 API 会失败）。自检走 poll_done。
+ * ⚠️ 调度器启动**前**不许调（FreeRTOS 阻塞 API 会失败）。数值自检（bsp_adc_self_check）在内部忙等。
  * ⚠️ timeout_ms 是"等一帧"的上限；正常一帧 2.048ms（4096 点 @2MSPS）。 */
 int bsp_adc_wait_frame(uint32_t timeout_ms);
 

@@ -13,7 +13,7 @@
  *    │
  *    └── log_put() 的**实现由链接的那一侧提供** —— 这就是 C 里的依赖注入：
  *          · MCU 构建（固件）：Device/Src/bsp_log.c 提供
- *            （RTT 或 UART 出口 + 递归互斥锁，多任务安全）
+ *            （RTT 出口 + 递归互斥锁，多任务安全）
  *          · PC 构建（Test/）：Test/stubs/log_host.c 提供（printf 到控制台）
  *        ⇒ 同一个符号名，链接时二选一。Operation 因此可以完全不认识硬件。
  *

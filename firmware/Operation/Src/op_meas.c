@@ -30,6 +30,7 @@ void op_meas_build(const meas_peak_t *peaks, int n_peaks, uint32_t seq,
     out->f1_hz = 0.0f;
     out->upp_mv = 0.0f;
     out->urms_mv = 0.0f;
+    out->thd = 0.0f;
     for (int i = 0; i < MEAS_MAX_PEAKS; i++) {
         out->peak[i].freq_hz = 0.0f;
         out->peak[i].amp_mv = 0.0f;
@@ -65,6 +66,29 @@ void op_meas_build(const meas_peak_t *peaks, int n_peaks, uint32_t seq,
     }
     out->urms_mv = (float)sqrt(sum_a2 / 2.0);
 
+    /* ⑤ THD = √(Σ_{k≥2} A_k²) / A1（A1 = 基波幅值 = f1 处峰值）。
+     *    口径放 Operation 层的理由：纯逻辑、PC 可单测（test_op_meas.c）。
+     *    n_peaks<2（纯基波/未检出）或 A1≤0 ⇒ 0（UI 显示 0.00 而不是 NaN）。
+     *    A1 按上面刚算出的 f1 反查峰表（不假设 peak[0] 就最低 —— 输入升序是
+     *    op_peak 的约定，但防御一次不花钱）。 */
+    float a1 = 0.0f;
+    for (int i = 0; i < n; i++) {
+        if (out->peak[i].freq_hz == f1) {
+            a1 = out->peak[i].amp_mv;
+            break;
+        }
+    }
+    if (n >= 2 && a1 > 0.0f) {
+        double sum_h2 = 0.0;
+        for (int i = 0; i < n; i++) {
+            if (out->peak[i].freq_hz == f1) {
+                continue; /* 基波不算进谐波能量 */
+            }
+            sum_h2 += (double)out->peak[i].amp_mv * (double)out->peak[i].amp_mv;
+        }
+        out->thd = (float)(sqrt(sum_h2) / (double)a1);
+    }
+
     /* ② Upp = sin 口径重建一个基波周期 → max−min。
      *    m_k = round(f_k/f1)（级次）—— 相位用各自测得的 φ_k（源端口径）。
      *    ⚠️ 重建点数按最高阶次自适应（见文件顶的说明），否则大阶次信号会偏。 */
@@ -91,15 +115,28 @@ void op_meas_build(const meas_peak_t *peaks, int n_peaks, uint32_t seq,
         }
     }
 
-    double w_max = -1e30;
-    double w_min = 1e30;
+    /* ★ 2026-10-14 八轮（P3.3）：**double → float + `sinf`**（口径不变，仍是"一个基波
+     *   周期内 sin 重建取 max−min"，docs/01 §5 ②）。
+     *   为什么：本工程只有单精度 FPU ⇒ 所有 double 都走软浮点；这里每帧要算
+     *   `pts × n` 次 sin（典型 512×3 ≈ 1536 次，大阶次信号可到 1600×5）——
+     *   是整条 DSP 链里最贵的一段（估算 ~10ms/帧）。判据 5mV/100mV = 5e-5，
+     *   而 `sinf` 相对误差 ~1e-7、`(float)j * inv` 只有一次舍入 ⇒ 余量两个数量级。
+     *   ω_k 预计算到数组里：原来在点循环里"重算 2π·m·f1·t"（每个点每个分量都乘一遍）。 */
+    const float two_pi = 6.28318530717958647692f;
+    const float inv    = 1.0f / (f1 * (float)pts); /* t = j / (f1·pts) */
+    float       wk[MEAS_MAX_PEAKS];
+
+    for (int i = 0; i < n; i++) {
+        wk[i] = two_pi * (float)m_k[i] * f1;
+    }
+
+    float w_max = -1e30f;
+    float w_min = 1e30f;
     for (uint32_t j = 0; j < pts; j++) {
-        const double t = (double)j / ((double)f1 * (double)pts);
-        double w = 0.0;
+        const float t = (float)j * inv;
+        float       w = 0.0f;
         for (int i = 0; i < n; i++) {
-            w += (double)peaks[i].amp_mv *
-                 sin(2.0 * 3.14159265358979323846 * (double)m_k[i] * (double)f1 * t +
-                     (double)peaks[i].phase_rad);
+            w += peaks[i].amp_mv * sinf(wk[i] * t + peaks[i].phase_rad);
         }
         if (w > w_max) {
             w_max = w;
@@ -108,5 +145,5 @@ void op_meas_build(const meas_peak_t *peaks, int n_peaks, uint32_t seq,
             w_min = w;
         }
     }
-    out->upp_mv = (float)(w_max - w_min);
+    out->upp_mv = w_max - w_min;
 }

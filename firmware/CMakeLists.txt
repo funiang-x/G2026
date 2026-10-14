@@ -71,13 +71,11 @@ add_executable(${CMAKE_PROJECT_NAME})
 add_subdirectory(cmake/stm32cubemx)
 
 # ============================================================================
-#  日志后端：RTT（默认）或 UART，编译期二选一
-#      RTT  —— 走调试探针，不占串口（`--preset Debug`）
-#      UART —— 走 board_config.h 里配的串口（`--preset Debug-UART`，没探针时用）
-#  实现二选一在 Device/Src/bsp_log.c，未定义会当场 #error。
+#  日志后端：**只有 RTT 一条**（走调试探针，不占串口）
+#      ⚠️ UART 后端已于 2026-10-06 移除 —— `.ioc` 里不再有任何 USART，
+#         板子没有串口出口，`--preset Debug-UART` 也随之取消。
+#      实现见 Device/Src/bsp_log.c；`LOG_BACKEND_RTT` 未定义会当场 #error。
 # ============================================================================
-set(LOG_BACKEND "RTT" CACHE STRING "日志后端：RTT 或 UART")
-set_property(CACHE LOG_BACKEND PROPERTY STRINGS RTT UART)
 
 # ============================================================================
 #  零告警口径（硬门禁，docs/11 §1）
@@ -210,6 +208,9 @@ target_compile_options(segger_rtt PRIVATE -Wall)
 #      · 一个外设一个文件，HAL 句柄 static 在 .c 里，**不写进对外头文件**
 #      · 中断回调写在本层，只投事件不跑业务（规矩 3）
 #      · 硬件事实取自 Core/Inc/board_config.h，本层不写魔法数字
+#      ⚠️ `bsp_sd.c`（TF 卡）**2026-10-06 起下线**：SDIO 已从 .ioc 移除，
+#         CubeMX 不再生成 sdio.c/h 与 HAL SD 驱动 ⇒ 源码留在 Device/Src/ 不删，
+#         但不进本目标（要用回来：.ioc 勾回 SDIO + 重新生成，再把这一行加回）。
 # ============================================================================
 add_library(device STATIC
     Device/Src/bsp_adc.c
@@ -217,14 +218,12 @@ add_library(device STATIC
     Device/Src/bsp_gpio.c
     Device/Src/bsp_lcd.c
     Device/Src/bsp_log.c
-    Device/Src/bsp_port_map.c
     Device/Src/bsp_rtc.c
-    Device/Src/bsp_sd.c
     Device/Src/bsp_spi.c
     Device/Src/bsp_tick.c
     Device/Src/bsp_touch.c)
 target_include_directories(device PUBLIC Device/Inc)
-target_compile_definitions(device PUBLIC LOG_BACKEND_${LOG_BACKEND})
+target_compile_definitions(device PUBLIC LOG_BACKEND_RTT)
 target_link_libraries(device PUBLIC
     common
     segger_rtt
@@ -266,18 +265,25 @@ target_compile_definitions(freertos_headers INTERFACE STM32F407xx)
 file(GLOB_RECURSE LVGL_SOURCES
     ${CMAKE_SOURCE_DIR}/Middlewares/LVGL/src/*.c)
 
-# 官方 demos：**2026-10-02 起不再进构建**（S5 清残留）。
-# 理由：交付态 `APP_LVGL_USE_DEMO=0`（业务 UI），demo 无人引用；`LV_USE_DEMO_WIDGETS`
-# 也已关（lv_conf.h）。要再上板验证显示/触摸时：打开这两个开关 + 把下面两行放回来。
-# file(GLOB LVGL_WIDGET_DEMO_SOURCES
+# 官方 demos：2026-10-13 移出构建，**2026-10-14 八轮把整个 demo 通道删掉**
+# （`APP_LVGL_USE_DEMO` 这个开关本身也不存在了 —— 那套"三处同开"的规矩随之作废）。
+# demos/*.c 仍在 `Middlewares/LVGL/demos/` 下（上游原样，不编进 target）。
+# 要临时重做"官方控件 + 触摸"验证：把
 #     ${CMAKE_SOURCE_DIR}/Middlewares/LVGL/demos/widgets/lv_demo_widgets.c
-#     ${CMAKE_SOURCE_DIR}/Middlewares/LVGL/demos/widgets/assets/*.c)
-# list(APPEND LVGL_SOURCES ${LVGL_WIDGET_DEMO_SOURCES})
+# 用 `list(APPEND LVGL_SOURCES ...)` 收进来、并在 `lv_conf.h` 把
+# `LV_USE_DEMO_WIDGETS` 改 1 与 `cmake --preset <名> --fresh`（GLOB 只在 configure 展开）。
+# ⚠️ 只收那一个 .c：本工程的 demo 是"轻量适配版"（见 lv_demo_widgets.c 文件头），
+#    上游的 Profile/Analytics/Shop 三页与 assets/*.c（图片）都已被删掉引用 ⇒ 收进来
+#    只会白编、白占 flash。
 
 add_library(lvgl STATIC ${LVGL_SOURCES})
 target_include_directories(lvgl SYSTEM PUBLIC
     Middlewares/LVGL
-    Middlewares/LVGL/src)
+    Middlewares/LVGL/src
+    # ★ 2026-10-09 加：`app_lvgl.c` 在 demo 模式下 `#include "lv_demos.h"`，
+    #   而那个头只在 `demos/` 下（`demos/lv_demos.h`）—— 不在本行就编不过。
+    #   它属于 vendor 树的一部分，无条件给上比"按开关给"少一处状态位。
+    Middlewares/LVGL/demos)
 target_compile_definitions(lvgl PUBLIC
     LV_CONF_INCLUDE_SIMPLE
     LV_LVGL_H_INCLUDE_SIMPLE
@@ -464,7 +470,7 @@ file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/board.env" CONTENT
 PROJECT_NAME=${CMAKE_PROJECT_NAME}
 BUILD_TYPE=${CMAKE_BUILD_TYPE}
 BUILD_DIR=${CMAKE_BINARY_DIR}
-LOG_BACKEND=${LOG_BACKEND}
+LOG_BACKEND=RTT
 MCU_NAME=${BOARD_MCU_NAME}
 JLINK_DEVICE=${BOARD_JLINK_DEVICE}
 FLASH_KB=${BOARD_FLASH_KB}

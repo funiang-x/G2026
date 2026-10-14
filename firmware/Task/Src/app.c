@@ -18,14 +18,14 @@
 #include "app_engine.h"     /* 测量编排（task_ops 层 —— 碰 bsp_adc/bsp_spi） */
 #include "app_lvgl.h"       /* LVGL 适配层（显示 + 触摸）—— 与 Device 一起用 */
 #include "app_tasks.h"      /* 任务创建（Task_Engine / Task_Ui）*/
-#include "app_ui.h"         /* 测量 UI（四页面，task_ops 层） */
+#include "app_ui.h"         /* 测量 UI（五页面，task_ops 层） */
 #include "board_config.h"   /* 硬件事实 */
 #include "bsp.h"            /* Device 层总入口 */
 #include "log.h"            /* Common 层：LOG_* 宏的唯一来源 */
 #include "op_flash.h"       /* Operation 层：页写拆分的纯逻辑 */
 #include "project_config.h" /* 应用参数 */
 
-#include <stddef.h> /* NULL —— 不要依赖别的头间接带入（app_panic 用到） */
+#include <stddef.h> /* NULL —— 不要依赖别的头间接带入（app_init_failed 用到） */
 
 /* 心跳灯（PB2，见 board_config.h）。句柄是组合根的私有状态 ——
  * 别的文件不该知道"灯接在哪个脚上"。 */
@@ -39,13 +39,37 @@ static int      s_boot_reported = 0; /* [AI_READY] 只打一次 */
 static int      s_stack_reported = 0; /* 任务栈余量只报一次 */
 static uint32_t s_last_hb_ms = 0;
 
+/* ---- 自检结果表（UI 第 3 页 STATE 读，见 app.h）------------------------ */
+static app_st_item_t s_st[APP_ST_MAX];
+static int            s_st_n = 0;
+
+/* 记一项。满了就丢 —— 自检是"探一探"，不该因为它把组合根搞崩。 */
+static void st_add(const char *name, int ok) {
+    if (s_st_n < APP_ST_MAX) {
+        s_st[s_st_n].name = name;
+        s_st[s_st_n].ok = (ok != 0) ? 1 : 0;
+        s_st_n++;
+    }
+}
+
+int app_selftest_snapshot(app_st_item_t *out, int cap) {
+    if (out == NULL || cap < APP_ST_MAX) {
+        return -1;
+    }
+    for (int i = 0; i < s_st_n; i++) {
+        out[i] = s_st[i];
+    }
+    return s_st_n;
+}
+
 /* ---- 自检状态（上板验证用）-------------------------------------------- */
 static bsp_rtc_time_t s_rtc_t0; /* 启动时读到的 RTC 时间 */
 static int            s_rtc_t0_valid = 0;
 static int            s_rtc_checked = 0; /* 走时对比只做一次 */
 
-/* 定义在文件下方，这里先声明（C 要求先声明后使用） */
-static void app_flash_rw_test(void);
+/* 定义在文件下方，这里先声明（C 要求先声明后使用）。
+ * 返回 0 = 读写往返一致；-1 = 失败**或跳过**（跳过 ≠ 验证通过，见函数内注释）。 */
+static int app_flash_rw_test(void);
 
 /* 上电自检：把板载外设挨个探一遍，结果打进日志。
  *
@@ -59,34 +83,22 @@ static void app_self_test(void) {
     if (bsp_spi_flash_init() == 0) {
         LOG_I("[SELFTEST] W25Q128 ok, JEDEC ID=0x%04X（期望 0xEF18）",
               (unsigned)bsp_spi_flash_read_id());
+        st_add("FLASH", 1);
     } else {
         LOG_W("[SELFTEST] W25Q128 未就绪 —— 看上面那行 ID 实际读到了什么");
+        st_add("FLASH", 0);
     }
 
-    /* ② TF 卡。**没插卡是常态，不是错误** —— 只报一行，不打扰。
-     *    CubeMX 生成的 MX_SDIO_SD_Init() 已在 main 里跑过一次，
-     *    没卡时它必然失败；这里只判断"要不要再试一次"。 */
-    if (bsp_sd_is_detected()) {
-        LOG_I("[SELFTEST] TF 卡在位，尝试初始化…");
-        if (bsp_sd_init() == 0) {
-            bsp_sd_info_t info;
-            if (bsp_sd_get_info(&info) == 0) {
-                LOG_I("[SELFTEST] TF 卡就绪：%lu KB（%lu 块 × %lu B）",
-                      (unsigned long)info.capacity_kb, (unsigned long)info.block_count,
-                      (unsigned long)info.block_size);
-            }
-        } else {
-            LOG_W("[SELFTEST] TF 卡初始化失败（接触不良 / 非 SD 卡？）");
-        }
-    } else {
-        LOG_I("[SELFTEST] TF 卡未插入（正常，跳过）");
-    }
+    /* ② TF 卡 —— **2026-10-06 起不检了**：`SDIO` 已从 `.ioc` 移除（板子不留 TF
+     *    卡座），CubeMX 不再生成 `sdio.c/h` 与 HAL SD 驱动 ⇒ `bsp_sd.c` 一并
+     *    从构建里下线（见 `CMakeLists.txt` 的 device 目标）。 */
 
     /* ③ 系统时钟频率（走 Device 层的封装，不直接调 HAL —— 那是分层规矩）
      * ⚠️ 期望值是 **144MHz 不是 168MHz**：2.0MSPS 采样要求 ADCCLK=36MHz，
      *    而那要求 PCLK2=72MHz ⇒ SYSCLK=144MHz。推导见 board_config.h 时钟一节。 */
     LOG_I("[SELFTEST] SYSCLK = %lu Hz（期望 144000000）",
           (unsigned long)bsp_tick_sysclk_hz());
+    st_add("CLK", bsp_tick_sysclk_hz() == 144000000UL);
 
     /* ④ RTC。没设过时间时读出来是 2000-01-01，那是"无意义值"不是错误。
      *    ⇒ 第一次上电主动设一次，之后靠 VBAT 保持。
@@ -101,9 +113,11 @@ static void app_self_test(void) {
     }
     if (bsp_rtc_get(&s_rtc_t0) == 0) {
         s_rtc_t0_valid = 1;
+        st_add("RTC", 1);
         LOG_I("[SELFTEST] RTC 初值 %02u:%02u:%02u（5 秒后复查是否在走）", s_rtc_t0.hour,
               s_rtc_t0.minute, s_rtc_t0.second);
     } else {
+        st_add("RTC", 0);
         LOG_E("[SELFTEST] RTC 读取失败");
     }
 
@@ -113,7 +127,7 @@ static void app_self_test(void) {
      *    留着会污染自检结论（同 `docs/07` 的"自检即硬件清单"口径）。 */
 
     /* ⑥ SPI Flash 读写往返（会擦最后一个扇区；内部有"非空则跳过"的保护）*/
-    app_flash_rw_test();
+    st_add("FLASH RW", app_flash_rw_test());
 
     /* ⑦ 采样链自检 —— **不在这里**，挪到 `app_adc_selftest()`（调度器启动后）。
      *    理由：它要真启动一次采集，路上有 `xSemaphoreTake` 与 DMA 中断里的
@@ -125,16 +139,21 @@ static void app_self_test(void) {
      * ⚠️ 判据同样是"**读得到**"而不是"ID 等于某个值"：能读到 4 个字节就说明
      *    RS 地址译码 + 16 位数据总线 + 读写时序全部正确。
      *    ⚠️ 此时屏**已经**由 LVGL 初始化过（app_init 里 app_lvgl_init 先跑）。 */
-    (void)bsp_lcd_self_check();
+    st_add("LCD", bsp_lcd_self_check() == 0);
 
     /* ⑨ 触摸：FT6336 应答 0x38（TD_STATUS 读得通即过，见 bsp_touch.c）。 */
-    (void)bsp_touch_self_check();
+#if APP_TOUCH_ENABLE
+    st_add("TOUCH", bsp_touch_self_check() == 0);
+#else
+    st_add("TOUCH", 0); /* 诊断态跳过 ⇒ 记"未通过"，别在屏上显示一个假的 ok */
+    LOG_I("[SELFTEST] APP_TOUCH_ENABLE=0：跳过触摸自检（诊断态，不碰 PB10/PB11）");
+#endif
 
     /* ⑩ DSP 链：合成一帧已知单音 → 全链 → 校验谱峰位置与幅值。
      * ★ 这是**唯一覆盖 MCU 侧 arm_cfft_f32 路径**的检查 —— PC 单测走的是朴素
      *   DFT 替身（OP_DSP_HOST_FFT），看不见 FFT 实例/表是否装配正确
      *   （2026-09-28 加，理由见 app_engine.h）。 */
-    (void)app_engine_selftest();
+    st_add("DSP", app_engine_selftest() == 0);
 
     /* ⚠️ 板上按键 SW2（PA0）**无代码消费**（ADC 于 2026-09-28 挪到 PA1，
      *    PA0 空闲但 SW2 电路还在；要用按键先配 .ioc 再建 bsp_key）——
@@ -160,7 +179,7 @@ static void app_self_test(void) {
  * 信号源，读数是多少都正常。搬回来就证明触发 / 转换 / 搬运三跳全通
  * （这是"编译通过 ≠ 能跑"最容易骗人的一处）。 */
 void app_adc_selftest(void) {
-    (void)bsp_adc_self_check();
+    st_add("ADC", bsp_adc_self_check() == 0);
 }
 
 /* SPI Flash 读写往返测试：擦一个扇区 → 跨页写 → 读回比对。
@@ -184,7 +203,7 @@ static uint8_t s_flash_actual[BSP_SPI_FLASH_PAGE_SIZE];
  * "这片是上次我们自己写的"，而不是误判成"别人的数据"（那会**永久跳过**测试）。 */
 static const uint8_t s_flash_magic[8] = {'F', 'L', 'S', 'H', 'T', 'S', 'T', '1'};
 
-static void app_flash_rw_test(void) {
+static int app_flash_rw_test(void) {
     /* 用**倒数第二个**扇区：上一次跑测试在最后一个扇区留了数据（那是加魔数
      * 之前写的，认不出来），换个扇区让本次能立刻测起来。
      * 有了魔数之后，以后同一个扇区就能反复测了。 */
@@ -203,7 +222,7 @@ static void app_flash_rw_test(void) {
     uint8_t probe[16];
     if (bsp_spi_flash_read(base + off, probe, sizeof(probe)) != 0) {
         LOG_W("[FLASHTEST] 读扇区失败，跳过");
-        return;
+        return -1;
     }
     int blank = 1;
     int ours = 1;
@@ -217,7 +236,9 @@ static void app_flash_rw_test(void) {
     }
     if (!blank && !ours) {
         LOG_W("[FLASHTEST] 测试扇区有数据且不是我们的，**跳过以免误擦**");
-        return;
+        /* ⚠️ 返回 -1（= 未通过）而不是 0：**跳过 ≠ 验证通过**。
+         *   屏上显示 FAIL 是诚实的 —— 这一项这次确实没验。 */
+        return -1;
     }
 
     /* ② 造图案：前 8 字节放魔数（供下次识别），其余是递增异或
@@ -232,15 +253,15 @@ static void app_flash_rw_test(void) {
     /* ③ 擦 → 跨页写 → 读回 */
     if (bsp_spi_flash_erase_sector(base) != 0) {
         LOG_E("[FLASHTEST] 扇区擦除失败");
-        return;
+        return -1;
     }
     if (app_flash_write(base + off, s_flash_expect, sizeof(s_flash_expect)) != 0) {
         LOG_E("[FLASHTEST] 跨页写失败");
-        return;
+        return -1;
     }
     if (bsp_spi_flash_read(base + off, s_flash_actual, sizeof(s_flash_actual)) != 0) {
         LOG_E("[FLASHTEST] 读回失败");
-        return;
+        return -1;
     }
 
     /* ④ 比对 */
@@ -263,11 +284,12 @@ static void app_flash_rw_test(void) {
         if (bsp_spi_flash_erase_sector(base) == 0) {
             LOG_I("[FLASHTEST] 测试扇区已擦回空白（下次可重复测）");
         }
-    } else {
-        LOG_E("[FLASHTEST] 读回有 %u/%u 字节不符（首个 @+%u：写 0x%02X 读到 0x%02X）",
-              bad, (unsigned)sizeof(s_flash_expect), first_bad,
-              s_flash_expect[first_bad], s_flash_actual[first_bad]);
+        return 0;
     }
+    LOG_E("[FLASHTEST] 读回有 %u/%u 字节不符（首个 @+%u：写 0x%02X 读到 0x%02X）",
+          bad, (unsigned)sizeof(s_flash_expect), first_bad, s_flash_expect[first_bad],
+          s_flash_actual[first_bad]);
+    return -1;
 }
 
 void app_init(void) {
@@ -275,8 +297,7 @@ void app_init(void) {
      * ⚠️ bsp_log_init() 必须**最先**：后面所有 LOG_* 都依赖它。
      *    它在调度器启动前被调用，所以内部只做初始化、不建锁（见 bsp_log.c）。 */
     bsp_log_init();
-    bsp_log_set_level(BSP_LOG_INFO);
-    bsp_tick_init();
+    bsp_log_set_level(LOG_LVL_INFO);
 
     /* ---- ② Operation 参数注入 -------------------------------------------
      * ★ 参数从 project_config.h 来，但**由本文件传进去** ——
@@ -389,32 +410,16 @@ void app_poll(void) {
     app_poll_at(bsp_tick_ms());
 }
 
-void app_panic(const char* reason) {
-    /* ⚠️ 只能用 nolock：此刻调度器可能没起、时钟可能不对，取锁/等中断都是死路。
-     *    RTT 后端只需要内存（不依赖时钟与中断），所以它能出声 ——
-     *    这也正是"默认用 RTT 而不是串口"的一个附带好处。 */
-    bsp_log_init(); /* 幂等：RTT 后端只是复位读写指针 */
-    bsp_log_printf_nolock(BSP_LOG_ERROR, BOARD_BOOT_FAIL_MARKER " %s",
-                          (reason != NULL) ? reason : "unknown");
-    bsp_log_printf_nolock(
-        BSP_LOG_ERROR,
-        "[FAULT] 固件已停在此处。查：HSE 起振 / 时钟树 / HAL 初始化返回值");
-
-    /* 不返回。栈与堆的状态未知，继续跑只会掩盖现场。 */
-    for (;;) {
-    }
-}
-
 void app_init_failed(const char* reason) {
-    /* ⚠️ 与 app_panic 的关键差别：**这里要返回**。
+    /* ⚠️ 与"出声 + 停机"的 panic 路径相反：**这里要返回**。
      *    调用它的是 `Error_Handler()`，而 Error_Handler 会被"可选外设初始化失败"
-     *    调到（典型：没插 TF 卡 ⇒ `HAL_SD_Init` 失败）。那种情况让整块板子停摆
-     *    是不合理的 —— 用不上 TF 卡的人不该被它绑架。
+     *    调到。那种情况让整块板子停摆是不合理的 —— 用不上那个外设的人
+     *    不该被它绑架。
      *
      * ⚠️ 也**不能**打 `[AI_FAIL]`：那是 `fw.py verify` 的失败判据，
      *    打了会把"其实跑起来了"误判成失败。 */
     bsp_log_init(); /* 幂等：RTT 后端只需内存，不依赖时钟与中断 */
-    bsp_log_printf_nolock(BSP_LOG_ERROR, "[E] %s",
+    bsp_log_printf_nolock(LOG_LVL_ERROR, "[E] %s",
                           (reason != NULL) ? reason : "HAL 初始化失败");
 }
 

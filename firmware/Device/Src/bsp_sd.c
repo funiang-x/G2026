@@ -1,11 +1,17 @@
 /* bsp_sd —— 板载 TF 卡座（SDIO 4-bit）的实现。
  *
+ * ⚠️⚠️ **本文件 2026-10-06 起不进构建**（SDIO 已从 `.ioc` 移除，源码保留作
+ *    恢复参考，见 CMakeLists.txt 的 device 目标注释）。恢复**前提**：
+ *    `.ioc` 勾回 SDIO 并重新生成 —— 那一步会带回 `Core/Src/sdio.c/h`（本文件
+ *    include 的 `sdio.h`）与 `stm32f4xx_hal_conf.h` 的 `HAL_SD_MODULE_ENABLED`；
+ *    只把 CMakeLists 那行加回来是**编不过**的。
+ *
  * ⚠️ 本文件**不写** `HAL_SD_MspInit` —— 引脚 / 时钟 / 复用由 CubeMX 生成的
  *    `Core/Src/sdio.c` 配（docs/10 §B 第 5 条：两边都定义会 multiple definition）。
  *
  * ⚠️ **已知缺陷（2026-09-23 记录，未修）**：
  *    `MX_SDIO_SD_Init()`（在 main.c 里上电就调）中 `HAL_SD_Init()` 失败时会走
- *    `Error_Handler()` → `app_panic()` → **停机**。
+ *    `Error_Handler()` → **停机**。
  *    ⇒ **上电时没插 TF 卡，整块板子就不启动了**（只打一行 [AI_FAIL] 然后停）。
  *    对"模板工程"这是硬伤：插不插卡不该决定板子能不能跑。
  *

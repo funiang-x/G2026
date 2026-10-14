@@ -29,7 +29,9 @@ from afe_net import V, build_afe, dft_amp, bh4  # noqa: E402
 #    `afe_net.V` 的默认值上，而那次 H2 改图只改了图纸、没同步 afe_net ⇒ 改前基线
 #    悄悄变成了改后基线。现在两边都写死，谁都不依赖对方。
 OPT = dict(r21=0.0, r6=69.8e3, r7=10e3)           # 改前（2026-10-02 图纸）
-OPT_AFTER = dict(r21=4.7, r6=24.9e3, r7=3.57e3)   # 改后（H1+H2，= 活体图纸）
+# ⚠️ 2026-10-11 ×4 增益改造（`hardware/57 §3 B1`）：R6 24.9k → 53.6k（R7 不动）
+#    ⇒ 净增益 2.0 → 4.0。本项 = 活体图纸，`afe_net.V["R6"]` 已同步为 53.6e3。
+OPT_AFTER = dict(r21=4.7, r6=53.6e3, r7=3.57e3)   # 改后（H1+H2+×4增益，= 活体图纸）
 
 
 def set_config(**kw):

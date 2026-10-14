@@ -2,7 +2,7 @@
  *  log_host.c —— `log_put()` 的 **PC 侧实现**（stub）
  *
  *  依赖注入的另一半（见 Common/Inc/log.h 的文件头）：
- *      MCU 构建（固件） → Device/Src/bsp_log.c  提供 log_put()（RTT/UART + 互斥锁）
+ *      MCU 构建（固件） → Device/Src/bsp_log.c  提供 log_put()（RTT + 互斥锁）
  *      PC 构建（单测）  → 本文件                   提供 log_put()（printf 到控制台）
  *
  *  ⇒ 同一份 Operation 源码，在板子上和在电脑上都能链接通过。

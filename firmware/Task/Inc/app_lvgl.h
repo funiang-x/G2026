@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-/* 初始化：lv_init + 创建 display/indev + 开背光 + 建一个占位界面。
+/* 初始化：lv_init + 创建 display/indev + 开背光。
  * 返回 0 成功，-1 失败（多半是 LVGL 内存池太小：`LV_ASSERT_MALLOC`）。
  *
  * ⚠️ 必须在 `app_init()` 里、**bsp_lcd_init() 之后**调 —— 它依赖 FSMC 已配好
@@ -45,10 +45,12 @@ int app_lvgl_init(void);
  *    这是 8080 并口方案要接受的代价，换来的是不需要显存也不撕裂。 */
 void app_lvgl_poll(uint32_t now_ms);
 
-/* 等效 fps（0.1 定点）：上 1 秒的 flush 像素吞吐 / 整帧像素（320×480）。
- * 口径是"屏带带宽用满程度"，不是渲染节拍 —— 静屏为 0，滑页/动画逼近 60。
- * UI 顶栏每秒取一次显示（性能可观测，见 app_lvgl.c 的说明）。 */
-uint32_t app_lvgl_fps_x10(uint32_t now_ms);
+/* flush 像素速率（**kpx/s**，1 秒窗口）：上 1 秒"交给屏的像素数 / 1s"。
+ * ⚠️ 它**不是帧率**（增量绘制下这个数本来就小）；页 2 的 BANDWIDTH 卡每秒读一次。
+ * ⚠️ 与 `app_lvgl.c` 里 `[LVGL] diag` 共用同一个累加器，各自差分，谁都不要去清零。
+ * （旧 API `app_lvgl_fps_x10()` 2026-10-14 八轮删除 —— 它读的"开机累计值 + 硬编码 5s
+ *   分母"曾给出超过 FSMC 物理上限的假吞吐，见 app_lvgl.c 的注释。） */
+uint32_t app_lvgl_flush_kpx_s(uint32_t now_ms);
 
 #ifdef __cplusplus
 }

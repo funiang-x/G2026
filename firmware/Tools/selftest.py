@@ -133,6 +133,25 @@ def _patch_size_budget(root: Path, region: str, kb: int) -> None:
     p.write_text(patched, encoding="utf-8")
 
 
+def _patch_ioc_tasks01(root: Path, field: int, value: int) -> None:
+    """改 `.ioc` 里 `FREERTOS.Tasks01=<名>,<优先级>,<栈words>,...` 的某个字段，
+    但**不动**生成物 `Core/Src/freertos.c` —— 模拟"改了 .ioc 却忘了重新生成"。
+
+    这是 CubeMX 对账里**最容易漏的一类漂移**：`.ioc` 与生成物各说各话，而编译器
+    完全不管。`field=1` 是优先级、`field=2` 是栈（words）。
+    ⚠️ 优先级这一项 2026-10-14 才补上（原先只比栈），所以这两条用例是它的"防回退"钉子。"""
+    hits = sorted(root.glob("*.ioc"))
+    assert hits, "注入失败：找不到 .ioc"
+    p = hits[0]
+    text = p.read_text(encoding="utf-8")
+    m = re.search(r"^FREERTOS\.Tasks01=(.*)$", text, re.MULTILINE)
+    assert m, "注入失败：.ioc 里没有 FREERTOS.Tasks01"
+    parts = m.group(1).split(",")
+    assert len(parts) > field, f"注入失败：Tasks01 只有 {len(parts)} 个字段，取不到第 {field} 个"
+    parts[field] = str(value)
+    p.write_text(text[:m.start(1)] + ",".join(parts) + text[m.end(1):], encoding="utf-8")
+
+
 def _break_operation_layering(root: Path) -> None:
     """在 Operation 层 include HAL 头 —— 规矩 2 的编译期强制应该当场拦下。"""
     p = root / "Operation" / "Src" / "op_blink.c"
@@ -156,9 +175,15 @@ def _use_rtos_in_operation(root: Path) -> None:
 STATIC_CASES: list[tuple[str, str, object]] = [
     ("改 HSE 频率 → 与 .ioc 矛盾", "lint", lambda r: _patch_board(r, "BOARD_HSE_VALUE", "25000000U")),
     ("改心跳灯引脚 → 与 .ioc 矛盾", "lint", lambda r: _patch_board(r, "BOARD_LED_PIN", "5")),
-    ("改日志串口 TX 脚 → 与 .ioc 矛盾", "lint", lambda r: _patch_board(r, "BOARD_LOG_UART_TX_PIN", "8")),
     ("改 RAM 容量 → 与链接脚本矛盾", "lint", lambda r: _patch_board(r, "BOARD_RAM_KB", "64U")),
     ("改 J-Link 器件名 → 前缀对不上", "lint", lambda r: _patch_board(r, "BOARD_JLINK_DEVICE", '"STM32F429ZI"')),
+    # ---- `.ioc` ↔ 生成物的漂移（"改了 .ioc 但没重新生成"）----
+    # 2026-10-14 补这两条：**优先级**那一项的对账是当天新加的，**栈**那一项一直有、
+    # 却从未被用例覆盖 ⇒ 谁把检查器改坏了都不会有人知道。这是它的防回退钉子。
+    ("改 .ioc 的任务优先级但没重新生成 → 必须报", "lint",
+     lambda r: _patch_ioc_tasks01(r, 1, 20)),
+    ("改 .ioc 的任务栈但没重新生成 → 必须报", "lint",
+     lambda r: _patch_ioc_tasks01(r, 2, 512)),
     ("引用不存在的文档 docs/99", "doccheck", lambda r: _append_to_agents(r, "见 `docs/99`。")),
     ("代码块里教人跑不存在的脚本", "doccheck",
      lambda r: _append_to_agents(r, "```bash\npython Tools/nonexistent_script.py\n```")),
