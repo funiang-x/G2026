@@ -90,7 +90,7 @@ void op_meas_build(const meas_peak_t *peaks, int n_peaks, uint32_t seq,
     }
 
     /* ② Upp = sin 口径重建一个基波周期 → max−min。
-     *    m_k = round(f_k/f1)（级次）—— 相位用各自测得的 φ_k（源端口径）。
+     *    m_k = round(f_k/f1)（级次）；**相位一律取 0**（题面口径，理由见重建段）。
      *    ⚠️ 重建点数按最高阶次自适应（见文件顶的说明），否则大阶次信号会偏。 */
     int m_k[MEAS_MAX_PEAKS];
     int m_max = 1;
@@ -130,13 +130,32 @@ void op_meas_build(const meas_peak_t *peaks, int n_peaks, uint32_t seq,
         wk[i] = two_pi * (float)m_k[i] * f1;
     }
 
+    /* ★★ 2026-10-16：**相位一律取 0 —— 形状只信幅值**。口径修订，必须与
+     *   `op_wave.c` 的形状重建同源（改一处必须看另一处）。
+     *
+     * 依据 = **题面信号的定义**：`u = Σ A_k·sin(2π·f_k·t)` —— 每个分量零相位
+     *   ⇒ `w(t) = Σ A_k·sin(2π·m_k·f₁·t + 0)` 就是真值形状，不需要相位信息。
+     *
+     * why 实测相位不能用（两条本机硬事实，2026-10-16 上板查实）：
+     *   ① **绝对相位不可用**：DFT 的相位参考点是**帧起点**，而帧起点与信号源无关
+     *      （无触发、ADC 自由跑）⇒ 每帧整体平移一个随机量（`op_wave.c` 记的
+     *      18~467 px 乱跳就是这个）。
+     *   ② **标定的相对相位也不可靠**：标定逐点、每点各自一帧 ⇒ 每点的绝对相位都
+     *      带一个独立的帧偏移 2π·f_k·δ_k，而形状要的恰是跨频差 θ(f_k) − m·θ(f₁)
+     *      ⇒ 相位表**每重标一次就换一组随机偏移**。实测污染：**+19°**
+     *      （Upp 144.2 vs 真值 134.9）与 **~180°**（Upp 332.9）。
+     *   ⇒ 形状只信幅值；`peak.phase_rad` 照测照存（op_peak / op_cal 不动），
+     *     将来做"相位差测量"靠它，**但不参与形状重建**。
+     *   ⚠️ 代价：对"谐波相对相位非零"的信号，本机 Upp 与真值不符 —— 题面不出这种
+     *     信号；要通用化得先把标定改成"**同帧多分量**"（单音的绝对相位在本装置上
+     *     不可用：缺一个与源共时基的参考分量）。 */
     float w_max = -1e30f;
     float w_min = 1e30f;
     for (uint32_t j = 0; j < pts; j++) {
         const float t = (float)j * inv;
         float       w = 0.0f;
         for (int i = 0; i < n; i++) {
-            w += peaks[i].amp_mv * sinf(wk[i] * t + peaks[i].phase_rad);
+            w += peaks[i].amp_mv * sinf(wk[i] * t);
         }
         if (w > w_max) {
             w_max = w;

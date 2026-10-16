@@ -24,7 +24,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import studies as ST  # noqa: E402
 from afe_net import V, build_afe  # noqa: E402
 
-OPT = dict(r21=4.7, r6=24.9e3, r7=3.57e3)
+OPT = dict(r21=4.7, r6=6.8e3, r7=1e3)   # 2026-10-15 实物
 RSRC = 50.0
 FS = 2.0e6
 

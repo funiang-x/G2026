@@ -117,6 +117,17 @@
 /* 波形对象四周留的余量（px）：折线宽 2px ⇒ 点之外还会"溢出" 1px，对象面积
  * 必须把这点算进去，否则会被 LVGL 按对象边界裁掉（见 wave_apply）。 */
 #define UI_WAVE_PAD 2
+/* ★ 2026-10-15（十一轮）：波形折线由**1 个对象拆成 8 个竖条带**。
+ *   why（上板现象"波形页有点撕裂"）：单对象时 LVGL 按整条带的紧 bbox 失效，
+ *   正弦满幅 = 448×134 = 60kpx，而一块 draw buffer 只有 480×56 = 26.9kpx
+ *   ⇒ 一次波形更新被切成 **3 块**，"渲染一块 → 写一块"串行 ≈26ms（口径见 `docs/03`）。
+ *   面板 GRAM 是自己在 60Hz 连续扫描的 ⇒ 这 26ms 里屏上就是"一半新、一半旧" = 撕裂。
+ *   拆条带后每块 render+flush ≈ 2~4ms（< 一帧 16.7ms）⇒ 接缝退化成一次快速扫过；
+ *   附带收益：**只有真变了的那几条带重画**（静止时 0 重绘，比单对象更省）。
+ * ⚠️ 每条带必须**各自紧 bbox**：换回固定整框是 2026-10-14 的性能回归（见 wave_apply）。*/
+#define UI_WAVE_STRIPS 8U
+/* 每条带的点数 = 160/8 = 20，再 +1 存与下一条带**共用**的端点（接缝不留缺口）*/
+#define UI_WAVE_STRIP_PTS ((APP_UI_WAVE_POINTS / (int)UI_WAVE_STRIPS) + 1)
 
 /* ⚠️ 2026-10-14：这里曾有 S1 的 `UI_WAVE_BOX_*`（固定整框）与 `UI_WAVE_SEG_N`（分 3 帧
  * 只失效 1/3）两组宏，**已删**。它们把"紧 bbox"换成了固定整框，实测是回归
@@ -124,6 +135,10 @@
  * 完整事故记录见 `wave_apply` 顶部的"回退记录"。 */
 
 #define UI_SPEC_X0 16
+/* ★ 2026-10-15：页面 1/2 上**显示**的谱线数（柱 + 右边缘框）。与峰表容量
+ *   `MEAS_MAX_PEAKS` 解耦 —— 界面按"基波 + 2~5 次谐波"五框一柱排布，而峰表容量
+ *   五框一柱排布，多了会挤爆布局（边框 y 坐标是 i×(H+GAP) 递推的）。*/
+#define UI_SPEC_LINES 5
 #define UI_SPEC_X1 288
 #define UI_SPEC_BASE_Y 250 /* 频域基线（五轮起轴下方**不再印刻度字**）*/
 #define UI_BAR_W 12
@@ -188,9 +203,13 @@ static lv_style_t s_st_btn_press; /* 按下：文字亮一档 */
 static lv_style_t s_st_sep;       /* 3T 的周期分隔线（1px @20%）*/
 static int s_styles_ready;
 
-/* ---- 静态点数组（lv_line 只存指针 ⇒ 必须常驻）---- */
-static lv_point_precise_t s_wave_pts[APP_UI_WAVE_POINTS];
+/* ---- 静态点数组（lv_line 只存指针 ⇒ 必须常驻）----
+ * ★ 2026-10-15：按**条带**分块存（8×21 点 ≈ 旧 160 点的同一量级 RAM）；每条带的坐标
+ *   是**相对自身对象原点**的，由 `wave_apply` 现算（不再有"全局绝对坐标"中间数组）。*/
+static lv_point_precise_t s_wave_pts[UI_WAVE_STRIPS][UI_WAVE_STRIP_PTS];
 static float s_wave_y[APP_UI_WAVE_POINTS]; /* 重建结果（mV），静态：UI 栈只剩 1.3KB */
+static float s_wave_scale;                 /* 当前纵向标尺（px/mV），wave_update 里装配 */
+static int   s_wave_shown;                 /* 条带此刻显示的是真实波形？(0 = 隐藏/平线)*/
 /* ⚠️ 2026-10-14：这里原有 `s_raw_trace[APP_ENGINE_TRACE_N]` + 一条"必须整除"的
  *   `_Static_assert` —— **已删**。无基波时不再画原始轨迹（改成一条直线，见 `wave_idle`），
  *   那个数组和那条断言就没有读者了。省下 160 B RAM。
@@ -207,15 +226,15 @@ static lv_obj_t *s_tv;
 static lv_obj_t *s_tiles[UI_PAGE_N];
 static lv_obj_t *s_cyc_key;      /* 周期切换键（**一个**：键面 = 当前值）*/
 static lv_obj_t *s_cyc_lbl;      /* 键面上的字（1T / 3T）*/
-static lv_obj_t *s_wave_line;    /* 波形（**单层 2px**；4px"发光层"2026-10-14 删，见页面构建处）*/
+static lv_obj_t *s_wave_line[UI_WAVE_STRIPS]; /* 波形 = 8 条竖带（单层 2px；4px 发光层已删）*/
 /* 波形"变化检测"用的上一帧（取整后的屏幕 y）+ 上一帧的点数（见 wave_apply）*/
 static int16_t   s_wave_ylast[APP_UI_WAVE_POINTS];
 static int       s_wave_last_n = -1;
 static lv_obj_t *s_sep[2];      /* 3T 的周期分隔线 */
 static lv_obj_t *s_time_val[3]; /* 0=F1 / 1=Vpp / 2=Vrms */
-static lv_obj_t *s_bar[MEAS_MAX_PEAKS];
-static lv_obj_t *s_box[MEAS_MAX_PEAKS];     /* 页 1 右边缘的谱线框（一框一根）*/
-static lv_obj_t *s_box_val[MEAS_MAX_PEAKS]; /* 框里的"频率 + 幅值"一行字 */
+static lv_obj_t *s_bar[UI_SPEC_LINES];
+static lv_obj_t *s_box[UI_SPEC_LINES];     /* 页 1 右边缘的谱线框（一框一根）*/
+static lv_obj_t *s_box_val[UI_SPEC_LINES]; /* 框里的"频率 + 幅值"一行字 */
 /* ★ 五轮删掉频谱页的 `NO SIGNAL` 大字（用户要求）：五张参数框**常驻**显示，
  *  没信号的那几行写 `-- kHz -- mV`，比一个盖在中间的英文短语信息量大得多。 */
 static lv_obj_t *s_st_list;
@@ -224,6 +243,7 @@ static lv_obj_t *s_cal_bw;
 static lv_obj_t *s_cal_panel;
 static lv_obj_t *s_cal_progress;
 static lv_obj_t *s_cal_prompt;
+static lv_obj_t *s_cal_ask;      /* 标定入口的"选择"层（已有表时先问：重标 / 关闭）*/
 static lv_obj_t *s_splash;
 static int s_cycles = 1; /* 波形 1T / 3T */
 
@@ -422,6 +442,18 @@ static void cycles_sync(void); /* 定义在下面；谱口径波形回来时要�
  *     原点**：对象面积缩到"轨迹自己扫过的那条带"（噪声带 ≈ 448×8，正弦 ≈ 448×134）。
  *   ⚠️ 对象位置每帧都随轨迹带宽变化 ⇒ 旧带 ∪ 新带都会被脏化，两块都很薄 ✓。
  *   ⚠️ 四周留 `UI_WAVE_PAD`：折线有 2px 宽，点之外还会溢出 1px，面积太紧会被裁掉。 */
+/* 第 k 条带覆盖的点下标区间 [*j0,*j1]（相邻条带**共用端点** ⇒ 接缝无缺口）。*/
+static void wave_strip_range(unsigned k, int *j0, int *j1) {
+    const int per = APP_UI_WAVE_POINTS / (int)UI_WAVE_STRIPS;
+    *j0 = (int)k * per;
+    *j1 = (*j0 + per > APP_UI_WAVE_POINTS - 1) ? (APP_UI_WAVE_POINTS - 1) : (*j0 + per);
+}
+
+/* 第 j 点的**绝对**屏幕 y（重建 mV × 当前标尺；屏 y 向下）。*/
+static float wave_abs_y(int j) {
+    return (float)UI_WAVE_MID - s_wave_y[j] * s_wave_scale;
+}
+
 static void wave_apply(int n) {
     /* ★ 2026-10-14 八轮（P2.2）：**变化检测** —— 稳定信号下不再每 100ms 重画同一条曲线。
      *   判据：把新算出的屏幕 y 取整后与"上一次真正画上去的"比，**所有列都 ≤1px** 就跳过
@@ -441,54 +473,86 @@ static void wave_apply(int n) {
      *   次要原因：分 3 帧 ⇒ 三段各显示**不同时刻**的数据（撕裂），而 `s_wave_ylast`
      *   记的是"最新数据"而非"真的画上去的" ⇒ 三个段会长期不同步。
      *   ⇒ **紧 bbox 不是"实现细节"，是这里最大的一笔优化。别拿它去换别的。** */
+    if (n < 2 || n > APP_UI_WAVE_POINTS) {
+        return;
+    }
+    const float dx = (float)(UI_WAVE_X1 - UI_WAVE_X0) / (float)(APP_UI_WAVE_POINTS - 1);
     int16_t ny[APP_UI_WAVE_POINTS];
     for (int j = 0; j < n; j++) {
-        ny[j] = (int16_t)(s_wave_pts[j].y + 0.5f);
+        ny[j] = (int16_t)(wave_abs_y(j) + 0.5f); /* 由重建 mV × 标尺现算，不依赖上一帧 */
     }
-    if (n == s_wave_last_n && !lv_obj_has_flag(s_wave_line, LV_OBJ_FLAG_HIDDEN)) {
-        int same = 1;
+    /* 全局变化检测（口径同旧版）：所有列都没动 ⇒ 整帧什么都不做 */
+    const int forced = (n != s_wave_last_n) || (s_wave_shown == 0);
+    int any = forced;
+    if (any == 0) {
         for (int j = 0; j < n; j++) {
             const int d = (int)ny[j] - (int)s_wave_ylast[j];
             if (d > 1 || d < -1) {
-                same = 0;
+                any = 1;
                 break;
             }
         }
-        if (same != 0) {
-            return; /* 屏上已经是对的 ⇒ 这一帧什么都不用做 */
-        }
     }
-    for (int j = 0; j < n; j++) {
-        s_wave_ylast[j] = ny[j];
+    if (any == 0) {
+        return; /* 屏上已经是对的 ⇒ 这一帧什么都不用做 */
     }
     s_wave_last_n = n;
+    s_wave_shown = 1;
 
-    float ymin = s_wave_pts[0].y;
-    float ymax = s_wave_pts[0].y;
-    for (int j = 1; j < n; j++) {
-        if (s_wave_pts[j].y < ymin) {
-            ymin = s_wave_pts[j].y;
+    /* ---- 逐条带：自己判脏 + 自己紧 bbox + 自己的点数组 ----
+     * 干净的那几条带**一个像素都不碰**（不 set_pos/set_size/set_points ⇒ 零失效）。*/
+    for (unsigned k = 0; k < UI_WAVE_STRIPS; k++) {
+        int j0, j1;
+        wave_strip_range(k, &j0, &j1);
+        if (j0 >= n) { /* 本帧点数覆盖不到这条带 */
+            lv_obj_add_flag(s_wave_line[k], LV_OBJ_FLAG_HIDDEN);
+            continue;
         }
-        if (s_wave_pts[j].y > ymax) {
-            ymax = s_wave_pts[j].y;
+        if (j1 > n - 1) {
+            j1 = n - 1;
         }
-    }
-    const lv_coord_t x0 = (lv_coord_t)(UI_WAVE_X0 - UI_WAVE_PAD);
-    const lv_coord_t y0 = (lv_coord_t)ymin - UI_WAVE_PAD;
-    const lv_coord_t w =
-        (lv_coord_t)(UI_WAVE_X1 - UI_WAVE_X0 + 1) + 2 * (lv_coord_t)UI_WAVE_PAD;
-    const lv_coord_t h =
-        (lv_coord_t)(ymax - ymin) + 1 + 2 * (lv_coord_t)UI_WAVE_PAD;
+        int dirty = forced;
+        if (dirty == 0) {
+            for (int j = j0; j <= j1; j++) {
+                const int d = (int)ny[j] - (int)s_wave_ylast[j];
+                if (d > 1 || d < -1) {
+                    dirty = 1;
+                    break;
+                }
+            }
+        }
+        if (dirty == 0) {
+            lv_obj_remove_flag(s_wave_line[k], LV_OBJ_FLAG_HIDDEN);
+            continue;
+        }
+        int ymin = ny[j0];
+        int ymax = ny[j0];
+        for (int j = j0 + 1; j <= j1; j++) {
+            if (ny[j] < ymin) {
+                ymin = ny[j];
+            }
+            if (ny[j] > ymax) {
+                ymax = ny[j];
+            }
+        }
+        const float xl = (float)UI_WAVE_X0 + (float)j0 * dx;
+        const float xr = (float)UI_WAVE_X0 + (float)j1 * dx;
+        const lv_coord_t x0 = (lv_coord_t)xl - UI_WAVE_PAD;
+        const lv_coord_t y0 = (lv_coord_t)ymin - UI_WAVE_PAD;
+        const lv_coord_t w  = (lv_coord_t)(xr - xl) + 1 + 2 * (lv_coord_t)UI_WAVE_PAD;
+        const lv_coord_t h  = (lv_coord_t)(ymax - ymin) + 1 + 2 * (lv_coord_t)UI_WAVE_PAD;
+        lv_obj_set_pos(s_wave_line[k], x0, y0);
+        lv_obj_set_size(s_wave_line[k], w, h); /* 显式尺寸 ⇒ LVGL 不再用 SIZE_CONTENT 撑面积 */
 
-    lv_obj_set_pos(s_wave_line, x0, y0);
-    lv_obj_set_size(s_wave_line, w, h); /* 显式尺寸 ⇒ LVGL 不再用 SIZE_CONTENT 撑面积 */
-
-    for (int j = 0; j < n; j++) { /* 平移到对象原点（对象坐标 = 屏幕坐标 − 对象位置）*/
-        s_wave_pts[j].x -= (float)x0;
-        s_wave_pts[j].y -= (float)y0;
+        const int cnt = j1 - j0 + 1;
+        for (int j = j0; j <= j1; j++) { /* 平移到本带对象原点 */
+            s_wave_pts[k][j - j0].x = ((float)UI_WAVE_X0 + (float)j * dx) - (float)x0;
+            s_wave_pts[k][j - j0].y = (float)ny[j] - (float)y0;
+            s_wave_ylast[j] = ny[j];
+        }
+        lv_line_set_points(s_wave_line[k], s_wave_pts[k], cnt);
+        lv_obj_remove_flag(s_wave_line[k], LV_OBJ_FLAG_HIDDEN);
     }
-    lv_line_set_points(s_wave_line, s_wave_pts, n);
-    lv_obj_remove_flag(s_wave_line, LV_OBJ_FLAG_HIDDEN);
 }
 
 /* 波形线的颜色按状态切：有周期信号 = 强调色；无 = 暗色（见 `wave_idle`）。
@@ -501,14 +565,20 @@ static void wave_set_color(int dim) {
         return;
     }
     s_wave_dim = dim;
-    lv_obj_set_style_line_color(s_wave_line, UI_HEX(dim != 0 ? UI_C_DIM : UI_C_ACCENT),
-                                LV_PART_MAIN);
+    for (unsigned k = 0; k < UI_WAVE_STRIPS; k++) {
+        lv_obj_set_style_line_color(s_wave_line[k], UI_HEX(dim != 0 ? UI_C_DIM : UI_C_ACCENT),
+                                    LV_PART_MAIN);
+    }
 }
 
 static void wave_update(const meas_result_t *r) {
     wave_set_color(0); /* 有周期信号 ⇒ 回到强调色 */
     if (r->n_peaks == 0U) {
-        lv_obj_add_flag(s_wave_line, LV_OBJ_FLAG_HIDDEN);
+        for (unsigned k = 0; k < UI_WAVE_STRIPS; k++) {
+            lv_obj_add_flag(s_wave_line[k], LV_OBJ_FLAG_HIDDEN);
+        }
+        s_wave_shown  = 0;
+        s_wave_last_n = -1;
         return;
     }
     /* 纵向量程 = 分量幅值和 ×1.2（自动缩放；下限 1mV 防除零）*/
@@ -517,15 +587,10 @@ static void wave_update(const meas_result_t *r) {
         amp_sum += r->peak[i].amp_mv;
     }
     const float range = (amp_sum < 1.0f) ? 1.0f : amp_sum * 1.2f;
-    const float scale = (float)UI_WAVE_HALF / range;
+    s_wave_scale = (float)UI_WAVE_HALF / range; /* 纵向标尺：点坐标由 wave_apply 现算 */
 
     if (op_wave_build(r, s_cycles, s_wave_y, APP_UI_WAVE_POINTS) != APP_UI_WAVE_POINTS) {
         return;
-    }
-    const float dx = (float)(UI_WAVE_X1 - UI_WAVE_X0) / (float)(APP_UI_WAVE_POINTS - 1);
-    for (int j = 0; j < APP_UI_WAVE_POINTS; j++) {
-        s_wave_pts[j].x = (float)UI_WAVE_X0 + (float)j * dx;
-        s_wave_pts[j].y = (float)UI_WAVE_MID - s_wave_y[j] * scale; /* 屏 y 向下 */
     }
     wave_apply(APP_UI_WAVE_POINTS);
     cycles_sync(); /* 原始路径可能把 1T/3T 分隔线藏了 —— 回到谱口径时按当前档位恢复 */
@@ -563,11 +628,23 @@ static int wave_idle(void) {
     const int ok = (app_engine_raw(&st) == 0); /* 只要统计（轨迹已于 2026-10-14 删）*/
 
     wave_set_color(1);
-    s_wave_pts[0].x = (float)UI_WAVE_X0;
-    s_wave_pts[0].y = (float)UI_WAVE_MID;
-    s_wave_pts[1].x = (float)UI_WAVE_X1;
-    s_wave_pts[1].y = (float)UI_WAVE_MID;
-    wave_apply(2);
+    /* ★ 平线只占**第 0 条带**（2 个点、y 相同 ⇒ 命中 `lv_draw_sw_line` 的水平快路径：
+     *   不建覆盖率掩膜、不 malloc），其余 7 条隐藏 —— 与旧版单对象的口径完全一致。*/
+    for (unsigned k = 1U; k < UI_WAVE_STRIPS; k++) {
+        lv_obj_add_flag(s_wave_line[k], LV_OBJ_FLAG_HIDDEN);
+    }
+    s_wave_pts[0][0].x = (float)UI_WAVE_PAD;
+    s_wave_pts[0][0].y = (float)UI_WAVE_PAD;
+    s_wave_pts[0][1].x = (float)(UI_WAVE_X1 - UI_WAVE_X0) + (float)UI_WAVE_PAD;
+    s_wave_pts[0][1].y = (float)UI_WAVE_PAD;
+    lv_obj_set_pos(s_wave_line[0], (lv_coord_t)(UI_WAVE_X0 - UI_WAVE_PAD),
+                   (lv_coord_t)(UI_WAVE_MID - UI_WAVE_PAD));
+    lv_obj_set_size(s_wave_line[0], (lv_coord_t)(UI_WAVE_X1 - UI_WAVE_X0 + 1 + 2 * UI_WAVE_PAD),
+                    (lv_coord_t)(2 * UI_WAVE_PAD + 1));
+    lv_line_set_points(s_wave_line[0], s_wave_pts[0], 2);
+    lv_obj_remove_flag(s_wave_line[0], LV_OBJ_FLAG_HIDDEN);
+    s_wave_shown  = 0;  /* 平线不算"真实波形" ⇒ 下一条真波形强制重画全部条带 */
+    s_wave_last_n = -1;
 
     for (int i = 0; i < 2; i++) {
         set_hidden(s_sep[i], 1); /* 12px 的 1T/3T 分隔线在"没有周期"时不出现 */
@@ -643,21 +720,30 @@ static void page_time_build(lv_obj_t *pg) {
      *    **加 draw task**（在 DRAW_MAIN 里直接写 draw buffer 会被随后执行的背景填充
      *    任务覆盖）；而"每列一个矩形" = 449 个任务 × ~百字节 ⇒ 池直接爆。
      *    要走到那一步得等一次真正的架构升级（自定义 draw unit / 显示叠加层）。 */
-    s_wave_line = lv_line_create(pg);
-    lv_line_set_points(s_wave_line, s_wave_pts, APP_UI_WAVE_POINTS);
-    lv_obj_add_style(s_wave_line, &s_st_bare, LV_PART_MAIN); /* 否则是白底大块 */
-    lv_obj_set_style_line_width(s_wave_line, 2, LV_PART_MAIN);
+    /* ★ 2026-10-15：**8 条竖带**（每条 20 点、相邻条带共用端点）。条带不省像素
+     *   （总面积与单对象几乎一样），它省的是**一次更新的时间窗**：把 1 块 60kpx
+     *   切成 8 块 ~4kpx，每块 render+flush ≈ 2~4ms < 一帧 16.7ms ⇒ 面板扫描期间
+     *   只可能看到一条 56px 宽的窄带在变，而不是一整条横贯全屏的接缝（撕裂）。 */
+    for (unsigned kw = 0; kw < UI_WAVE_STRIPS; kw++) {
+        s_wave_line[kw] = lv_line_create(pg);
+        lv_line_set_points(s_wave_line[kw], s_wave_pts[kw], UI_WAVE_STRIP_PTS);
+        lv_obj_add_style(s_wave_line[kw], &s_st_bare, LV_PART_MAIN); /* 否则是白底大块 */
+        lv_obj_set_style_line_width(s_wave_line[kw], 2, LV_PART_MAIN);
+        lv_obj_set_style_line_rounded(s_wave_line[kw], false, LV_PART_MAIN); /* 每段省两个圆头 */
+        /* 先给一个"紧"的显式尺寸：不用 SIZE_CONTENT，否则对象面积会被点数组的**最大
+         * 坐标**撑成 465×150 ≈ 70 kpx（见 wave_apply 的注释）。真实尺寸每帧由 wave_apply 给。 */
+        lv_obj_set_pos(s_wave_line[kw], (lv_coord_t)(UI_WAVE_X0 - UI_WAVE_PAD),
+                       (lv_coord_t)(UI_WAVE_MID - UI_WAVE_PAD));
+        lv_obj_set_size(s_wave_line[kw], (lv_coord_t)(UI_WAVE_X1 - UI_WAVE_X0 + 1 + 2 * UI_WAVE_PAD),
+                        (lv_coord_t)(2 * UI_WAVE_PAD + 1));
+        lv_obj_add_flag(s_wave_line[kw], LV_OBJ_FLAG_HIDDEN);
+    }
     /* 线色走**唯一入口** `wave_set_color()`（有信号 = 强调色 / 无 = 暗色）——
-     * 不再在这里直接写样式，否则"线色"就有两个真相源。 */
+     * 不再在这里直接写样式，否则"线色"就有两个真相源。
+     * ⚠️ 先清 `s_wave_dim`：它有"同色不碰"的闸，页重建后若颜色没变会**跳过设色**
+     *    ⇒ 新建的对象停在默认线色上。*/
+    s_wave_dim = -1;
     wave_set_color(0);
-    lv_obj_set_style_line_rounded(s_wave_line, false, LV_PART_MAIN); /* 每段省两个圆头任务 */
-    /* 先给一个"紧"的显式尺寸：不用 SIZE_CONTENT，否则对象面积会被点数组的**最大
-     * 坐标**撑成 465×150 ≈ 70 kpx（见 wave_apply 的注释）。真实尺寸每帧由 wave_apply 给。 */
-    lv_obj_set_pos(s_wave_line, (lv_coord_t)(UI_WAVE_X0 - UI_WAVE_PAD),
-                   (lv_coord_t)(UI_WAVE_MID - UI_WAVE_PAD));
-    lv_obj_set_size(s_wave_line, (lv_coord_t)(UI_WAVE_X1 - UI_WAVE_X0 + 1 + 2 * UI_WAVE_PAD),
-                    (lv_coord_t)(2 * UI_WAVE_PAD + 1));
-    lv_obj_add_flag(s_wave_line, LV_OBJ_FLAG_HIDDEN);
 
     /* 3T 的周期分隔线：1px 竖条 @20%，与波形区等高 */
     for (int i = 0; i < 2; i++) {
@@ -769,7 +855,7 @@ static void page_freq_build(lv_obj_t *pg) {
     /* 1~5 次谐波柱：12px 宽、圆角 6、顶强调色→底黑竖直渐变。
      * 未检出的柱直接**藏掉**（不是留一个 0 高的空壳）—— 屏幕上不出现"没有的
      * 东西"的位置，是这个页面的留白纪律。 */
-    for (int i = 0; i < MEAS_MAX_PEAKS; i++) {
+    for (int i = 0; i < UI_SPEC_LINES; i++) {
         s_bar[i] = lv_obj_create(pg);
         lv_obj_set_size(s_bar[i], UI_BAR_W, 0);
         lv_obj_set_pos(s_bar[i], UI_SPEC_X0, UI_SPEC_BASE_Y);
@@ -783,7 +869,7 @@ static void page_freq_build(lv_obj_t *pg) {
      *   "哪根是哪根"一眼可分，代价是 5 卡 + 10 label ≈ +3.2KB —— 池里有余量，值。
      * ⚠️ 框里**不能开 recolor**：序号写成 `#1`…`#5`，而 LVGL 的重着色语法也是
      *   `#RRGGBB 文字#` ⇒ 两套 '#' 会打架（三轮实测屏上出现 "1250.0k" 残渣）。 */
-    for (int i = 0; i < MEAS_MAX_PEAKS; i++) {
+    for (int i = 0; i < UI_SPEC_LINES; i++) {
         const lv_coord_t y = (lv_coord_t)(UI_BOX_Y0 + i * (UI_BOX_H + UI_BOX_GAP));
         s_box[i] = glass_card_create(pg, UI_BOX_X, y, UI_BOX_W, UI_BOX_H);
         char tag[8];
@@ -805,7 +891,7 @@ static void page_freq_build(lv_obj_t *pg) {
 static void harm_boxes_update(const meas_result_t *r) {
     const int n = (int)r->n_peaks;
 
-    for (int i = 0; i < MEAS_MAX_PEAKS; i++) {
+    for (int i = 0; i < UI_SPEC_LINES; i++) {
         if (i >= n) {
             set_text(s_box_val[i], "-- kHz  -- mV"); /* 没检出 ⇒ 留框留单位 */
             continue;
@@ -821,11 +907,11 @@ static void harm_boxes_update(const meas_result_t *r) {
 }
 
 static void refresh_freq(const meas_result_t *r) {
-    op_spec_line_t s[MEAS_MAX_PEAKS];
-    const int n = op_spec_build(r, s, MEAS_MAX_PEAKS); /* 未检出/参数非法 → -1 */
+    op_spec_line_t s[UI_SPEC_LINES];
+    const int n = op_spec_build(r, s, UI_SPEC_LINES); /* 未检出/参数非法 → -1 */
     const float span = (float)(UI_SPEC_X1 - UI_SPEC_X0);
 
-    for (int i = 0; i < MEAS_MAX_PEAKS; i++) {
+    for (int i = 0; i < UI_SPEC_LINES; i++) {
         const int on = (i < n);
         lv_coord_t h = 0;
         lv_coord_t x = UI_SPEC_X0;
@@ -856,10 +942,22 @@ static void cal_overlay_cb(lv_event_t *e);
 
 static void cal_prompt_refresh(void) {
     char b[16];
+    char pk[16];
+    char pp[16];
+    char txt[128];
+
     fmt_dec1(b, sizeof(b), app_engine_cal_freq(app_engine_cal_index()) / 1000.0f);
-    char txt[96]; /* 最坏 "Set the source to\n100 mV sine @ <最长频点> kHz\nthen press MEAS." ≈ 66 B */
+    /* ★★ 2026-10-14：**口径必须写在屏上**。原来只写 "100 mV sine"，没说峰值还是 Vpp
+     *   ⇒ 信号源按 Vpp=100mV 设，整张表偏 **2×**（症状："标定之后所有幅度读数都偏"，
+     *   极难反查到标定这一步）。现在明写 peak 并把 Vpp 换算也打出来。
+     * ⚠️ 数值一律来自 `APP_CAL_SRC_PEAK_MV`（project_config.h）= 计算口径同源；
+     * ⚠️ 用 `fmt_dec1` 而不是 printf 的 `%f`：本工程上屏数值全走定点格式化
+     *   （newlib-nano 没开浮点 printf），所以先把数转成串再 `%s` 拼。 */
+    fmt_dec1(pk, sizeof(pk), (float)APP_CAL_SRC_PEAK_MV);
+    fmt_dec1(pp, sizeof(pp), (float)APP_CAL_SRC_PEAK_MV * 2.0f);
     (void)snprintf(txt, sizeof(txt),
-                   "Set the source to\n100 mV sine @ %s kHz\nthen press MEAS.", b);
+                   "Set the source to\n%s mV peak sine @ %s kHz\n"
+                   "(= %s mVpp) then press MEAS.", pk, b, pp);
     set_text(s_cal_prompt, txt);
 }
 
@@ -966,25 +1064,76 @@ static void cal_panel_show(int show) {
     }
 }
 
-static void cal_overlay_cb(lv_event_t *e) {
-    LV_UNUSED(e);
+/* ---- 标定入口的"选择"层（2026-10-15，用户要求）----
+ * 已有有效表时点 CALIBRATE **不再直接清表开测**，先问一句：
+ *   [REDO]  = 走原流程（只动 RAM 工作表；中途 CLOSE 会由 `app_engine_cal_abort()`
+ *             把 Flash 里的旧表读回来 ⇒ 误点零代价）
+ *   [CLOSE] = 什么都不做（表与 `s_cal_valid` 一字不改）
+ * ⚠️ 文案用英文：本工程 UI 字体是 Montserrat（无中文字形），与 MEAS/CLOSE/CAL OK 一致。*/
+static void cal_ask_show(int show) {
+    if (s_cal_ask == NULL) {
+        return;
+    }
+    if (show != 0) {
+        lv_obj_move_foreground(s_cal_ask);
+        lv_obj_remove_flag(s_cal_ask, LV_OBJ_FLAG_HIDDEN);
+    } else {
+        lv_obj_add_flag(s_cal_ask, LV_OBJ_FLAG_HIDDEN);
+    }
+}
+
+/* 真正开始标定（原来直接写在 `cal_overlay_cb` 里的那几行，抽出来给两处共用）*/
+static void cal_start(void) {
     app_engine_cal_begin();
     cal_prompt_refresh();
     char b[24];
     (void)snprintf(b, sizeof(b), "step 0 / %d", app_engine_cal_points());
     set_text(s_cal_progress, b);
+    cal_ask_show(0);
     cal_panel_show(1);
 }
 
+static void cal_ask_redo_cb(lv_event_t *e) {
+    LV_UNUSED(e);
+    cal_start();
+}
+
+static void cal_ask_close_cb(lv_event_t *e) {
+    LV_UNUSED(e);
+    cal_ask_show(0); /* 表/状态一字不改 ⇒ 这就是"误点不丢"的那一半 */
+}
+
+static void cal_overlay_cb(lv_event_t *e) {
+    LV_UNUSED(e);
+    if (app_engine_cal_loaded() != 0) {
+        cal_ask_show(1); /* 已有表 ⇒ 先问，不碰任何状态 */
+        return;
+    }
+    cal_start(); /* 还没有表 ⇒ 直接进标定流程 */
+}
+
+/* ★ 2026-10-15（用户要求）：CLOSE = **放弃本次标定，并把 Flash 里的历史表读回来**。
+ *   原来这里只 `cal_panel_show(0)` —— 而 `cal_begin` 已经把 RAM 工作表清空且
+ *   `s_cal_valid = 0` ⇒ **误点一次 CALIBRATE 就得重标 17 点**（Flash 里其实一直躺着
+ *   旧表，只是没有任何回退路径）。现在 CLOSE 调 `app_engine_cal_abort()` ⇒ 误点零代价。
+ *   ⚠️ `app_engine_cal_save()` 仍然是唯一的写 Flash 路径 ⇒ "放弃"永远安全。*/
 static void cal_close_cb(lv_event_t *e) {
     LV_UNUSED(e);
+    (void)app_engine_cal_abort();
     cal_panel_show(0);
 }
 
 static void cal_meas_cb(lv_event_t *e) {
     LV_UNUSED(e);
     char b[32];
+    const int idx0 = app_engine_cal_index();
     const int left = app_engine_cal_step(); /* 同步 ~40ms（标定仪式流程可接受）*/
+    /* ★ 2026-10-14：这一行是"点了 MEAS 到底有没有被收到"的判据（用户报过"没有任何反应"）：
+     *   日志里没有这一行 ⇒ **回调根本没跑**（按钮/触摸问题，与标定逻辑无关）；
+     *   有这一行且 rc<0 ⇒ 走到了失败分支（屏上进度那行会变 "no peak! retry"）；
+     *   有这一行且 rc>=0 ⇒ **成功前进了一格** —— 悬空输入时噪声若越过 2.5mV 门限
+     *   也会"成功"（这是**静默记录垃圾点**的真实风险，见回复里的待办）。 */
+    LOG_I("[CAL] MEAS: idx %d -> rc %d", idx0, left);
     if (left < 0) {
         set_text(s_cal_progress, "no peak! retry");
         return; /* 不前进：人检查信号源后重按 */
@@ -1043,6 +1192,22 @@ static void cal_panel_create(lv_obj_t *scr) {
 
     text_btn_create(c, "MEAS", UI_PAD, 118, 120, 44, cal_meas_cb);
     text_btn_create(c, "CLOSE", (lv_coord_t)(UI_PAD + 152), 118, 120, 44, cal_close_cb);
+
+    /* ---- 选择层（建在主面板**之后** ⇒ 天然在它上面）----
+     * 只在"已有有效表时点 CALIBRATE"这一条路径上显示（见 `cal_overlay_cb`）。*/
+    s_cal_ask = lv_obj_create(scr);
+    lv_obj_set_pos(s_cal_ask, 0, 0);
+    lv_obj_set_size(s_cal_ask, UI_W, UI_H);
+    lv_obj_add_style(s_cal_ask, &s_st_wall, LV_PART_MAIN);
+    lv_obj_remove_flag(s_cal_ask, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_add_flag(s_cal_ask, LV_OBJ_FLAG_HIDDEN);
+
+    lv_obj_t *a = glass_card_create(s_cal_ask, UI_PAD, 90,
+                                    (lv_coord_t)(UI_W - 2 * UI_PAD), 150);
+    (void)label_create(a, "CAL TABLE EXISTS", &s_st_cap, UI_PAD, 14);
+    (void)label_create(a, "Redo the 17-point calibration?", &s_st_cap, UI_PAD, 36);
+    text_btn_create(a, "REDO", UI_PAD, 78, 120, 44, cal_ask_redo_cb);
+    text_btn_create(a, "CLOSE", (lv_coord_t)(UI_PAD + 152), 78, 120, 44, cal_ask_close_cb);
 }
 
 /* ================================================================ splash
@@ -1143,7 +1308,9 @@ static const char *const s_page_name[UI_PAGE_N] = {"TIME", "FREQ", "CAL"};
  *    **不属于页 2**，销毁页 2 时必须留着它们（它们自己管显示/隐藏）。 */
 static void page_clear_refs(uint8_t p) {
     if (p == 0U) {
-        s_wave_line = NULL;
+        for (unsigned k = 0; k < UI_WAVE_STRIPS; k++) {
+            s_wave_line[k] = NULL;
+        }
         s_cyc_key = NULL;
         s_cyc_lbl = NULL;
         s_sep[0] = NULL;
@@ -1152,7 +1319,7 @@ static void page_clear_refs(uint8_t p) {
             s_time_val[i] = NULL;
         }
     } else if (p == 1U) {
-        for (uint32_t i = 0; i < MEAS_MAX_PEAKS; i++) {
+        for (uint32_t i = 0; i < UI_SPEC_LINES; i++) {
             s_bar[i] = NULL;
             s_box[i] = NULL;
             s_box_val[i] = NULL;

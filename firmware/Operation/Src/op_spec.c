@@ -6,7 +6,9 @@
 #include <math.h>
 
 int op_spec_build(const meas_result_t *r, op_spec_line_t *out, int cap) {
-    if (r == NULL || out == NULL || cap < MEAS_MAX_PEAKS || r->n_peaks == 0U) {
+    /* ⚠️ 2026-10-15：`cap` 不再要求 ≥ MEAS_MAX_PEAKS —— UI 只显示前 `UI_SPEC_LINES`(5)
+     *    根，而峰表容量已升到 16（那是给波形重建用的）。只要 cap > 0 即可。 */
+    if (r == NULL || out == NULL || cap <= 0 || r->n_peaks == 0U) {
         return -1;
     }
 

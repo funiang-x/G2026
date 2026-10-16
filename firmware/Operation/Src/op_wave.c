@@ -24,22 +24,50 @@ int op_wave_build(const meas_result_t *r, int cycles, float *y_out, int out_n) {
     const int   n      = (int)r->n_peaks;
     float       wk[MEAS_MAX_PEAKS]; /* ω_k */
     float       ak[MEAS_MAX_PEAKS]; /* A_k */
-    float       ph[MEAS_MAX_PEAKS]; /* φ_k */
 
+    /* ★ 2026-10-15：**只收 f1 的整数倍分量**（±5%）。
+     *   why：峰表按幅值取前 N 根，可能混进非谐波杂散（干扰残留、噪声峰）。它们被
+     *   `round(f/f1)` 硬塞成某次谐波后，会在重建里注入一根**相位无意义**的正弦
+     *   ⇒ 波形形状直接错掉（用户上板现象："叠加谐波时波形不正确"）。
+     *   真实谐波的精化频率误差 ≪0.1%（单点 DFT）⇒ 5% 的门限只挡杂散。*/
+    /* ★★ 2026-10-16（二次修订）：**形状按"零相位谐波族"重建 —— 相位不参与**。
+     *
+     * 口径与 `op_meas.c` 的 Upp 重建**同源**（改一处必须看另一处；两侧单测都钉着）。
+     *   依据 = **题面信号的定义**：`u = Σ A_k·sin(2π·f_k·t)` —— 每个分量零相位
+     *   ⇒ 真值形状就是 `w(t) = Σ A_k·sin(2π·m_k·f₁·t + 0)`，不需要任何相位信息。
+     *
+     * why 实测相位不能用（两条本机硬事实，2026-10-16 上板查实）：
+     *   ① **绝对相位不可用**：DFT 的相位参考点是**帧起点**，而帧起点与信号源无关
+     *      （无触发、ADC 自由跑）⇒ 每帧整体水平平移一个随机量。第一版就是这样
+     *      "波形一直在动、像在滚"（实测 1T 档过零点在 18~467 px 之间乱跳，
+     *      相邻两帧 |Δx| 均值 141 px，而幅值抖动只有 0.03%）。
+     *   ② **标定出来的相对相位也不可靠**：标定逐点、**每点各自一帧** ⇒ 每点的绝对
+     *      相位里都带一个独立的帧偏移 2π·f_k·δ_k，而形状要的恰是跨频差
+     *      θ(f_k) − m·θ(f₁) ⇒ 相位表**每重标一次就换一组随机偏移**。对 Upp 的
+     *      污染实测到 **+19°**（Upp 144.2 / 真值 134.9）与 **~180°**（Upp 332.9）。
+     *   ⇒ 形状**只信幅值**；顺带把第一版那套"相位锚定"机器整段删掉 —— 相对相位
+     *     归零后波形天然定死在基波过零点，正是第一版要达到的目的（且更彻底）。
+     *   代价：对"谐波相对相位非零"的信号，本机显示与 Upp 会与真值不符 —— 题面
+     *     不出这种信号；要通用化，得先把标定改成"**同帧多分量**"（单音的绝对相位
+     *     在本装置上不可用：缺一个与源共时基的参考分量）。
+     *   ⚠️ `peak.phase_rad` 仍照测照存（op_peak / op_cal 不动）—— 将来做"相位差
+     *      测量"要靠它，只是**不参与形状重建**。 */
+    int cnt = 0;
     for (int i = 0; i < n; i++) {
-        int m = (int)(r->peak[i].freq_hz / r->f1_hz + 0.5f);
-        if (m < 1) {
-            m = 1;
+        const float mf = r->peak[i].freq_hz / r->f1_hz;
+        const int   m  = (int)(mf + 0.5f);
+        if (m < 1 || fabsf(mf - (float)m) > 0.05f) {
+            continue;
         }
-        wk[i] = two_pi * (float)m * r->f1_hz;
-        ak[i] = r->peak[i].amp_mv;
-        ph[i] = r->peak[i].phase_rad;
+        wk[cnt] = two_pi * (float)m * r->f1_hz;
+        ak[cnt] = r->peak[i].amp_mv;
+        cnt++;
     }
     for (int j = 0; j < out_n; j++) {
         const float t = t_end * (float)j / (float)out_n;
         float       w = 0.0f;
-        for (int i = 0; i < n; i++) {
-            w += ak[i] * sinf(wk[i] * t + ph[i]);
+        for (int i = 0; i < cnt; i++) {
+            w += ak[i] * sinf(wk[i] * t);
         }
         y_out[j] = w;
     }

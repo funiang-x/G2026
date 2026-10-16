@@ -133,7 +133,7 @@ def run_case(name, freqs, amps_mv, cal=True, uj=None, gnet=1.995):
         x += uj[1] * np.sin(2 * math.pi * uj[0] * t)
 
     # 2) 前端（LTI，逐谐波复数传递）
-    c, _ = build_afe(src_ac=1.0, r21=4.7, r6=24.9e3, r7=3.57e3)
+    c, _ = build_afe(src_ac=1.0, r21=4.7, r6=V["R6"], r7=V["R7"])
     fs_grid = np.logspace(3, math.log10(3e6), 900)
     H = c.ac(fs_grid)["ADCP"]
     fc17 = np.logspace(4, math.log10(5e5), 17)

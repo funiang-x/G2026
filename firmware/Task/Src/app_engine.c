@@ -448,7 +448,7 @@ int app_engine_selftest(void) {
     /* 单音落在第 k0 个 bin：**整数周期** ⇒ 无泄漏，谱峰位置与幅值都有解析真值。
      * k0=100 在扫描带 [19,1028] 内，对应 fs·k0/N = 48.83kHz。 */
     const uint32_t k0 = 100U;
-    const float    amp_mv = 100.0f; /* 输入端 100mV 峰值（远高于门限 1.5mV） */
+    const float    amp_mv = 100.0f; /* 输入端 100mV 峰值（远高于门限 2.5mV） */
     const float    lsb_mv = (float)BOARD_ADC_VREF_MV / 4096.0f / (float)BOARD_NET_GAIN;
     const double   two_pi = 6.28318530717958647692;
 
@@ -521,11 +521,36 @@ uint8_t app_engine_scene(void) {
 }
 
 /* ---------------- 标定流程 ---------------- */
+/* ★ 2026-10-15（用户要求）：`cal_begin` 只动 **RAM 工作表**，Flash 里的历史表**从未被写**
+ *   （只有 `cal_save` 才写）⇒ "误点 CALIBRATE" 本来就不该有代价 —— 代价来自"没有回退路径"。
+ *   配套：UI 的 CLOSE 现在调 `app_engine_cal_abort()` 把历史表**读回来**（见下）。*/
 void app_engine_cal_begin(void) {
     op_cal_default_freqs(&s_cal);
     s_cal_idx = 0;
     s_cal_calibrating = 1;
     s_cal_valid = 0; /* 建表期间测量不带半截表 */
+}
+
+/* 放弃本次标定：把 Flash 里那张表重新载回工作表（并恢复 `s_cal_valid`）。
+ * 返回 0 = 恢复成功；-1 = Flash 里没有可用表（读数走"未标定"回退）。
+ * ⚠️ blob 用 **static**：本函数由 UI 任务的 CLOSE 回调调用，而 UI 栈只剩 ~1.3KB，
+ *    不能在这里放 ~220B 的栈数组（与 `app_engine_init` 里的局部 blob 不同：那在 init 栈上）。*/
+int app_engine_cal_abort(void) {
+    static uint8_t blob[OP_CAL_BLOB_SIZE];
+
+    s_cal_calibrating = 0;
+    s_cal_idx = 0;
+    s_cal_loaded = 0;
+    if (bsp_spi_flash_read(APP_CAL_FLASH_ADDR, blob, sizeof(blob)) == 0 &&
+        op_cal_unpack(blob, sizeof(blob), &s_cal) == 0) {
+        s_cal_valid = 1;
+        s_cal_loaded = 1;
+        LOG_I("[CAL] 放弃本次标定 ⇒ 已恢复 Flash 里的表（%d 点）", OP_CAL_POINTS);
+        return 0;
+    }
+    s_cal_valid = 0;
+    LOG_W("[CAL] 放弃本次标定，但 Flash 里没有可用表 ⇒ 读数未做 LTI 修正");
+    return -1;
 }
 
 int app_engine_cal_points(void) {
@@ -564,11 +589,13 @@ static int cal_measure_current(void) {
             return -1; /* 不前进：人检查后重按"测量" */
         }
         /* 标定源是单音：取最低峰作该频点读数。
-         * g = 读数/100mV（标称真值）；p = 读数相位（源端零相位）。
+         * g = 测得**峰值幅度** / `APP_CAL_SRC_PEAK_MV`（标称真值，峰值口径 ——
+         *   屏上提示文字同源，见 project_config.h 该宏的说明）；p = 读数相位（源端零相位）。
          * ★ 走 `op_cal_set_point`（不是直接赋值）：它负责把相位**展开**——
          *   本板的相移在 306~392 kHz 之间穿过 ±180°，主值序列会在那里跳 360°，
          *   直接存下去会让查表在该区间插出 ~180° 的错（实测 Upp 偏 -19 mV）。 */
-        op_cal_set_point(&s_cal, s_cal_idx, pk[0].amp_mv / 100.0f, pk[0].phase_rad);
+        op_cal_set_point(&s_cal, s_cal_idx,
+                         pk[0].amp_mv / (float)APP_CAL_SRC_PEAK_MV, pk[0].phase_rad);
     }
     return 0;
 }

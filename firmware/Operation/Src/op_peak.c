@@ -12,7 +12,7 @@
  * PC 单测（Test/test_op_meas.c）不调 init，靠这份默认跑 ——
  * ⚠️ 改 APP_PEAK_* 时必须同步改这里（Operation 层不许 include 配置头）。 */
 static op_peak_params_t s_p = {
-    9000.0f, 502000.0f, 1.5f,
+    9000.0f, 502000.0f, 2.5f,
 };
 
 /* 递推重置步长：误差有界的最小保险丝（见 op_peak.h 说明）。256 步内

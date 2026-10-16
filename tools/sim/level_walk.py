@@ -17,7 +17,9 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from afe_net import build_afe  # noqa: E402
 
-OPT = dict(r21=4.7, r6=24.9e3, r7=3.57e3)
+OPT = dict(r21=4.7, r6=6.8e3, r7=1e3)   # 2026-10-15 实物：R6=6.8k / R7=1k
+GSTAGE = 1 + OPT["r6"] / OPT["r7"]      # U1B 本级增益
+GNET = 0.25 * GSTAGE                    # 净增益（源端 EMF→ADC；端接 ×0.5、LC 双端接 ×0.5）
 VREF, NBIT = 3.3, 12
 LSB = VREF / (1 << NBIT)          # 805.66 µV
 VBIAS = 1.65
@@ -34,7 +36,7 @@ NODES = [
     ("N3",      "第 3 节后"),
     ("N4",      "梯形输出（= LCOUT）"),
     ("GAININ",  "C9 隔直之后（U1B 的 +in）"),
-    ("GOUT",    "U1B 输出（×7.975）"),
+    ("GOUT",    f"U1B 输出（×{GSTAGE:.2f}）"),
     ("ADCP",    "R8+C10 之后 = **ADC 输入**"),
 ]
 
@@ -83,11 +85,11 @@ def main():
               f"{(c_hi-c_lo)/4096*100:>12.1f}%")
 
     print(f"\n④ 余量（按 5mV 判据与 1.5mV 门限折算到源端）")
-    print(f"   1 LSB 折到源端   = {LSB/1.9937*1e3:.3f} mV")
-    print(f"   量化噪声(rms)    = {LSB/math.sqrt(12)/1.9937*1e3:.3f} mVrms（源端）")
+    print(f"   1 LSB 折到源端   = {LSB/GNET*1e3:.3f} mV")
+    print(f"   量化噪声(rms)    = {LSB/math.sqrt(12)/GNET*1e3:.3f} mVrms（源端）")
     print(f"   仿真噪声底        = 0.054 mVrms（@TP4）")
-    print(f"   50mVpp 时：量化步长占 Upp 的 {LSB/1.9937/0.050*100:.2f}% ⇒ 5mV 判据 ≈ {(5/50)*100:.0f}% of Upp")
-    print(f"   250mVpp 不削顶上限 = ±827 mVpk（源端，= {827/125:.1f}× 于 250mVpp 的峰值）")
+    print(f"   50mVpp 时：量化步长占 Upp 的 {LSB/GNET/0.050*100:.2f}% ⇒ 5mV 判据 ≈ {(5/50)*100:.0f}% of Upp")
+    print(f"   250mVpp 不削顶上限 = ±{VBIAS/GNET*1e3:.0f} mVpk（源端，= {VBIAS/GNET/0.125:.1f}× 于 250mVpp 的峰值）")
 
     print("\n" + "=" * 104)
     print("读法：① 里『比值』一列全部是常数 ⇒ **整条链是线性的**（LTI），两个端点只差一个比例系数；")

@@ -138,6 +138,7 @@ float app_engine_cal_freq(int idx);          /* 第 idx 点的提示频率（Hz�
 int   app_engine_cal_points(void);           /* 总点数（17） */
 int   app_engine_cal_save(void);             /* 擦扇区 + 写 Flash；0=成功 */
 int   app_engine_cal_loaded(void);           /* 1 = 开机时载到了有效表（UI 提示用） */
+int   app_engine_cal_abort(void);            /* 放弃本次标定：把 Flash 里的表读回来（CLOSE 用） */
 
 #ifdef __cplusplus
 }

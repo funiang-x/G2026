@@ -8,7 +8,7 @@
   ① `U1A` 接成跟随器，但**反馈点取在输出引脚**上，`R3`(49.9Ω) 串在反馈点**之后**
      ⇒ 梯形大电容**不在环内**（经典"隔离电阻"手法，`30 §1.4` 已记其意图）；
   ② `U1B` 同理：反馈取在 `GOUT`，`R8`(100Ω) 在**之后**，`C10` **不在环内**；
-  ③ `U1B` 噪声增益 = `1+R6/R7` = **7.975**（不是 1）。
+  ③ `U1B` 噪声增益 = `1+R6/R7` = **7.8**（不是 1）。
 
 ⚠️ **本电路没有"单一相位裕度"**（本文件实测出来的）：
 `VBIAS` 同时是 `U1A` 的 `+in` 偏置（经 `R2`）、`U1B` 的 `+in` 偏置（经 `R5`）、
@@ -36,7 +36,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from afe_net import V, build_afe, opa2197  # noqa: E402
 from mna import Circuit  # noqa: E402
 
-OPT_LIVE = dict(r21=4.7, r6=24.9e3, r7=3.57e3)
+OPT_LIVE = dict(r21=4.7, r6=6.8e3, r7=1e3)   # 2026-10-15 实物（R6=6.8k / R7=1k）
 R6_OLD, R7_OLD = 69.8e3, 10e3
 
 
@@ -120,11 +120,11 @@ def main():
     print(f"   ⇒ U1A 环内**没有任何外部极点**（反馈点=输出脚，梯形电容经 R3 在环外）")
 
     print(f"\n② 环内的唯一外部极点：`R6∥R7` × 运放输入电容（在 U1B 的 −in 上）")
-    fc_u1b = 10e6 * (1.0 / 7.975)              # 环穿越 ≈ GBW × β
+    fc_u1b = 10e6 * (1.0 / (1 + OPT_LIVE["r6"] / OPT_LIVE["r7"]))   # 环穿越 ≈ GBW × β
     print(f"   U1B 环穿越 ≈ GBW×β = {fc_u1b/1e6:.2f} MHz")
     print(f"   {'R6/R7':<22}{'Cin':>9}{'R6∥R7':>10}{'极点':>10}{'穿越处相位损失':>16}")
-    for tag, r6, r7 in ((f"活体 {R6_OLD/1e3:.1f}k/{R7_OLD/1e3:.0f}k（改前）", R6_OLD, R7_OLD),
-                        ("活体 24.9k/3.57k", 24.9e3, 3.57e3)):
+    for tag, r6, r7 in (("改前 69.8k/10k", R6_OLD, R7_OLD),
+                        ("活体 6.8k/1k", OPT_LIVE["r6"], OPT_LIVE["r7"])):
         for cd, cc, ct in ((2e-12, 2e-12, "2p/2p"), (8e-12, 4e-12, "8p/4p"),
                            (16e-12, 8e-12, "16p/8p")):
             p = inloop_pole(r6, r7, cd, cc)

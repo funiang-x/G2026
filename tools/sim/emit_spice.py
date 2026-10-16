@@ -81,12 +81,12 @@ def emit_afe_ac():
     A(f"C23   N4    R4T  {V['C23']*1e6:.6g}u")
     A(f"R4    R4T   AGND {V['R4']:.6g}")
     A("")
-    A("* ---- ⑤ 二级增益 U1B（×7.975）----")
+    A(f"* ---- ⑤ 二级增益 U1B（×{1 + V['R6'] / V['R7']:.2f}）----")
     A(f"C9    N4    GAININ {V['C9']*1e9:.6g}n")
     A(f"R5    GAININ VBIAS {V['R5']:.6g}")
     A("XU1B  GAININ FB 5VA AGND OPA2197")
-    A(f"R6    GOUT  FB  {24.9e3:.6g}")        # ★ 改后值（H2）
-    A(f"R7    FB    VBIAS {3.57e3:.6g}")      # ★ 改后值（H2）
+    A(f"R6    GOUT  FB  {V['R6']:.6g}")
+    A(f"R7    FB    VBIAS {V['R7']:.6g}")
     A(f"R8    GOUT  ADCP {V['R8']:.6g}")
     A(f"C10   ADCP  AGND {V['C10']*1e12:.6g}p")
     A("")
