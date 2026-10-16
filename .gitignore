@@ -1,6 +1,7 @@
 # 生成物与 IDE
 firmware/build/
 firmware/.vscode/
+.vscode/
 
 # 只读输入（外部厂商资料包 ~3.7G，不可变、无需回滚；git 只管自产文档与固件源码）
 docs/立创·梁山派·天空星STM32F407VET6开发板资料（标准库）/
@@ -20,7 +21,11 @@ _review6/
 _review7/
 hardware/_review/
 
+# EDA 工具产物（网表/截图/BOM 导出，按“产物不进版本库”口径；同名 _eda/ 已在下面排除）
+.easyeda/
+
 # 各 AI 客户端的工作状态目录（不进版本库）
 .workbuddy-ai/
+.workbuddy/
 .trae/
 .codebuddy/
