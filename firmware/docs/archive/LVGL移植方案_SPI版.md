@@ -272,7 +272,7 @@ lv_timer_handler → touch_read_cb
   → 那要同步删/桩掉 `Device/Src/bsp_sd.c`，并改 `board_config.h` 和 `bsp.h`
 
 **④ LVGL 源码从哪来**
-- **A（我推荐）**：从 `C:\Users\funiang\Desktop\lvgl_windows\lv_port_pc_vscode-master\lvgl\`
+- **A（我推荐）**：从 `<LOCAL>\Desktop\lvgl_windows\lv_port_pc_vscode-master\lvgl\`
   拷（**同一版本 v9.5.0**，本地拷秒级完成，且与 UI 验证过的版本严格一致）
 - **B**：`git clone --depth 1 --branch v9.5.0`（需要联网，版本号还得自己核）
 
@@ -280,8 +280,8 @@ lv_timer_handler → touch_read_cb
 
 ## 附：这套方案的来源
 
-- 屏的参数：`C:\Users\funiang\Desktop\lvgl_windows\docs\3668626735JMD2.8TFT.pdf`（你提供的规格书）
-- UI 与字体：`C:\Users\funiang\Desktop\lvgl_windows\lv_port_pc_vscode-master\src\ui\`（PC 上已验证）
-- ILI9341 驱动骨架与初始化序列：`C:\Users\funiang\Desktop\2026G\lvgl-hmi\port\bsp_lcd_spi.c`
+- 屏的参数：`<LOCAL>\Desktop\lvgl_windows\docs\3668626735JMD2.8TFT.pdf`（你提供的规格书）
+- UI 与字体：`<LOCAL>\Desktop\lvgl_windows\lv_port_pc_vscode-master\src\ui\`（PC 上已验证）
+- ILI9341 驱动骨架与初始化序列：`<LOCAL>\Desktop\2026G\lvgl-hmi\port\bsp_lcd_spi.c`
   （**但那份是文档区产物，从没编译过、没上过板** —— 搬进来要按本工程的规矩重写，不是照抄）
 - 引脚事实：`Project\stm32prj\docs\...\第02章\硬件\立创梁山派·天空星开发板原理图_2024-01-17.pdf` 第 7 页

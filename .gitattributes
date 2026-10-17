@@ -1,0 +1,15 @@
+# 行尾统一为 LF；二进制文件不做任何转换
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+*.docx binary
+*.xlsx binary
+*.pptx binary
+*.a binary
+*.stl binary
+*.epro binary
+*.eprj binary

@@ -7,7 +7,7 @@
 ## 一键跑
 
 ```bash
-PY=C:/Users/funiang/.workbuddy-ai/binaries/python/envs/default/Scripts/python.exe
+PY=python
 
 $PY tools/sim/selftest_mna.py    # ① 内核自检：6 项与解析解对拍（必须全绿）
 $PY tools/sim/studies.py         # ② 七项研究 S1~S7 → out/studies.json（约 30s）

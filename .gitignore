@@ -1,5 +1,6 @@
 # 生成物与 IDE
 firmware/build/
+docs/paper/build/
 firmware/.vscode/
 .vscode/
 
@@ -29,3 +30,29 @@ hardware/_review/
 .workbuddy/
 .trae/
 .codebuddy/
+
+# AI 开工证/会话状态（本机，不进版本库）
+.ai-skills-state/
+
+# 内部 AI 工作规则与本机派生文件（含本机绝对路径，公开仓库不收录；本地保留）
+AGENTS.md
+CLAUDE.md
+firmware/..toolsmxgen.txt
+
+# 内部文档与项目管理（整目录不公开；仅 hardware/test/ 保留测试单）
+/docs/
+/PROJECT.md
+
+# 论文中间产物（LaTeX；PDF 作为可读产物保留入库）
+docs/paper/*.aux
+docs/paper/*.bbl
+docs/paper/*.blg
+docs/paper/*.log
+docs/paper/*.out
+docs/paper/*.toc
+docs/paper/*.synctex.gz
+docs/paper/*.fls
+docs/paper/*.fdb_latexmk
+docs/paper/chapters/*.aux
+docs/paper/front/*.aux
+docs/paper/appendix/*.aux

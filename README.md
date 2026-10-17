@@ -1,49 +1,90 @@
-# G2026 — 周期信号测量分析装置（电赛 G 题）
+# G2026 — 周期信号测量分析装置
 
-> 3.5″ 屏 8080 并口 + AFE 模拟前端 + STM32F407VGT6 核心板 + 自研底板的完整产品工程。
-> **三态口径**：凡涉及"上板"的结论一律**未验证**（装置尚未制造），验证过的会注明实测日期与证据链接。
+> 面向 10 kHz～500 kHz 周期信号的测量分析装置：**50 Ω 端接 + 8 阶抗混叠 + 2.0 MSPS 采样 +
+> 单点 DFT 精化 + LVGL 界面**，在一块自研两层底板上完成从模拟前端到屏幕显示的完整链路。
 
-**进门先读**：[`AGENTS.md`](AGENTS.md)（AI 工作规则）→ [`docs/INDEX.md`](docs/INDEX.md)（全部文档的单一索引）→ [`PROJECT.md`](PROJECT.md)（阶段/待办/门禁基线）。
+| 指标 | 要求 | 实测最坏值 | 结论 |
+|---|---|---|---|
+| 基频误差 | ≤ 1 kHz | **0 Hz** | 满足 |
+| 峰峰值误差 | ≤ 5 mV | **1.9 mV** | 满足（余量 2.6×） |
+| 有效值误差 | ≤ 5 mV | **0.8 mV** | 满足（余量 6.3×） |
+| 频率分辨率 | ≤ 500 Hz | **488.28 Hz** | 满足 |
+| 单次测量 | ≤ 2 s | **约 0.25 s** | 满足（余量 8×） |
+| 抗干扰 | 1 MHz / 200 mVpp | 带内**仅 2 根谱线** | 满足 |
 
-## 目录导览
+> 测试口径：官方三组信号 + 11 项边界/组合场景 + 6 点干扰矩阵，共 14+6 项全部 PASS。
+> 原始记录见 [`hardware/test/G2026-上板测试单-20261016-v5.xlsx`](hardware/test/G2026-上板测试单-20261016-v5.xlsx)。
 
-| 位置 | 内容 | 规则 |
-|---|---|---|
-| `docs/` | 产品级方案与全链路索引（`INDEX.md` 是唯一入口） | 编号文档 + INDEX 登记 |
-| `hardware/` | 硬件编号文档 01~50（需求→原理图→PCB→复核）+ BOM 真相源 `bom_final.csv` | 白名单制，见 AGENTS.md |
-| `firmware/` | STM32 四层工程（CubeMX + CMake + FreeRTOS + LVGL），门禁 `firmware/Tools/fw.py` | 规范手册见 `firmware/docs/00~13` |
-| `tools/` | 跨域工具（`tidy_workspace.py` 工作区归位、`verify_dsp.py` 数值复算、`sim/` 仿真环境） | 可复用工具的家 |
-| `_work/` | AI 会话临时产物唯一落点（git 忽略） | 每周一 09:00 自动清扫 |
-| `_archive/` | 历史证据冻结区（EDA 整包快照、早期评审脚本，文档引用已指向此处） | 只读 |
+## 系统一览
 
-## 门禁（改完必跑）
-
-- **固件**：`python firmware/Tools/fw.py verify`（env → lint → doccheck → test → sizecheck 一条龙；CubeMX 重生成后先读 `firmware/docs/11 §11`）。
-- **EDA**：`easyeda sch check / sch nets / sch drc`（三页）+ `pcb drc`；基线数字记录在 `PROJECT.md`。
-- **工作区**：`python tools/tidy_workspace.py`（默认 dry-run）。
-
-## 文档规范（模板口径，[MUST]）
-
-1. **编号**：新文档接续所在目录的最大编号（硬件 `hardware/51-…`，两位数字，永不复用）。
-2. **文件名**：`NN-主题-YYYYMMDD.md`（日期=定稿日；可复用工具/长期维护的表可无日期，如 `04-pinout连接表.md`）。
-3. **H1**：`# NN · 标题（YYYY-MM-DD）`；开头三行内写清**性质**（决策/审计/讲解/事故/拍板）与**状态**（已执行/待审/未验证）。
-4. **登记**：写完必到 `docs/INDEX.md` 加一行（文档 | 内容 | 何时读）——没登记=不存在。
-5. **引用即合同**：文档里引用的每个本地路径必须真实存在；引证据前先把它放进白名单或 `_archive/`。
-
-## 如何派生新项目
-
-> **模板母体 = `projects/templet`**（全项目模板：软件+硬件+文档+治理；本工程是它的派生实例）。
-
-**一条命令**（默认 dry-run 先看方案，`--go` 执行）：
-
-```bash
-python tools/derive_project.py <新项目名> --dest <父目录> --go
+```mermaid
+flowchart LR
+  IN[SMA 50Ω] --> AFE[端接/耦合 + 8阶 LC + ×7.8 放大 + 1.65V 偏置]
+  AFE --> ADC[ADC1 2.0 MSPS / 4096 点]
+  ADC --> DSP[DSP：BH4 + FFT + 找峰 + 单点 DFT + 标定]
+  DSP --> UI[LVGL 界面]
+  UI --> LCD[3.5 英寸 320×480 8080 并口]
 ```
 
-自动完成：复制 AGENTS/CLAUDE/.gitignore/tidy_workspace.py/.vscode（按新名改写）、生成 README/PROJECT/INDEX 最小骨架、建 `_work/_archive/hardware` 空目录，并打印三步手工清单（固件模板派生 / 重铺项目门 skillman doors / git init）。
-之后：写第一篇 `hardware/01-需求冻结-<日期>.md`，登记 INDEX，开始走编号文档流程。本工程的约定演进后（改 AGENTS/工具），**下次派生自动带上**——无需维护另一份模板。
+- **硬件**：STM32F407VGT6 核心板 + 自研两层底板；模拟/数字分区、AGND 独立岛、单点接地；
+  21 只 33 Ω 源端阻尼贴 MCU 侧 2.5～2.9 mm。
+- **软件**：Task / Operation / Device / Common 四层，业务逻辑不碰 HAL，可在 PC 上单元测试；
+  FreeRTOS 三任务 + 1 深 mailbox；采样窗内 FSMC 零动作。
+- **算法**：去均值 → BH4 窗 → 4096 点 CFFT → 门限找峰 → 抛物线/三点/单点 DFT 三步精化 →
+  17 点对数频标定；`Upp` 用零相位重建，`Urms` 用 `√(ΣA²/2)`。
 
-## 历史与恢复
+## 目录结构
 
-固件迁移/CubeMX 治愈的完整记录见 [`_archive/README-状态与恢复-20260928.md`]（原 README，历史留档）；
-EDA 整包回退点见 [`PROJECT.md`](PROJECT.md) 的「回退点」节。
+| 位置 | 内容 |
+|---|---|
+| [`hardware/`](hardware/) | 硬件编号文档 58～67（机械尺寸、PCB 审查、运放稳定性、屏雪花根因、原理图/BOM、外壳定案）+ `data/` + `sch/`（原理图 PDF）+ `test/`（上板测试单） |
+| [`firmware/`](firmware/) | 四层固件工程（CubeMX + CMake + FreeRTOS + LVGL）+ 规范手册 `firmware/docs/00~13` |
+| [`tools/`](tools/) | 复算与仿真（`verify_dsp.py`、`sim/`）、工作区归位 |
+
+进门先读：[`firmware/README.md`](firmware/README.md)（分层与构建）→ [`hardware/`](hardware/)（硬件口径与实测）。
+
+## 快速开始（固件）
+
+```bash
+python firmware/Tools/fw.py env      # 工具链 / 探针 / 器件体检
+python firmware/Tools/fw.py build    # 编译（--clean-first 为零告警口径）
+python firmware/Tools/fw.py flash    # J-Link SWD 烧录
+python firmware/Tools/fw.py rtt      # RTT 日志
+python firmware/Tools/fw.py verify   # 门禁 + 烧录 + 抓标记，退出码即结论
+```
+
+不接板也能验证业务逻辑：
+
+```bash
+python firmware/Tools/fw.py test     # Operation 层 PC 侧单测
+```
+
+## 测试记录与文档说明
+
+- **上板测试单**：[`hardware/test/G2026-上板测试单-20261016-v5.xlsx`](hardware/test/G2026-上板测试单-20261016-v5.xlsx)
+  —— 官方三式、T1～T11、J1～J6 的逐项记录，含判据与结论。
+- **固件规范**：`firmware/docs/00~13` —— 分层规则、构建门禁、日志与测试约定。
+- **硬件口径**：`hardware/66`（原理图与 BOM，元件取值的唯一真相源）、`hardware/67`（外壳尺寸定案）。
+
+毕业设计报告、软硬件导读讲义与补测清单不随本仓库公开（`docs/` 已排除，见 `.gitignore`）；
+如需报告或复算明细，可通过 Issue 联系。
+
+## 状态与边界
+
+- ✅ **已上板验证**：显示、触摸、采样、算法、干扰抑制、测量时延。
+- ⚠️ **未闭环项**：温漂与长时稳定性未测；三音以上与节点级波形未验证。
+- 📄 本仓库为**公开版**：已移除内部文档（`docs/`）、AI 规则文件、编辑器本机配置与 3.7 GB
+  厂商资料包；所有本机绝对路径已替换为相对路径或占位符。
+
+## 仓库规范
+
+| 文件 | 作用 |
+|---|---|
+| [`LICENSE`](LICENSE) | 原创代码与文档采用 MIT |
+| [`THIRD_PARTY.md`](THIRD_PARTY.md) | ST HAL / CMSIS / FreeRTOS / LVGL / RTT 的许可归属 |
+| [`.gitattributes`](.gitattributes) | 行尾统一 LF，PDF/PNG/STL/XLSX 按二进制处理 |
+
+## 许可
+
+原创代码与文档采用 [MIT](LICENSE)。第三方组件（ST HAL、CMSIS、FreeRTOS、LVGL、SEGGER RTT、
+字体）版权归各自所有者，详见 [`THIRD_PARTY.md`](THIRD_PARTY.md)。

@@ -24,7 +24,7 @@ Date:
 2023/11/13
 Sheet    of
 File:
-C:\Users\..\TK035F5501_转接板.SchDocDrawn By:
+TK035F5501_转接板.SchDocDrawn By:
 CS
 1
 RS

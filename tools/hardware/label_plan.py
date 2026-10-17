@@ -2,7 +2,7 @@
 """标签规划 v2：key→id→pins；规则分配网络；生成 labels_body.json"""
 import json, urllib.request, importlib.util, sys
 
-spec = importlib.util.spec_from_file_location("pp", r"C:/Users/funiang/Desktop/Project/projects/G2026/hardware/place_parts.py")
+spec = importlib.util.spec_from_file_location("pp", r"hardware/place_parts.py")
 pp = importlib.util.module_from_spec(spec); sys.modules["pp"] = pp; spec.loader.exec_module(pp)
 BASE = "http://localhost:49620"
 
@@ -184,5 +184,5 @@ for (num, name, x, y) in key_pins.get("EVK1", []):
     if str(num) in EVK: L(x,y,EVK[str(num)])
     elif str(num) in EVKFLAG: t,net = EVKFLAG[str(num)]; F(t,net,x,y)
 
-json.dump({"labels": labels, "flags": flags}, open(r"C:/Users/funiang/Desktop/Project/projects/G2026/hardware/label_plan.json","w",encoding="utf-8"), ensure_ascii=False)
+json.dump({"labels": labels, "flags": flags}, open(r"hardware/label_plan.json","w",encoding="utf-8"), ensure_ascii=False)
 print("labels:", len(labels), "flags:", len(flags))

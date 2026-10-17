@@ -99,5 +99,5 @@ return out;
 """ % (json.dumps([{"k":k,"q":q,"m":m,"not":nt,"p":pg,"x":x,"y":y,"rot":rot} for (k,q,m,nt,pg,x,y,rot) in M], ensure_ascii=False), json.dumps([P_AFE, P_PWR, P_INT]))
 
 body = json.dumps({"code": js})
-open(r"C:/Users/funiang/Desktop/Project/projects/G2026/hardware/place_body.json", "w", encoding="utf-8").write(body)
+open(r"hardware/place_body.json", "w", encoding="utf-8").write(body)
 print("body written, items:", len(M))
