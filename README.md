@@ -3,6 +3,13 @@
 > 面向 10 kHz～500 kHz 周期信号的测量分析装置：**50 Ω 端接 + 8 阶抗混叠 + 2.0 MSPS 采样 +
 > 单点 DFT 精化 + LVGL 界面**，在一块自研两层底板上完成从模拟前端到屏幕显示的完整链路。
 
+![MCU](https://img.shields.io/badge/MCU-STM32F407VGT6-03234B)
+![RTOS](https://img.shields.io/badge/RTOS-FreeRTOS-4479A1)
+![GUI](https://img.shields.io/badge/GUI-LVGL%209.5-6C3FC5)
+![Lang](https://img.shields.io/badge/Language-C11-00599C)
+![Build](https://img.shields.io/badge/Build-CMake%20%2B%20Ninja-064F8C)
+![DSP](https://img.shields.io/badge/DSP-CMSIS--DSP-FF6F00)
+
 | 指标 | 要求 | 实测最坏值 | 结论 |
 |---|---|---|---|
 | 基频误差 | ≤ 1 kHz | **0 Hz** | 满足 |
@@ -14,6 +21,20 @@
 
 > 测试口径：官方三组信号 + 11 项边界/组合场景 + 6 点干扰矩阵，共 14+6 项全部 PASS。
 > 原始记录见 [`test-record/G2026-上板测试单-20261016-v5.xlsx`](test-record/G2026-上板测试单-20261016-v5.xlsx)。
+
+## 技术栈（每条都能点开核对）
+
+| 方向 | 具体技术 | 证据 |
+|---|---|---|
+| 嵌入式 C / 裸机 | STM32F407VGT6、时钟树 144 MHz（HSE+PLL）、ADC+DMA、TIM8 触发、FSMC、I²C、SPI | [`board_config.h`](firmware/Core/Inc/board_config.h) |
+| 实时系统 | FreeRTOS 三任务、优先级设计（UI > Engine）、信号量 / 任务通知 / 1 深 mailbox | [`app_rtos.c`](firmware/Task/Src/app_rtos.c) · [`app_tasks.c`](firmware/Task/Src/app_tasks.c) |
+| 数字信号处理 | 4096 点 CFFT（CMSIS-DSP）、BH4 窗、门限找峰、单点 DFT、17 点对数频标定 | [`op_dsp.c`](firmware/Operation/Src/op_dsp.c) · [`op_peak.c`](firmware/Operation/Src/op_peak.c) |
+| 显示与 UI | LVGL 9.5、8080 16 位并口、分块刷新、页面按需建销、触摸中断门控 | [`app_lvgl.c`](firmware/Task/Src/app_lvgl.c) · [`app_ui.c`](firmware/Task/Src/app_ui.c) |
+| 模拟电路 | 8 阶无源 LC 巴特沃斯、OPA2197 两级放大、1.65 V 偏置、单点接地 | [`G2026-AFE.pdf`](hardware/sch/G2026-AFE.pdf) · [`G2026-INT.pdf`](hardware/sch/G2026-INT.pdf) |
+| 工程化 | 四层架构、编译期隔离（Operation 禁 HAL/RTOS）、主机侧单测、五道构建门禁 | [`fw.py`](firmware/Tools/fw.py) · [`CMakeLists.txt`](firmware/CMakeLists.txt) |
+| 测试与度量 | 官方三式 + 11 项边界 + 6 点干扰矩阵，误差按 RSS 分解 | [`测试单`](test-record/G2026-上板测试单-20261016-v5.xlsx) |
+
+> 这些不是关键词：每行都指向能打开的文件。面试时可从任意一行展开到实现细节与取舍。
 
 ## 系统一览
 
