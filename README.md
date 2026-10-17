@@ -13,7 +13,7 @@
 | 抗干扰 | 1 MHz / 200 mVpp | 带内**仅 2 根谱线** | 满足 |
 
 > 测试口径：官方三组信号 + 11 项边界/组合场景 + 6 点干扰矩阵，共 14+6 项全部 PASS。
-> 原始记录见 [`hardware/test/G2026-上板测试单-20261016-v5.xlsx`](hardware/test/G2026-上板测试单-20261016-v5.xlsx)。
+> 原始记录见 [`test-record/G2026-上板测试单-20261016-v5.xlsx`](test-record/G2026-上板测试单-20261016-v5.xlsx)。
 
 ## 系统一览
 
@@ -37,11 +37,11 @@ flowchart LR
 
 | 位置 | 内容 |
 |---|---|
-| [`hardware/`](hardware/) | 硬件编号文档 58～67（机械尺寸、PCB 审查、运放稳定性、屏雪花根因、原理图/BOM、外壳定案）+ `data/` + `sch/`（原理图 PDF）+ `test/`（上板测试单） |
+| [`hardware/sch/`](hardware/sch/) | 原理图 PDF：`G2026-AFE.pdf`（模拟前端）、`G2026-INT.pdf`（接口/数字） |
 | [`firmware/`](firmware/) | 四层固件工程（CubeMX + CMake + FreeRTOS + LVGL）+ 规范手册 `firmware/docs/00~13` |
-| [`tools/`](tools/) | 复算与仿真（`verify_dsp.py`、`sim/`）、工作区归位 |
+| [`test-record/`](test-record/) | 上板测试单（官方三式 + T1～T11 + J1～J6 原始记录） |
 
-进门先读：[`firmware/README.md`](firmware/README.md)（分层与构建）→ [`hardware/`](hardware/)（硬件口径与实测）。
+进门先读：[`firmware/README.md`](firmware/README.md)（分层与构建）→ [`hardware/sch/`](hardware/sch/)（模拟前端与接口原理图）。
 
 ## 快速开始（固件）
 
@@ -61,20 +61,20 @@ python firmware/Tools/fw.py test     # Operation 层 PC 侧单测
 
 ## 测试记录与文档说明
 
-- **上板测试单**：[`hardware/test/G2026-上板测试单-20261016-v5.xlsx`](hardware/test/G2026-上板测试单-20261016-v5.xlsx)
+- **上板测试单**：[`test-record/G2026-上板测试单-20261016-v5.xlsx`](test-record/G2026-上板测试单-20261016-v5.xlsx)
   —— 官方三式、T1～T11、J1～J6 的逐项记录，含判据与结论。
 - **固件规范**：`firmware/docs/00~13` —— 分层规则、构建门禁、日志与测试约定。
-- **硬件口径**：`hardware/66`（原理图与 BOM，元件取值的唯一真相源）、`hardware/67`（外壳尺寸定案）。
+- **原理图**：`hardware/sch/` 两份 PDF，对应模拟前端与接口/数字部分。
 
 毕业设计报告、软硬件导读讲义与补测清单不随本仓库公开（`docs/` 已排除，见 `.gitignore`）；
-如需报告或复算明细，可通过 Issue 联系。
+BOM、PCB 审查与结构文档同样未收录。如需报告或复算明细，可通过 Issue 联系。
 
 ## 状态与边界
 
 - ✅ **已上板验证**：显示、触摸、采样、算法、干扰抑制、测量时延。
 - ⚠️ **未闭环项**：温漂与长时稳定性未测；三音以上与节点级波形未验证。
-- 📄 本仓库为**公开版**：已移除内部文档（`docs/`）、AI 规则文件、编辑器本机配置与 3.7 GB
-  厂商资料包；所有本机绝对路径已替换为相对路径或占位符。
+- 📄 本仓库为**公开版**：仅保留固件源码、原理图与测试单；内部文档（`docs/`）、BOM/PCB 审查、
+  结构文档、`tools/`、AI 规则文件与厂商资料包均未收录。
 
 ## 仓库规范
 

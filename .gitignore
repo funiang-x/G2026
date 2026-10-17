@@ -39,9 +39,14 @@ AGENTS.md
 CLAUDE.md
 firmware/..toolsmxgen.txt
 
-# 内部文档与项目管理（整目录不公开；仅 hardware/test/ 保留测试单）
+# 内部文档与项目管理（整目录不公开；测试单在 test-record/）
 /docs/
 /PROJECT.md
+
+# 公开版只保留原理图；其余硬件资料与工具脚本留在本地
+/hardware/*
+!/hardware/sch/
+/tools/
 
 # 论文中间产物（LaTeX；PDF 作为可读产物保留入库）
 docs/paper/*.aux
