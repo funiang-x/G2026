@@ -6,8 +6,8 @@
  *  依据 docs/01 §11：题面允许"携带自用信号发生器 + 标称值" ⇒ 全部 LTI 误差
  *  （增益/分压/通带/孔径/相移）可被赛前一次标定吃掉（复算：残差 0.023mV）。
  *
- *  表 = 17 个对数频点（10k→500k）上的 G(f)（幅值修正系数）与 P(f)（相位修正，
- *  rad）。使用：A/=G(f)，φ−=P(f)（verify_dsp 的 cal()）。
+ *  表 = 20 个频点（10k→500k，顶段加密）上的 G(f)（幅值修正系数）与 P(f)（相位
+ *  修正，rad）。使用：A/=G(f)，φ−=P(f)（verify_dsp 的 cal()）。
  *  ---- 分工 ----
  *  本层只管"表长什么样、怎么插值、怎么进出 Flash"；
  *  "怎么测出表"是 engine+UI 的流程（逐频点测一次读数），"写 Flash"是组合根
@@ -20,9 +20,13 @@
 extern "C" {
 #endif
 
-/* 17 点对数间隔 10k→500k：f_k = 10k·(50)^(k/16)（verify_dsp 的 logspace）。
+/* 20 点：低段沿用原对数网格 f_k = 10k·(50)^(k/16)（16 点，10k…391.5k）；
+ * 顶段 391.5k→500k 再**四等分**（4 点，步进 50^(1/64)≈1.063）。
+ * 为什么顶段加密（2026-10-30 实测）：400~500k 的整链通带有 ~2% 量级的凹陷，
+ * 而原表在这一段只有两个端点、靠直线插值 ⇒ 中间凹下 2mV 量级。四等分后该段
+ * 的插值残差按 h² 降到 ~1/16（约 0.1%，见 `cal_residual.py` 复算）。
  * 频段是题面定死的（第 2/3 项 10k~500kHz），不做参数。 */
-#define OP_CAL_POINTS 17
+#define OP_CAL_POINTS 20
 #define OP_CAL_F_LO 10000.0f
 #define OP_CAL_F_HI 500000.0f
 
@@ -49,7 +53,7 @@ void op_cal_default_freqs(op_cal_table_t *t);
  *   实测 160 kHz 基波 + 二次谐波（320 kHz 落在坏区间）⇒ **Upp 偏 -18.95 mV**
  *   （题面判据 ±5 mV）。
  * 展开规则：把 p 平移到离**上一个点**最近的等价主值（相邻点真实相移 <180°，
- * 这是 17 点对数密度的保证）。idx==0 直接存主值。
+ * 这是 20 点密度的保证：最宽一段 27.7%、最密一段 6.3%）。idx==0 直接存主值。
  * ⚠️ 旧表（未展开）若已写进 Flash，读回来仍会插错 —— 重新标定一次即可。 */
 void op_cal_set_point(op_cal_table_t *t, int idx, float g, float p);
 
@@ -61,10 +65,10 @@ void op_cal_lookup(const op_cal_table_t *t, float freq_hz, float *g, float *p);
  *   offset 0  : magic "GCAL"（4B）
  *   offset 4  : version = 1（1B）
  *   offset 5  : 保留（3B，全 0）
- *   offset 8  : 17 × (f,g,p) = 204B
- *   offset 212: CRC32（前 212 字节，多项式 0xEDB88320 反射 —— 与常见 zlib 一致）
- *   合计 216B —— 一页（256B）放得下，写/读都不用跨页。 */
-#define OP_CAL_BLOB_SIZE 216U
+ *   offset 8  : 20 × (f,g,p) = 240B
+ *   offset 248: CRC32（前 248 字节，多项式 0xEDB88320 反射 —— 与常见 zlib 一致）
+ *   合计 252B —— 一页（256B）放得下，写/读都不用跨页。 */
+#define OP_CAL_BLOB_SIZE (8U + 12U * OP_CAL_POINTS + 4U) /* = 252B */
 #define OP_CAL_MAGIC 0x4C414347U /* "GCAL" 小端 */
 
 int op_cal_pack(const op_cal_table_t *t, uint8_t *buf, size_t cap);

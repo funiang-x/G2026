@@ -398,7 +398,7 @@
 #define APP_UI_WAVE_POINTS 160 /* 不带 U：大量出现在 int 循环里，-Wsign-compare 会炸 */
 
 /* 标定表在 W25Q128 的落点：扇区 0（4KB）。选它是为了离固件尾部测试扇区
- * （app_flash_rw_test 用倒数两个扇区）足够远；表 216B < 1 页 256B。 */
+ * （app_flash_rw_test 用倒数两个扇区）足够远；表 252B < 1 页 256B。 */
 #define APP_CAL_FLASH_ADDR 0x00000000U
 
 /* 标定的**标称真值**：信号源在每个标定点上要给的正弦**峰值幅度**（mV）。

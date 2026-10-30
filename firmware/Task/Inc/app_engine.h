@@ -29,7 +29,7 @@
  *
  *  ---- 标定流程（docs/01 §11）----
  *  UI 逐步驱动：cal_begin → 显示频点提示 → 人调信号源 → cal_step（同步测一次）
- *  → …17 次… → cal_save（擦+写 Flash）。表在 RAM 里即时生效。
+ *  → …20 次… → cal_save（擦+写 Flash）。表在 RAM 里即时生效。
  *  ⚠️ 遗留：cal_step 目前在 UI 任务里**同步**跑（阻塞 ~15ms），标定时界面短暂停顿。
  *     彻底不卡 UI 需改成"engine 收请求 / UI 轮询 `app_engine_cal_index()`"的异步版。
  * ==========================================================================*/
@@ -133,9 +133,9 @@ uint8_t app_engine_scene(void);
 /* ---- 标定流程（UI 驱动，见文件头）---- */
 void  app_engine_cal_begin(void);            /* 建空表 + 回到第 0 点 */
 int   app_engine_cal_step(void);             /* 测当前点（同步），返回剩余点数，-1=失败 */
-int   app_engine_cal_index(void);            /* 当前点序号 0..16（UI 进度） */
+int   app_engine_cal_index(void);            /* 当前点序号 0..19（UI 进度） */
 float app_engine_cal_freq(int idx);          /* 第 idx 点的提示频率（Hz） */
-int   app_engine_cal_points(void);           /* 总点数（17） */
+int   app_engine_cal_points(void);           /* 总点数（20） */
 int   app_engine_cal_save(void);             /* 擦扇区 + 写 Flash；0=成功 */
 int   app_engine_cal_loaded(void);           /* 1 = 开机时载到了有效表（UI 提示用） */
 int   app_engine_cal_abort(void);            /* 放弃本次标定：把 Flash 里的表读回来（CLOSE 用） */

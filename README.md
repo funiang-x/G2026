@@ -28,7 +28,7 @@
 |---|---|---|
 | 嵌入式 C / 裸机 | STM32F407VGT6、时钟树 144 MHz（HSE+PLL）、ADC+DMA、TIM8 触发、FSMC、I²C、SPI | [`board_config.h`](firmware/Core/Inc/board_config.h) |
 | 实时系统 | FreeRTOS 三任务、优先级设计（UI > Engine）、信号量 / 任务通知 / 1 深 mailbox | [`app_rtos.c`](firmware/Task/Src/app_rtos.c) · [`app_tasks.c`](firmware/Task/Src/app_tasks.c) |
-| 数字信号处理 | 4096 点 CFFT（CMSIS-DSP）、BH4 窗、门限找峰、单点 DFT、17 点对数频标定 | [`op_dsp.c`](firmware/Operation/Src/op_dsp.c) · [`op_peak.c`](firmware/Operation/Src/op_peak.c) |
+| 数字信号处理 | 4096 点 CFFT（CMSIS-DSP）、BH4 窗、门限找峰、单点 DFT、20 点频标定（顶段加密） | [`op_dsp.c`](firmware/Operation/Src/op_dsp.c) · [`op_peak.c`](firmware/Operation/Src/op_peak.c) |
 | 显示与 UI | LVGL 9.5、8080 16 位并口、分块刷新、页面按需建销、触摸中断门控 | [`app_lvgl.c`](firmware/Task/Src/app_lvgl.c) · [`app_ui.c`](firmware/Task/Src/app_ui.c) |
 | 模拟电路 | 8 阶无源 LC 巴特沃斯、OPA2197 两级放大、1.65 V 偏置、单点接地 | [`G2026-AFE.pdf`](hardware/sch/G2026-AFE.pdf) · [`G2026-INT.pdf`](hardware/sch/G2026-INT.pdf) |
 | 工程化 | 四层架构、编译期隔离（Operation 禁 HAL/RTOS）、主机侧单测、五道构建门禁 | [`fw.py`](firmware/Tools/fw.py) · [`CMakeLists.txt`](firmware/CMakeLists.txt) |
@@ -52,7 +52,7 @@ flowchart LR
 - **软件**：Task / Operation / Device / Common 四层，业务逻辑不碰 HAL，可在 PC 上单元测试；
   FreeRTOS 三任务 + 1 深 mailbox；采样窗内 FSMC 零动作。
 - **算法**：去均值 → BH4 窗 → 4096 点 CFFT → 门限找峰 → 抛物线/三点/单点 DFT 三步精化 →
-  17 点对数频标定；`Upp` 用零相位重建，`Urms` 用 `√(ΣA²/2)`。
+  20 点频标定（16 点对数 + 顶段 391.5k→500k 四等分）；`Upp` 用零相位重建，`Urms` 用 `√(ΣA²/2)`。
 
 ## 目录结构
 

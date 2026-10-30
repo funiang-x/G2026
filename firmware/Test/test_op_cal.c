@@ -20,13 +20,21 @@ static void fill_test_table(op_cal_table_t *t) {
 int main(void) {
     op_cal_table_t t;
 
-    /* ---- 默认频点：两端 10k/500k，严格递增 ---- */
+    /* ---- 默认频点：两端 10k/500k，严格递增，顶段加密 ---- */
     TEST_CASE("默认频点");
     op_cal_default_freqs(&t);
     CHECK(fabs(t.f[0] - 10000.0) < 1.0);
-    CHECK(fabs(t.f[16] - 500000.0) < 1.0);
+    CHECK(fabs(t.f[OP_CAL_POINTS - 1] - 500000.0) < 1.0);
     for (int k = 1; k < OP_CAL_POINTS; k++) {
         CHECK(t.f[k] > t.f[k - 1]);
+    }
+    /* 顶部 4 段（391.5k→500k）必须比其余段密 —— 这是 2026-10-30 加点的目的，
+     * 改回"20 点均匀对数"会让这条断言失败。 */
+    {
+        const float wide = t.f[1] / t.f[0];                     /* 27.7% */
+        const float top = t.f[OP_CAL_POINTS - 1] / t.f[OP_CAL_POINTS - 2];
+        CHECK(top < 1.1f);
+        CHECK(top < wide);
     }
 
     /* ---- lookup：表内插值单调平滑，端点钳位 ---- */
@@ -42,7 +50,7 @@ int main(void) {
         op_cal_lookup(&t, 9000.0f, &g1, &p1); /* 下越界 → 首端点 */
         CHECK(fabs(g1 - t.g[0]) < 1e-6);
         op_cal_lookup(&t, 600000.0f, &g1, &p1); /* 上越界 → 末端点 */
-        CHECK(fabs(g1 - t.g[16]) < 1e-6);
+        CHECK(fabs(g1 - t.g[OP_CAL_POINTS - 1]) < 1e-6);
 
         /* 表点正中：log 域插值必落在两端点之间（端点性质——比"等于均值"
          * 更本质：log 域中点与算术中点天然差一个 AM-GM 间隙，不该当断言） */
@@ -94,9 +102,9 @@ int main(void) {
         buf[100] ^= 0xFFU; /* 恢复 */
         CHECK(op_cal_unpack(buf, sizeof(buf), &back) == 0);
 
-        buf[212] ^= 0x01U; /* 翻转 CRC 域本身 */
+        buf[OP_CAL_BLOB_SIZE - 4U] ^= 0x01U; /* 翻转 CRC 域本身 */
         CHECK(op_cal_unpack(buf, sizeof(buf), &back) == -1);
-        buf[212] ^= 0x01U;
+        buf[OP_CAL_BLOB_SIZE - 4U] ^= 0x01U;
 
         buf[0] = 'X'; /* 魔数错 */
         CHECK(op_cal_unpack(buf, sizeof(buf), &back) == -1);

@@ -19,7 +19,7 @@
  *
  *  ---- 标定流程（docs/01 §11）----
  *  UI 逐步驱动：cal_begin → 显示频点提示 → 人调信号源 → cal_step（同步测一次）
- *  → …17 次… → cal_save（擦+写 Flash）。表在 RAM 里即时生效。
+ *  → …20 次… → cal_save（擦+写 Flash）。表在 RAM 里即时生效。
  *  ⚠️ cal_step 由 LVGL 回调（UI 任务上下文）调，本函数**阻塞**到测完 ——
  *     标定是"人点一下测一次"的交互，UI 短暂停顿可接受；彻底不卡 UI 需改成
  *     "engine 收请求 / UI 轮询进度"的异步版（见 app_engine.h 的遗留说明）。
@@ -643,7 +643,7 @@ int app_engine_cal_save(void) {
     if (op_cal_pack(&s_cal, blob, sizeof(blob)) != (int)sizeof(blob)) {
         return -1;
     }
-    /* 216B 在一页（256B）内，不跨页：擦扇区 → 单页写。 */
+    /* 252B 在一页（256B）内，不跨页：擦扇区 → 单页写。 */
     if (bsp_spi_flash_erase_sector(APP_CAL_FLASH_ADDR) != 0 ||
         bsp_spi_flash_write_page(APP_CAL_FLASH_ADDR, blob, sizeof(blob)) != 0) {
         LOG_E("[CAL] 写 Flash 失败 —— 表本次有效，重启后丢失");

@@ -141,7 +141,11 @@ int main(void) {
         op_spec_line_t s[MEAS_MAX_PEAKS];
         meas_result_t zero = {0};
         CHECK(op_spec_build(&zero, s, MEAS_MAX_PEAKS) == -1);
-        CHECK(op_spec_build(&r, s, 1) == -1); /* 容量不足 */
+        CHECK(op_spec_build(&r, s, 0) == -1); /* cap 必须 > 0 */
+        /* cap < 峰数 ⇒ 只写 cap 条（不越界），返回实际条数 */
+        s[1].x01 = -42.0f;
+        CHECK_EQ(op_spec_build(&r, s, 1), 1);
+        CHECK(fabsf(s[1].x01 + 42.0f) < 1e-9f); /* 第 2 条没被写 */
     }
 
     return test_report();

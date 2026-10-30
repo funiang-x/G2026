@@ -5,15 +5,22 @@
 
 #include <math.h>
 
+/* 下面 16+4 的填表循环是按 20 点写死的；改 OP_CAL_POINTS 而不改这里会留下
+ * 未初始化的频点（查表静默错）—— 让它编译期就断。 */
+_Static_assert(OP_CAL_POINTS == 20, "op_cal_default_freqs 的 16+4 布局要跟着改");
+
 void op_cal_default_freqs(op_cal_table_t *t) {
     if (t == NULL) {
         return;
     }
-    /* f_k = 10k · 50^(k/16)，k=0..16 —— 两端严格 10k / 500k（与 verify_dsp
-     * 的 logspace(log10(10e3), log10(500e3), 17) 一致）。 */
-    for (int k = 0; k < OP_CAL_POINTS; k++) {
-        const float x = (float)k / (float)(OP_CAL_POINTS - 1);
-        t->f[k] = OP_CAL_F_LO * powf(50.0f, x);
+    /* 16 点沿用原对数网格 f_k = 10k·50^(k/16)（k=0..15 ⇒ 10k…391.5k）；
+     * 顶段 391.5k→500k 再四等分（j=1..4，步进 50^(1/64)≈1.063）——
+     * 2026-10-30 实测 400~500k 整链通带有 ~2% 凹陷，27.7% 的段宽抓不住。 */
+    for (int k = 0; k < 16; k++) {
+        t->f[k] = OP_CAL_F_LO * powf(50.0f, (float)k / 16.0f);
+    }
+    for (int j = 1; j <= 4; j++) {
+        t->f[15 + j] = t->f[15] * powf(50.0f, (float)j / 64.0f);
     }
 }
 
@@ -63,7 +70,7 @@ void op_cal_lookup(const op_cal_table_t *t, float freq_hz, float *g, float *p) {
 }
 
 /* ---- CRC32（反射 0xEDB88320）----
- * 位算法（无 256 项查表）：216B × 8 位 = 1728 次循环，毫秒不到，不值得为它
+ * 位算法（无 256 项查表）：252B × 8 位 = 2016 次循环，毫秒不到，不值得为它
  * 挂一张 1KB 表。只给本模块 pack/unpack 用 —— 单测通过"改一个字节 ⇒ unpack
  * 必失败"验证 CRC 有效性，不需要独立复算。 */
 static uint32_t crc32_reflect(const uint8_t *buf, size_t len) {
@@ -127,8 +134,9 @@ int op_cal_pack(const op_cal_table_t *t, uint8_t *buf, size_t cap) {
         put_f32(row + 4U, t->g[k]);
         put_f32(row + 8U, t->p[k]);
     }
-    /* CRC 只覆盖前 212B（不含 CRC 域本身），小端写在 212..215。 */
-    put_u32(&buf[212], crc32_reflect(buf, 212U));
+    /* CRC 只覆盖数据区（不含 CRC 域本身），小端写在末尾 4 字节。 */
+    const uint32_t crc_at = OP_CAL_BLOB_SIZE - 4U;
+    put_u32(&buf[crc_at], crc32_reflect(buf, crc_at));
     return (int)OP_CAL_BLOB_SIZE;
 }
 
@@ -140,7 +148,8 @@ int op_cal_unpack(const uint8_t *buf, size_t len, op_cal_table_t *t) {
         buf[4] != 1U) {
         return -1; /* 不是本模块的表 / 版本不认 —— 按缺失处理 */
     }
-    if (get_u32(&buf[212]) != crc32_reflect(buf, 212U)) {
+    const uint32_t crc_at = OP_CAL_BLOB_SIZE - 4U;
+    if (get_u32(&buf[crc_at]) != crc32_reflect(buf, crc_at)) {
         return -1; /* CRC 不符：表损坏，等价于"没有标定表" */
     }
     for (int k = 0; k < OP_CAL_POINTS; k++) {

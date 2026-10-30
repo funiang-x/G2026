@@ -22,7 +22,8 @@ typedef struct {
     float len01;  /* 线长，0..1（最高峰 = 1，其余按幅值比） */
 } op_spec_line_t;
 
-/* 峰表 → 谱线几何。out 容量 ≥ MEAS_MAX_PEAKS。返回线数；-1 参数非法。 */
+/* 峰表 → 谱线几何。out 至少 cap 个元素；**最多写 cap 条**（按峰表顺序取前 cap 条），
+ * 返回写入条数；-1 = 参数非法。 */
 int op_spec_build(const meas_result_t *r, op_spec_line_t *out, int cap);
 
 #ifdef __cplusplus

@@ -1114,7 +1114,7 @@ static void cal_overlay_cb(lv_event_t *e) {
 
 /* ★ 2026-10-15（用户要求）：CLOSE = **放弃本次标定，并把 Flash 里的历史表读回来**。
  *   原来这里只 `cal_panel_show(0)` —— 而 `cal_begin` 已经把 RAM 工作表清空且
- *   `s_cal_valid = 0` ⇒ **误点一次 CALIBRATE 就得重标 17 点**（Flash 里其实一直躺着
+ *   `s_cal_valid = 0` ⇒ **误点一次 CALIBRATE 就得重标 20 点**（Flash 里其实一直躺着
  *   旧表，只是没有任何回退路径）。现在 CLOSE 调 `app_engine_cal_abort()` ⇒ 误点零代价。
  *   ⚠️ `app_engine_cal_save()` 仍然是唯一的写 Flash 路径 ⇒ "放弃"永远安全。*/
 static void cal_close_cb(lv_event_t *e) {
@@ -1183,7 +1183,10 @@ static void cal_panel_create(lv_obj_t *scr) {
 
     lv_obj_t *c = glass_card_create(s_cal_panel, UI_PAD, 70,
                                     (lv_coord_t)(UI_W - 2 * UI_PAD), 180);
-    s_cal_progress = label_create(c, "step 0 / 17", &s_st_cap, UI_PAD, 14);
+    /* 点数由 engine 给（20），别在这里写死 —— 改表长就会说谎。 */
+    char b[32];
+    (void)snprintf(b, sizeof(b), "step 0 / %d", app_engine_cal_points());
+    s_cal_progress = label_create(c, b, &s_st_cap, UI_PAD, 14);
     s_cal_prompt = label_create(c, "", &s_st_cap, UI_PAD, 46);
     lv_obj_set_style_text_font(s_cal_prompt, &lv_font_montserrat_14, LV_PART_MAIN);
     lv_obj_set_style_text_color(s_cal_prompt, UI_HEX(UI_C_TEXT), LV_PART_MAIN);
@@ -1205,7 +1208,9 @@ static void cal_panel_create(lv_obj_t *scr) {
     lv_obj_t *a = glass_card_create(s_cal_ask, UI_PAD, 90,
                                     (lv_coord_t)(UI_W - 2 * UI_PAD), 150);
     (void)label_create(a, "CAL TABLE EXISTS", &s_st_cap, UI_PAD, 14);
-    (void)label_create(a, "Redo the 17-point calibration?", &s_st_cap, UI_PAD, 36);
+    (void)snprintf(b, sizeof(b), "Redo the %d-point calibration?",
+                   app_engine_cal_points());
+    (void)label_create(a, b, &s_st_cap, UI_PAD, 36);
     text_btn_create(a, "REDO", UI_PAD, 78, 120, 44, cal_ask_redo_cb);
     text_btn_create(a, "CLOSE", (lv_coord_t)(UI_PAD + 152), 78, 120, 44, cal_ask_close_cb);
 }
