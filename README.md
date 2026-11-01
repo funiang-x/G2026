@@ -30,7 +30,7 @@
 | 实时系统 | FreeRTOS 三任务、优先级设计（UI > Engine）、信号量 / 任务通知 / 1 深 mailbox | [`app_rtos.c`](firmware/Task/Src/app_rtos.c) · [`app_tasks.c`](firmware/Task/Src/app_tasks.c) |
 | 数字信号处理 | 4096 点 CFFT（CMSIS-DSP）、BH4 窗、门限找峰、单点 DFT、20 点频标定（顶段加密） | [`op_dsp.c`](firmware/Operation/Src/op_dsp.c) · [`op_peak.c`](firmware/Operation/Src/op_peak.c) |
 | 显示与 UI | LVGL 9.5、8080 16 位并口、分块刷新、页面按需建销、触摸中断门控 | [`app_lvgl.c`](firmware/Task/Src/app_lvgl.c) · [`app_ui.c`](firmware/Task/Src/app_ui.c) |
-| 模拟电路 | 8 阶无源 LC 巴特沃斯、OPA2197 两级放大、1.65 V 偏置、单点接地 | [`G2026-AFE.pdf`](hardware/sch/G2026-AFE.pdf) · [`G2026-INT.pdf`](hardware/sch/G2026-INT.pdf) |
+| 模拟电路 | 8 阶无源 LC 巴特沃斯、OPA2197 两级放大、1.65 V 偏置、单点接地 | [`G2026-AFE-frontend.jpg`](hardware/sch/G2026-AFE-frontend.jpg) · [`G2026-INT.pdf`](hardware/sch/G2026-INT.pdf) |
 | 工程化 | 四层架构、编译期隔离（Operation 禁 HAL/RTOS）、主机侧单测、五道构建门禁 | [`fw.py`](firmware/Tools/fw.py) · [`CMakeLists.txt`](firmware/CMakeLists.txt) |
 | 测试与度量 | 官方三式 + 11 项边界 + 6 点干扰矩阵，误差按 RSS 分解 | [`测试单`](test-record/G2026-上板测试单-20261016-v6.xlsx) |
 
@@ -66,14 +66,14 @@ flowchart LR
 | ④ 8 阶巴特沃斯抗混叠低通 | 无源 LC 梯形（L 4.7/22/22/15 µH，C 6.8/10/10/2.2 nF） | 唯一能压住 1 MHz 干扰的环节，数字侧补不回来 | 10 kHz 入 50 → 出 **25 mVpp**（−6.02 dB）；1 MHz/200 mVpp 带内只剩 2 根谱线 |
 | ⑤ 二级增益与 ADC 输入 | `U1B` ×7.8 + `R11` 300 Ω / `C10` 470 pF | 抬到 ADC 量程，输出 RC 再补一刀 | 25 → **195 mVpp**；500 kHz 处再低 0.8 dB |
 
-> 矢量版 [`G2026-AFE.pdf`](hardware/sch/G2026-AFE.pdf) 供打印；该 PDF 导出时未嵌入字体，
-> 多数查看器只画图形、不画位号与参数，**读图以上面这张 JPG 为准**。
+> 上面这张是立创EDA 导出的位号可读版。矢量 PDF 导出时未嵌入字体（位号与参数画不出来），
+> 已从仓库移除；需要可打印的矢量版可开 Issue。
 
 ## 目录结构
 
 | 位置 | 内容 |
 |---|---|
-| [`hardware/sch/`](hardware/sch/) | 原理图：`G2026-AFE-frontend.jpg`（模拟前端位号可读版）、`G2026-AFE.pdf`（矢量）、`G2026-INT.pdf`（接口/数字） |
+| [`hardware/sch/`](hardware/sch/) | 原理图：`G2026-AFE-frontend.jpg`（模拟前端）、`G2026-INT.pdf`（接口/数字） |
 | [`firmware/`](firmware/) | 四层固件工程（CubeMX + CMake + FreeRTOS + LVGL）+ 规范手册 `firmware/docs/00~13` |
 | [`test-record/`](test-record/) | 上板测试单（官方三式 + T1～T11 + J1～J6 原始记录） |
 
@@ -100,7 +100,7 @@ python firmware/Tools/fw.py test     # Operation 层 PC 侧单测
 - **上板测试单**：[`test-record/G2026-上板测试单-20261016-v6.xlsx`](test-record/G2026-上板测试单-20261016-v6.xlsx)
   —— 两张表：测试矩阵（官方三式 + T1～T11，14 项）、干扰矩阵（J1～J6，6 项），逐项含判据与结论，20/20 PASS。
 - **固件规范**：`firmware/docs/00~13` —— 分层规则、构建门禁、日志与测试约定。
-- **原理图**：`hardware/sch/` 两份 PDF（模拟前端、接口/数字）+ 一份前端 JPG 可读版。
+- **原理图**：`hardware/sch/` —— 前端 JPG 可读版 + 接口/数字 PDF。
 
 毕业设计报告、软硬件导读讲义与补测清单不随本仓库公开（`docs/` 已排除，见 `.gitignore`）；
 BOM、PCB 审查与结构文档同样未收录。如需报告或复算明细，可通过 Issue 联系。
