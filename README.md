@@ -20,7 +20,7 @@
 | 抗干扰 | 1 MHz / 200 mVpp | 带内**仅 2 根谱线** | 满足 |
 
 > 测试口径：官方三组信号 + 11 项边界/组合场景 + 6 点干扰矩阵，共 14+6 项全部 PASS。
-> 原始记录见 [`test-record/G2026-上板测试单-20261016-v5.xlsx`](test-record/G2026-上板测试单-20261016-v5.xlsx)。
+> 原始记录见 [`test-record/G2026-上板测试单-20261016-v6.xlsx`](test-record/G2026-上板测试单-20261016-v6.xlsx)。
 
 ## 技术栈（每条都能点开核对）
 
@@ -32,7 +32,7 @@
 | 显示与 UI | LVGL 9.5、8080 16 位并口、分块刷新、页面按需建销、触摸中断门控 | [`app_lvgl.c`](firmware/Task/Src/app_lvgl.c) · [`app_ui.c`](firmware/Task/Src/app_ui.c) |
 | 模拟电路 | 8 阶无源 LC 巴特沃斯、OPA2197 两级放大、1.65 V 偏置、单点接地 | [`G2026-AFE.pdf`](hardware/sch/G2026-AFE.pdf) · [`G2026-INT.pdf`](hardware/sch/G2026-INT.pdf) |
 | 工程化 | 四层架构、编译期隔离（Operation 禁 HAL/RTOS）、主机侧单测、五道构建门禁 | [`fw.py`](firmware/Tools/fw.py) · [`CMakeLists.txt`](firmware/CMakeLists.txt) |
-| 测试与度量 | 官方三式 + 11 项边界 + 6 点干扰矩阵，误差按 RSS 分解 | [`测试单`](test-record/G2026-上板测试单-20261016-v5.xlsx) |
+| 测试与度量 | 官方三式 + 11 项边界 + 6 点干扰矩阵，误差按 RSS 分解 | [`测试单`](test-record/G2026-上板测试单-20261016-v6.xlsx) |
 
 > 这些不是关键词：每行都指向能打开的文件。面试时可从任意一行展开到实现细节与取舍。
 
@@ -54,11 +54,26 @@ flowchart LR
 - **算法**：去均值 → BH4 窗 → 4096 点 CFFT → 门限找峰 → 抛物线/三点/单点 DFT 三步精化 →
   20 点频标定（16 点对数 + 顶段 391.5k→500k 四等分）；`Upp` 用零相位重建，`Urms` 用 `√(ΣA²/2)`。
 
+### 模拟前端：五级链路
+
+![G2026 模拟前端五级链路](hardware/sch/G2026-AFE-frontend.jpg)
+
+| 级 | 电路 | 作用 | 关键数值 |
+|---|---|---|---|
+| ① 输入保护与端接 | `J1` SMA + `R1` 49.9 Ω + `D1` | 50 Ω 端接、过压钳位 | 源 100 mVpp → **50 mVpp**（×0.5） |
+| ② 一级缓冲与偏置注入 | `U1A` 跟随器、`C1` 100 nF | 高阻隔离，负载不回打到源 | 入 ≈ 出，直流抬到 **1.65 V** |
+| ③ 基准与偏置 | 分压 + 去耦 → `VBIAS`（`TP5`） | 给单电源 ADC 定量程中点 | **1.650 V** |
+| ④ 8 阶巴特沃斯抗混叠低通 | 无源 LC 梯形（L 4.7/22/22/15 µH，C 6.8/10/10/2.2 nF） | 唯一能压住 1 MHz 干扰的环节，数字侧补不回来 | 10 kHz 入 50 → 出 **25 mVpp**（−6.02 dB）；1 MHz/200 mVpp 带内只剩 2 根谱线 |
+| ⑤ 二级增益与 ADC 输入 | `U1B` ×7.8 + `R11` 300 Ω / `C10` 470 pF | 抬到 ADC 量程，输出 RC 再补一刀 | 25 → **195 mVpp**；500 kHz 处再低 0.8 dB |
+
+> 矢量版 [`G2026-AFE.pdf`](hardware/sch/G2026-AFE.pdf) 供打印；该 PDF 导出时未嵌入字体，
+> 多数查看器只画图形、不画位号与参数，**读图以上面这张 JPG 为准**。
+
 ## 目录结构
 
 | 位置 | 内容 |
 |---|---|
-| [`hardware/sch/`](hardware/sch/) | 原理图 PDF：`G2026-AFE.pdf`（模拟前端）、`G2026-INT.pdf`（接口/数字） |
+| [`hardware/sch/`](hardware/sch/) | 原理图：`G2026-AFE-frontend.jpg`（模拟前端位号可读版）、`G2026-AFE.pdf`（矢量）、`G2026-INT.pdf`（接口/数字） |
 | [`firmware/`](firmware/) | 四层固件工程（CubeMX + CMake + FreeRTOS + LVGL）+ 规范手册 `firmware/docs/00~13` |
 | [`test-record/`](test-record/) | 上板测试单（官方三式 + T1～T11 + J1～J6 原始记录） |
 
@@ -82,10 +97,10 @@ python firmware/Tools/fw.py test     # Operation 层 PC 侧单测
 
 ## 测试记录与文档说明
 
-- **上板测试单**：[`test-record/G2026-上板测试单-20261016-v5.xlsx`](test-record/G2026-上板测试单-20261016-v5.xlsx)
-  —— 官方三式、T1～T11、J1～J6 的逐项记录，含判据与结论。
+- **上板测试单**：[`test-record/G2026-上板测试单-20261016-v6.xlsx`](test-record/G2026-上板测试单-20261016-v6.xlsx)
+  —— 两张表：测试矩阵（官方三式 + T1～T11，14 项）、干扰矩阵（J1～J6，6 项），逐项含判据与结论，20/20 PASS。
 - **固件规范**：`firmware/docs/00~13` —— 分层规则、构建门禁、日志与测试约定。
-- **原理图**：`hardware/sch/` 两份 PDF，对应模拟前端与接口/数字部分。
+- **原理图**：`hardware/sch/` 两份 PDF（模拟前端、接口/数字）+ 一份前端 JPG 可读版。
 
 毕业设计报告、软硬件导读讲义与补测清单不随本仓库公开（`docs/` 已排除，见 `.gitignore`）；
 BOM、PCB 审查与结构文档同样未收录。如需报告或复算明细，可通过 Issue 联系。
